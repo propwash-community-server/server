@@ -7,4 +7,4 @@ plugins = [
     "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
 ]
 # Where players land, in order.
-try = ["hub", "propwash-one"]
+try = ["hub", "fpv"]

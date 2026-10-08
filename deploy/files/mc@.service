@@ -1,6 +1,6 @@
-# One unit for every server: mc@velocity, mc@propwash-one, ...
+# One unit for every server: mc@velocity, mc@survival, ...
 # Each runs inside its own tmux session so you can still open the console:
-#   mc-console propwash-one     (detach with Ctrl+B then D)
+#   mc-console survival     (detach with Ctrl+B then D)
 [Unit]
 Description=Minecraft %i
 After=network-online.target

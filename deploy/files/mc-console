@@ -1,5 +1,5 @@
 #!/bin/sh
-# Open a server's console: mc-console propwash-one
+# Open a server's console: mc-console survival
 # Detach (leave it running) with Ctrl+B then D.
 if [ -z "$1" ]; then
     echo "usage: mc-console <server>"

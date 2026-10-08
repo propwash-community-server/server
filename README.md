@@ -1,7 +1,8 @@
 # propwash-community-server
 
-Everything for the Propwash community Minecraft network: a Velocity proxy, a Paper hub and Fabric
-backends running Propwash, deployed to one VPS with [pyinfra](https://pyinfra.com).
+Everything for the Propwash community Minecraft network, deployed to one VPS with
+[pyinfra](https://pyinfra.com): a Velocity proxy, a Paper `hub`, and Fabric + Propwash backends
+`fpv` (adventure) and `survival`.
 
 ```
 deploy/          inventory.py (prod + local), deploy.py, files/ (systemd unit, helpers)

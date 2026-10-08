@@ -1,6 +1,6 @@
 type = "fabric"
-port = 25566
-ram = "8G"
+port = 25568
+ram = "4G"
 jar = "fabric-server.jar"
 url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
 mods = [
