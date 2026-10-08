@@ -10,12 +10,21 @@ services:
     ports: ["25565:25565"]
     volumes: [mc-home:/home/mc]
 
-  # Stand-in for the backup bucket; anonymous read and write.
+  # Stand-in for the world bucket; anonymous read and write.
   store:
     image: rclone/rclone:1.69.1
-    entrypoint: ["sh", "-c", "mkdir -p /data/backups && exec rclone serve s3 --addr :8080 /data"]
+    entrypoint: ["sh", "-c", "mkdir -p /data/worlds /data/backups && exec rclone serve s3 --addr :8080 --dir-cache-time 0s /data"]
     ports: ["8080:8080"]
     volumes: [store:/data]
+
+  # Blank stand-in for every map in servers/*/maps/ the store doesn't have yet.
+  seed:
+    image: python:3.13-slim
+    command: ["python", "/seed_blank_maps.py"]
+    volumes:
+      - ./seed_blank_maps.py:/seed_blank_maps.py:ro
+      - ../servers:/servers:ro
+      - store:/data
 
 volumes:
   mc-home:

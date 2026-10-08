@@ -5,6 +5,7 @@ Safe to re-run: it only changes what differs, and never touches worlds,
 whitelists, ops or any server.properties setting except the ones it manages.
 """
 
+import json
 import os
 import subprocess
 import tomllib
@@ -29,6 +30,10 @@ LOCAL = host.data.get("local", False)
 configs = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/*/server.toml"))}
 velocity = configs.pop("velocity")
 backends = configs
+
+maps = {}
+for p in sorted(ROOT.glob("servers/*/maps/*.toml")):
+    maps.setdefault(p.parent.parent.name, []).append({"name": p.stem, **tomllib.loads(p.read_text())})
 
 
 def read_secret(name, kind="binary"):
@@ -66,6 +71,16 @@ class PaperVelocityOk(FactBase):
         return bool(output) and output[0].strip() == "ok"
 
 
+class MapKey(FactBase):
+    """Archive key a map folder was unpacked from, or None."""
+
+    def command(self, path):
+        return f"cat {path}/.key 2>/dev/null || true"
+
+    def process(self, output):
+        return output[0].strip() if output else None
+
+
 def jar_folder(label, folder, urls):
     # Download listed jars, delete any other jar in the folder.
     wanted = {filename(u): u for u in urls}
@@ -85,6 +100,77 @@ def extra_files(name, d):
         files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=str(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
         for p in sorted(src.rglob("*")) if p.is_file()
     ]
+
+
+# Maps are void dimensions (maps:<name>) whose region files come from the store.
+MAP_PACK = json.dumps({"pack": {"description": "Propwash maps", "min_format": 121, "max_format": 999}})
+MAP_DIMENSION = json.dumps(
+    {"type": "minecraft:overworld", "generator": {"type": "minecraft:flat", "settings": {"biome": "minecraft:the_void", "layers": []}}}
+)
+
+
+def map_command(server_maps):
+    # Melius Commands: /map lists the maps, /map <name> teleports there. Runs as the player
+    # with op level 2, so players don't need op themselves.
+    def run(command):
+        return {"command": command, "op_level": 2}
+
+    names = ", ".join(m["name"] for m in server_maps)
+    return json.dumps({
+        "id": "map",
+        "executes": [run(f"tellraw @s {json.dumps('Maps: ' + names)}")],
+        "literals": [
+            {"id": m["name"], "executes": [run(f"execute in maps:{m['name']} run tp @s {' '.join(map(str, m['spawn']))}")]}
+            for m in server_maps
+        ],
+    }, indent=2)
+
+
+def map_ops(name, d, server_maps):
+    store = host.data.get("world_store")
+    if not store:
+        raise SystemExit(f"{host.name} has no world_store but servers/{name}/maps/ lists maps")
+    world = f"{d}/world"
+    pack = f"{world}/datapacks/maps"
+    ops = []
+    # One by one: files.put would mkdir -p the parents as root.
+    for path in [world, f"{world}/datapacks", pack, f"{pack}/data", f"{pack}/data/maps", f"{pack}/data/maps/dimension",
+                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives",
+                 f"{d}/config", f"{d}/config/melius-commands", f"{d}/config/melius-commands/commands"]:
+        files.directory(name=f"{name}: {path}", path=path, **OWNER)
+    ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
+    ops.append(files.put(
+        name=f"{name}: /map command",
+        src=StringIO(map_command(server_maps)),
+        dest=f"{d}/config/melius-commands/commands/map.json",
+        **OWNER,
+    ))
+    for m in server_maps:
+        ops.append(files.put(
+            name=f"{name}: map {m['name']} dimension",
+            src=StringIO(MAP_DIMENSION),
+            dest=f"{pack}/data/maps/dimension/{m['name']}.json",
+            **OWNER,
+        ))
+        dim = f"{world}/dimensions/maps/{m['name']}"
+        # Unpacked again whenever the manifest points at a different archive.
+        if host.get_fact(MapKey, path=dim) != m["key"]:
+            archive = f"/home/{MC}/world-archives/{m['key']}"
+            files.download(name=f"{name}: map {m['name']} archive", src=f"{store}/{m['key']}", dest=archive,
+                           # Locally the store holds blank stand-ins, which can't match the real hash.
+                           sha256sum=None if LOCAL else m["sha256"], **OWNER)
+            ops.append(server.shell(
+                name=f"{name}: map {m['name']} unpack",
+                commands=[
+                    f"systemctl stop mc@{name}",
+                    f"rm -rf {dim}",
+                    f"mkdir -p {dim}",
+                    f"tar -xzf {archive} -C {dim}",
+                    f"echo {m['key']} > {dim}/.key",
+                    f"chown -R {MC}:{MC} {dim}",
+                ],
+            ))
+    return ops
 
 
 def service(name, changes):
@@ -174,6 +260,8 @@ for name, cfg in backends.items():
     else:
         changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
     changes += extra_files(name, d)
+    if maps.get(name):
+        changes += map_ops(name, d, maps[name])
 
     if cfg.get("new_world") and host.get_fact(File, path=f"{d}/server.properties") is None:
         props = "".join(f"{k}={v}\n" for k, v in cfg["new_world"].items())

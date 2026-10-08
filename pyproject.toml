@@ -3,8 +3,17 @@ name = "propwash-community-server"
 version = "0"
 requires-python = ">=3.12"
 dependencies = [
+    "boto3>=1.43.109",
     "pyinfra==3.10.0",
 ]
 
-[tool.uv]
-package = false
+[project.scripts]
+upload-world = "tools.upload_world:main"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "tools"
+module-root = ""
