@@ -1,0 +1,28 @@
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# ┃     Velocitab Tab Groups     ┃
+# ┃  by William278 & AlexDev03   ┃
+# ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+# ┣╸ Information: https://william278.net/project/velocitab
+# ┗╸ Documentation: https://william278.net/docs/velocitab
+
+groups:
+- name: default
+  headers: []
+  footers: []
+  format: <gray>[%server%]</gray> %prefix%%username%
+  nametag:
+    prefix: ''
+    suffix: ''
+  servers:
+  - .*
+  sorting_placeholders:
+  - '%role_weight%'
+  - '%server%'
+  - '%username_lower%'
+  placeholder_replacements: {}
+  collisions: false
+  header_footer_update_rate: 1000
+  format_update_rate: 1000
+  nametag_update_rate: 1000
+  placeholder_update_rate: 1000
+  only_list_players_in_same_server: false

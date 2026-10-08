@@ -41,6 +41,9 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
+The `weight.*` and `prefix.*` entries set the role shown next to a player's name in the tab list
+([Velocitab](https://modrinth.com/plugin/velocitab), on the proxy, configured in
+[`tab_groups.yml`](../servers/velocity/files/plugins/velocitab/tab_groups.yml)).
 
 Group membership is stored in LuckPerms, not in the repo. It can be granted in game, or from the
 VPS once the player has joined:

@@ -10,6 +10,8 @@ plugins = [
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/tamnmXad/LuckPerms-Velocity-5.5.71.jar",
     # Network-wide bans, mutes and kicks; data in MariaDB (sql.yml written by the deploy).
     "https://cdn.modrinth.com/data/PgXAUxLZ/versions/TUuNKL02/LibertyBans_Release-1.2.0-M1.jar",
+    # Network-wide TAB list: server and LuckPerms role per player.
+    "https://cdn.modrinth.com/data/Q10irTG0/versions/7gyD0ard/Velocitab-1.7.11-b34b3ec.jar",
 ]
 # Where players land, in order.
 try = ["hub", "fpv"]

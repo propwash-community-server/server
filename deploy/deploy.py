@@ -76,7 +76,7 @@ def permission_commands():
     # permissions.toml as LuckPerms console commands. Listed groups are replaced as a whole.
     lines = []
     for group, cfg in permissions.get("groups", {}).items():
-        lines += [f"lp creategroup {group}", f"lp group {group} permission clear"]
+        lines += [f"lp creategroup {group}", f"lp group {group} clear"]
         lines += [f"lp group {group} permission set {p}" for p in cfg.get("permissions", [])]
     return "\n".join(lines + ["lp networksync"]) + "\n"
 

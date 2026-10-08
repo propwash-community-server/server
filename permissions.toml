@@ -17,6 +17,9 @@ permissions = [
 
 [groups.builder]
 permissions = [
+    # Role shown in the tab list; the highest weight wins and sorts first.
+    "weight.100",
+    '"prefix.100.<green>[Builder]</green> "',
     "worldedit.* server=fpv",
     "flan.command.bypass.claim server=fpv",
     # Map spawns (<map>) and spots (<map>_<spot>) are warps.
@@ -30,6 +33,8 @@ permissions = [
 
 [groups.staff]
 permissions = [
+    "weight.200",
+    '"prefix.200.<gold>[Staff]</gold> "',
     "group.builder",
     "minecraft.command.gamemode",
     "minecraft.command.teleport",
@@ -46,4 +51,4 @@ permissions = [
 ]
 
 [groups.admin]
-permissions = ["*"]
+permissions = ["weight.300", '"prefix.300.<red>[Admin]</red> "', "*"]
