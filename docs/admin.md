@@ -7,7 +7,7 @@ Running the production server. The tools are the same as in the [README](../READ
 
 1. Create an age key at `~/.config/sops/age/keys.txt` (Windows: `%AppData%\sops\age\keys.txt`):
    `age-keygen -o <that path>`.
-2. Add its public key to [`.sops.yaml`](../.sops.yaml). Someone with access then runs `sops updatekeys secrets/*.sops`.
+2. Add its public key to [`.sops.yaml`](../.sops.yaml). Someone with access then runs `sops updatekeys secrets/*.secret.sops` and `sops updatekeys --input-type dotenv secrets/*.env.sops`.
 3. Add your SSH public key as [`access/<name>.pub`](../access/). It's installed on the next deploy.
 
 ## Deploy

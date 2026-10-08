@@ -1,5 +1,6 @@
 # One age public key per collaborator. After changing this list:
-#   sops updatekeys secrets/*.sops
+#   sops updatekeys secrets/*.secret.sops
+#   sops updatekeys --input-type dotenv secrets/*.env.sops
 creation_rules:
   # Dummies for the local stack, encrypted to the committed local/age.key.
   - path_regex: local/secrets/.*\.sops$
@@ -8,3 +9,4 @@ creation_rules:
     key_groups:
       - age:
           - age1n4luyzpg57v5t225l8gajakftujq8gksau2gdzv65rtpecvuzg2selw8y5  # tomas
+          - age1semg5a4ptekd4t63cpjhf3xzg2qne6u87dkg2h4n62s3m7dkpf8s9hz8aq  # elias
