@@ -1,0 +1,15 @@
+#!/bin/sh
+# Restore one server's world from restic: mc-restore <server> [snapshot]
+# The current world is kept next to it as world.before-restore-<time>.
+set -eu
+[ $# -ge 1 ] || { echo "usage: mc-restore <server> [snapshot]"; exit 1; }
+s=$1
+snapshot=${2:-latest}
+dir=/home/mc/servers/$s
+set -a; . /etc/mc-backup.env; set +a
+
+systemctl stop "mc@$s"
+[ -d "$dir/world" ] && mv "$dir/world" "$dir/world.before-restore-$(date +%Y%m%d-%H%M%S)"
+restic restore "$snapshot" --target / --include "$dir/world"
+chown -R mc:mc "$dir/world"
+systemctl start "mc@$s"

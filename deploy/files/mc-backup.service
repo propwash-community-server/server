@@ -1,0 +1,8 @@
+[Unit]
+Description=Back up the Minecraft servers to restic
+
+[Service]
+Type=oneshot
+CacheDirectory=restic
+Environment=RESTIC_CACHE_DIR=/var/cache/restic
+ExecStart=/usr/local/bin/mc-backup

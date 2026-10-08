@@ -62,5 +62,5 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 | Console on the VPS | `mc-console <name>` |
 | Status / logs | `systemctl status mc@<name>` |
 
-Worlds, whitelists, ops and server.properties (except `server-ip`, `server-port`, `online-mode`)
+Worlds, whitelists, ops and server.properties (except `server-ip`, `server-port`, `online-mode` and the RCON keys)
 are never touched.

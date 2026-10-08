@@ -22,6 +22,8 @@ ROOT = Path(__file__).resolve().parent.parent
 MC = "mc"
 SERVERS = f"/home/{MC}/servers"
 OWNER = {"user": MC, "group": MC}
+# Explicit, or the docker connector keeps the deploying user's uid.
+ROOT_OWNER = {"user": "root", "group": "root"}
 LOCAL = host.data.get("local", False)
 
 configs = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/*/server.toml"))}
@@ -39,6 +41,8 @@ def read_secret(name, kind="binary"):
 
 
 secret = read_secret("forwarding.secret")
+rcon_password = read_secret("rcon.secret")
+backup_env = read_secret("backup.env", "dotenv")
 
 
 def filename(url):
@@ -100,7 +104,7 @@ def service(name, changes):
 
 apt.packages(
     name="Install Java and tools",
-    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml"],
+    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic"],
     update=True,
     cache_time=3600,
 )
@@ -118,11 +122,15 @@ if not LOCAL:
     if keys:
         server.user_authorized_keys(name="root SSH keys", user="root", public_keys=keys)
 
-files.put(name="systemd unit mc@.service", src=str(ROOT / "deploy/files/mc@.service"), dest="/etc/systemd/system/mc@.service")
-files.put(name="mc-console helper", src=str(ROOT / "deploy/files/mc-console"), dest="/usr/local/bin/mc-console", mode="755")
-files.put(name="paper-velocity helper", src=str(ROOT / "deploy/files/paper-velocity"), dest="/usr/local/bin/paper-velocity", mode="755")
+for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer"]:
+    files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore"]:
+    files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
+
+files.put(name="backup credentials", src=StringIO(backup_env + "\n"), dest="/etc/mc-backup.env", mode="600", **ROOT_OWNER)
+systemd.service(name="backup timer", service="mc-backup.timer", running=True, enabled=True, daemon_reload=True)
 
 # --- Velocity (first: Paper backends read its forwarding.secret) ------------
 
@@ -173,7 +181,15 @@ for name, cfg in backends.items():
 
     # Created as mc first: files.line would otherwise create them as root.
     files.file(name=f"{name}: server.properties", path=f"{d}/server.properties", **OWNER)
-    for key, value in {"server-ip": "127.0.0.1", "server-port": cfg["port"], "online-mode": "false"}.items():
+    managed = {
+        "server-ip": "127.0.0.1",
+        "server-port": cfg["port"],
+        "online-mode": "false",
+        "enable-rcon": "true",
+        "rcon.port": cfg["port"] + 10000,
+        "rcon.password": rcon_password,
+    }
+    for key, value in managed.items():
         changes.append(
             files.line(name=f"{name}: {key}", path=f"{d}/server.properties", line=f"^{key}=.*", replace=f"{key}={value}")
         )

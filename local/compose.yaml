@@ -4,10 +4,19 @@ services:
   vps:
     build: .
     container_name: propwash-local
+    hostname: propwash-local
     privileged: true
     tmpfs: [/run, /run/lock, /tmp]
     ports: ["25565:25565"]
     volumes: [mc-home:/home/mc]
 
+  # Stand-in for the backup bucket; anonymous read and write.
+  store:
+    image: rclone/rclone:1.69.1
+    entrypoint: ["sh", "-c", "mkdir -p /data/backups && exec rclone serve s3 --addr :8080 /data"]
+    ports: ["8080:8080"]
+    volumes: [store:/data]
+
 volumes:
   mc-home:
+  store:

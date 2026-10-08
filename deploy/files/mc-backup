@@ -1,0 +1,29 @@
+#!/bin/sh
+# Snapshot every server folder to restic (run nightly by mc-backup.timer).
+# World saving is paused for the snapshot and always switched back on.
+set -eu
+set -a; . /etc/mc-backup.env; set +a
+
+paused=""
+resume() {
+    for s in $paused; do mc-rcon "$s" save-on || true; done
+    paused=""
+}
+trap resume EXIT
+trap 'exit 1' INT TERM
+
+restic cat config >/dev/null 2>&1 || restic init
+
+for unit in $(systemctl list-units --state=active --plain --no-legend 'mc@*' | awk '{print $1}'); do
+    s=${unit#mc@}; s=${s%.service}
+    [ "$s" = velocity ] && continue
+    mc-rcon "$s" save-off
+    paused="$paused $s"
+    mc-rcon "$s" save-all flush
+done
+
+restic backup /home/mc/servers \
+    --exclude '*.jar' --exclude libraries --exclude logs --exclude versions --exclude .fabric
+resume
+
+restic forget --prune --keep-daily 7 --keep-weekly 4 --keep-monthly 6
