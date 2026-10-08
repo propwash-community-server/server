@@ -16,6 +16,8 @@ plugins = [
 spawn-on-join = "true"
 delay-motd = "-1"
 notify-no-new-mail = "false"
+# Nested under newbies:, hence the indent. '' = no kit on first join (the default gives stone tools).
+"  kit" = "''"
 
 # Only written when the server is first created.
 [new_world]
