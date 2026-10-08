@@ -21,6 +21,10 @@ mods = [
 gamemode = "creative"
 force-gamemode = "true"
 
+# Warps (/warp set, /warp tp) go through LuckPerms, see permissions.toml.
+[config."config/EssentialCommands.properties"]
+use_permissions_api = "true"
+
 # Flan world rules: none of these, anywhere on fpv (maps included), unless in /flan bypass.
 [flan]
 deny = [

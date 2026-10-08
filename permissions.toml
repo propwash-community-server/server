@@ -12,10 +12,21 @@ permissions = [
     "essentials.tpaccept",
     "essentials.tpdeny",
     "flan.claim.create false server=fpv",
+    "essentialcommands.warp.tp server=fpv",
 ]
 
 [groups.builder]
-permissions = ["worldedit.* server=fpv", "flan.command.bypass.claim server=fpv"]
+permissions = [
+    "worldedit.* server=fpv",
+    "flan.command.bypass.claim server=fpv",
+    # Map spawns (<map>) and spots (<map>_<spot>) are warps.
+    "essentialcommands.warp.set server=fpv",
+    "essentialcommands.warp.delete server=fpv",
+    # Getting into a map that has no warp yet: /execute in maps:<name> run tp @s X Y Z
+    "minecraft.command.execute server=fpv",
+    "minecraft.command.teleport server=fpv",
+    "minecraft.command.tp server=fpv",
+]
 
 [groups.staff]
 permissions = [

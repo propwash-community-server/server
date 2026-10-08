@@ -150,23 +150,6 @@ MAP_DIMENSION = json.dumps(
 )
 
 
-def map_command(server_maps):
-    # Melius Commands: /map lists the maps, /map <name> teleports there. Runs as the player
-    # with op level 2, so players don't need op themselves.
-    def run(command):
-        return {"command": command, "op_level": 2}
-
-    names = ", ".join(m["name"] for m in server_maps)
-    return json.dumps({
-        "id": "map",
-        "executes": [run(f"tellraw @s {json.dumps('Maps: ' + names)}")],
-        "literals": [
-            {"id": m["name"], "executes": [run(f"execute in maps:{m['name']} run tp @s {' '.join(map(str, m['spawn']))}")]}
-            for m in server_maps
-        ],
-    }, indent=2)
-
-
 def map_ops(name, d, server_maps):
     store = host.data.get("world_store")
     if not store:
@@ -176,16 +159,11 @@ def map_ops(name, d, server_maps):
     ops = []
     # One by one: files.put would mkdir -p the parents as root.
     for path in [world, f"{world}/datapacks", pack, f"{pack}/data", f"{pack}/data/maps", f"{pack}/data/maps/dimension",
-                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives",
-                 f"{d}/config", f"{d}/config/melius-commands", f"{d}/config/melius-commands/commands"]:
+                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives"]:
         files.directory(name=f"{name}: {path}", path=path, **OWNER)
     ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
-    ops.append(files.put(
-        name=f"{name}: /map command",
-        src=StringIO(map_command(server_maps)),
-        dest=f"{d}/config/melius-commands/commands/map.json",
-        **OWNER,
-    ))
+    # Spawns and spots are Essential Commands warps, set in game; this was the old /map command.
+    ops.append(files.file(name=f"{name}: no /map command", path=f"{d}/config/melius-commands/commands/map.json", present=False))
     for m in server_maps:
         ops.append(files.put(
             name=f"{name}: map {m['name']} dimension",

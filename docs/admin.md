@@ -51,7 +51,11 @@ mc-rcon hub "lp user <name> parent set admin"
 
 On the Fabric servers, [Vanilla Permissions](https://modrinth.com/mod/vanilla-permissions) exposes
 vanilla commands as `minecraft.command.<name>`. [Essential Commands](https://modrinth.com/mod/essential-commands)
-does not use LuckPerms and is configured in its own config.
+uses LuckPerms on fpv (`essentialcommands.<command>`, for warps); elsewhere it is configured in its own config.
+Commands without a LuckPerms entry keep their default: open to everyone or op only.
+
+The `builder` group is what map editing needs on fpv: WorldEdit, `/flan bypass`, setting and
+deleting warps, and `/tp` and `/execute` to reach a map that has no warp yet.
 
 ## Protection
 

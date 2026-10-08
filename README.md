@@ -63,15 +63,27 @@ Maps live on `fpv`. Each map is a dimension `maps:<name>`. Its archive is in a b
 
 ### Adding a map
 
-Upload the save folder (the one with `level.dat`) and its spawn point. This also writes the
-`.toml` file:
+Upload the save folder (the one with `level.dat`). This also writes the `.toml` file:
 
 ```
-uv run upload-world "<save folder>" mosslorn --author "Mosslorn authors" --spawn 212 315 199 --local
+uv run upload-world "<save folder>" mosslorn --author "Mosslorn authors" --local
 ```
 
-Drop `--local` to upload to the real bucket. After a deploy, `/map mosslorn` on `fpv` takes you
-there, and `/map` lists all maps.
+Drop `--local` to upload to the real bucket. After a deploy, a builder goes to the map with
+`/execute in maps:mosslorn run tp @s <x> <y> <z>` and sets its spawn with `/warp set mosslorn`.
+
+### Spawns and spots
+
+Map locations are [Essential Commands](https://modrinth.com/mod/essential-commands) warps, set in
+game by builders and stored in the `fpv` world. The warp `<map>` is the map's spawn, and
+`<map>_<spot>` is a spot on it (for example `mosslorn_waterfall`).
+
+| Task | Command |
+|---|---|
+| List warps | `/warp list` |
+| Go to one | `/warp tp <name>` |
+| Add one (builders) | `/warp set <name>` where you stand |
+| Move or remove one (builders) | `/warp delete <name>`, then set it again |
 
 Only the overworld terrain is kept. Old maps are upgraded as you explore, so the first visit can
 be slow.

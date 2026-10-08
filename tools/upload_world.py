@@ -1,7 +1,7 @@
 """
 Pack a world save as a map, upload it to the world store and write servers/<server>/maps/<name>.toml.
 
-  uv run upload-world <save folder> <name> --author <you> --spawn X Y Z [--server fpv] [--local]
+  uv run upload-world <save folder> <name> --author <you> [--server fpv] [--local]
 
 --local uploads to the store from local/compose.yaml; otherwise the bucket from secrets/s3.env.sops.
 Only the overworld is taken; the map shows up in game as the dimension maps:<name>.
@@ -27,7 +27,6 @@ def main():
     parser.add_argument("save", type=Path)
     parser.add_argument("name")
     parser.add_argument("--author", required=True)
-    parser.add_argument("--spawn", type=int, nargs=3, required=True, metavar=("X", "Y", "Z"))
     parser.add_argument("--server", default="fpv")
     parser.add_argument("--local", action="store_true")
     args = parser.parse_args()
@@ -73,8 +72,5 @@ def main():
 
     manifest = Path("servers", args.server, "maps", f"{args.name}.toml")
     (ROOT / manifest).parent.mkdir(exist_ok=True)
-    (ROOT / manifest).write_text(
-        f'key = "{key}"\nsha256 = "{sha256}"\nauthor = "{args.author}"\n'
-        f"spawn = [{', '.join(map(str, args.spawn))}]\n"
-    )
+    (ROOT / manifest).write_text(f'key = "{key}"\nsha256 = "{sha256}"\nauthor = "{args.author}"\n')
     print(f"uploaded {key}, wrote {manifest}")
