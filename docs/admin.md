@@ -58,7 +58,7 @@ uses LuckPerms on fpv (`essentialcommands.<command>`, for warps); elsewhere it i
 Commands without a LuckPerms entry keep their default: open to everyone or op only.
 
 The `builder` group is what map editing needs on fpv: WorldEdit, `/flan bypass`, setting and
-deleting warps, and `/tp` and `/execute` to reach a map that has no warp yet.
+deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that has no warp yet.
 
 ## Protection
 

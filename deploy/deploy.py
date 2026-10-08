@@ -145,9 +145,39 @@ def extra_files(name, d):
 
 # Maps are void dimensions (maps:<name>) whose region files come from the store.
 MAP_PACK = json.dumps({"pack": {"description": "Propwash maps", "min_format": 121, "max_format": 999}})
-MAP_DIMENSION = json.dumps(
-    {"type": "minecraft:overworld", "generator": {"type": "minecraft:flat", "settings": {"biome": "minecraft:the_void", "layers": []}}}
-)
+# Each map has its own clock (so /time on a map only changes that map), started paused at noon once.
+# The vanilla files come from the 26.3 server jar; copy them again when upgrading Minecraft.
+VANILLA = {p.stem: json.loads(p.read_text()) for p in (ROOT / "deploy/vanilla").glob("*.json")}
+LOAD_TAG = json.dumps({"values": ["maps:load"]})
+
+
+def map_pack_files(name):
+    """Datapack files (path under data/ -> JSON) for the map dimension maps:<name>."""
+    clock = f"maps:{name}"
+    return {
+        f"maps/world_clock/{name}.json": {},
+        f"maps/timeline/{name}_day.json": {**VANILLA["timeline_day"], "clock": clock},
+        f"maps/timeline/{name}_moon.json": {**VANILLA["timeline_moon"], "clock": clock},
+        f"maps/dimension_type/{name}.json": {
+            **VANILLA["dimension_type_overworld"], "default_clock": clock, "timelines": [f"{clock}_day", f"{clock}_moon"],
+        },
+        f"maps/dimension/{name}.json": {
+            "type": clock,
+            "generator": {"type": "minecraft:flat", "settings": {"biome": "minecraft:the_void", "layers": []}},
+        },
+    }
+
+
+def map_load_function(server_maps):
+    lines = ["scoreboard objectives add maps_clock dummy"]
+    for m in server_maps:
+        unset = f"execute unless score {m['name']} maps_clock matches 1 run"
+        lines += [
+            f"{unset} time of maps:{m['name']} set noon",
+            f"{unset} time of maps:{m['name']} pause",
+            f"scoreboard players set {m['name']} maps_clock 1",
+        ]
+    return "\n".join(lines) + "\n"
 
 
 def map_ops(name, d, server_maps):
@@ -158,19 +188,26 @@ def map_ops(name, d, server_maps):
     pack = f"{world}/datapacks/maps"
     ops = []
     # One by one: files.put would mkdir -p the parents as root.
-    for path in [world, f"{world}/datapacks", pack, f"{pack}/data", f"{pack}/data/maps", f"{pack}/data/maps/dimension",
+    pack_dirs = ["maps", "maps/world_clock", "maps/timeline", "maps/dimension_type", "maps/dimension", "maps/function",
+                 "minecraft", "minecraft/tags", "minecraft/tags/function"]
+    for path in [world, f"{world}/datapacks", pack, f"{pack}/data", *(f"{pack}/data/{p}" for p in pack_dirs),
                  f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives"]:
         files.directory(name=f"{name}: {path}", path=path, **OWNER)
     ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
+    ops.append(files.put(name=f"{name}: maps load tag", src=StringIO(LOAD_TAG),
+                         dest=f"{pack}/data/minecraft/tags/function/load.json", **OWNER))
+    ops.append(files.put(name=f"{name}: maps load function", src=StringIO(map_load_function(server_maps)),
+                         dest=f"{pack}/data/maps/function/load.mcfunction", **OWNER))
     # Spawns and spots are Essential Commands warps, set in game; this was the old /map command.
     ops.append(files.file(name=f"{name}: no /map command", path=f"{d}/config/melius-commands/commands/map.json", present=False))
     for m in server_maps:
-        ops.append(files.put(
-            name=f"{name}: map {m['name']} dimension",
-            src=StringIO(MAP_DIMENSION),
-            dest=f"{pack}/data/maps/dimension/{m['name']}.json",
-            **OWNER,
-        ))
+        for rel, data in map_pack_files(m["name"]).items():
+            ops.append(files.put(
+                name=f"{name}: map {m['name']} {rel}",
+                src=StringIO(json.dumps(data)),
+                dest=f"{pack}/data/{rel}",
+                **OWNER,
+            ))
         dim = f"{world}/dimensions/maps/{m['name']}"
         # Unpacked again whenever the manifest points at a different archive.
         if host.get_fact(MapKey, path=dim) != m["key"]:

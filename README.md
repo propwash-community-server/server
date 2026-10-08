@@ -88,12 +88,24 @@ game by builders and stored in the `fpv` world. The warp `<map>` is the map's sp
 Only the overworld terrain is kept. Old maps are upgraded as you explore, so the first visit can
 be slow.
 
+### Time
+
+Each map has its own clock, which starts paused at noon. Builders change it in game, standing on the
+map, and it only affects that map.
+
+| Task | Command |
+|---|---|
+| Set the time | `/time set <noon\|night\|...>` or `/time set <ticks>` |
+| Let it run again | `/time resume` |
+| Stop it | `/time pause` |
+
 ### Updating and removing
 
 To update a map, upload it again under the same name and deploy. In-game changes to it are lost.
 
 To remove a map, delete its `.toml` file. Servers that already have it keep it until you delete
-`world/dimensions/maps/<name>` and `datapacks/maps/data/maps/dimension/<name>.json`.
+`world/dimensions/maps/<name>` and its files in `world/datapacks/maps/data/maps/` (`dimension`,
+`dimension_type`, `world_clock` and `timeline`).
 
 Locally, a map missing from the local store is an empty platform at `2 99 2`.
 

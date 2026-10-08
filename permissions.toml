@@ -25,6 +25,8 @@ permissions = [
     # Map spawns (<map>) and spots (<map>_<spot>) are warps.
     "essentialcommands.warp.set server=fpv",
     "essentialcommands.warp.delete server=fpv",
+    # Map time: /time on a map changes only that map's clock.
+    "minecraft.command.time server=fpv",
     # Getting into a map that has no warp yet: /execute in maps:<name> run tp @s X Y Z
     "minecraft.command.execute server=fpv",
     "minecraft.command.teleport server=fpv",
