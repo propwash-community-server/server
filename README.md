@@ -66,8 +66,11 @@ Maps live on `fpv`. Each map is a dimension `maps:<name>`. Its archive is in a b
 Upload the save folder (the one with `level.dat`). This also writes the `.toml` file:
 
 ```
-uv run upload-world "<save folder>" mosslorn --author "Mosslorn authors" --local
+uv run upload-world "<save folder>" mosslorn --author "milkshake_mp3" --local
 ```
+
+`--author` and `--title` (by default the name, capitalized) go in the `.toml` file and are shown on
+screen to players entering the map.
 
 Drop `--local` to upload to the real bucket. After a deploy, a builder goes to the map with
 `/execute in maps:mosslorn run tp @s <x> <y> <z>` and sets its spawn with `/warp set mosslorn`.
@@ -99,13 +102,21 @@ map, and it only affects that map.
 | Let it run again | `/time resume` |
 | Stop it | `/time pause` |
 
+### Race courses
+
+[Propwash](https://www.curseforge.com/minecraft/mc-mods/propwash-fpv) race courses in the save come
+with the map. The deploy adds them to the server's courses when it unpacks the map, before the server
+loads it. Only the course owner from the save can edit them in game.
+
 ### Updating and removing
 
-To update a map, upload it again under the same name and deploy. In-game changes to it are lost.
+To update a map, upload it again under the same name and deploy. In-game changes to it are lost,
+and its race courses are replaced along with their lap times.
 
 To remove a map, delete its `.toml` file. Servers that already have it keep it until you delete
 `world/dimensions/maps/<name>` and its files in `world/datapacks/maps/data/maps/` (`dimension`,
-`dimension_type`, `world_clock` and `timeline`).
+`dimension_type`, `world_clock` and `timeline`). Its race courses stay until deleted with
+`/propwash race delete`.
 
 Locally, a map missing from the local store is an empty platform at `2 99 2`.
 

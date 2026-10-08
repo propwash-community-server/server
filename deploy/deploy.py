@@ -149,6 +149,7 @@ MAP_PACK = json.dumps({"pack": {"description": "Propwash maps", "min_format": 12
 # The vanilla files come from the 26.3 server jar; copy them again when upgrading Minecraft.
 VANILLA = {p.stem: json.loads(p.read_text()) for p in (ROOT / "deploy/vanilla").glob("*.json")}
 LOAD_TAG = json.dumps({"values": ["maps:load"]})
+TICK_TAG = json.dumps({"values": ["maps:tick"]})
 
 
 def map_pack_files(name):
@@ -180,6 +181,40 @@ def map_load_function(server_maps):
     return "\n".join(lines) + "\n"
 
 
+def map_tick_function(server_maps):
+    # Title and author on screen each time a player enters a map.
+    lines = []
+    for m in server_maps:
+        tag, dim = f"map_{m['name']}", f"maps:{m['name']}"
+        entering = f"execute as @a[tag=!{tag}] at @s if dimension {dim} run"
+        lines += [
+            f"{entering} title @s subtitle {json.dumps('by ' + m['author'])}",
+            f"{entering} title @s title {json.dumps(m.get('title', m['name'].capitalize()))}",
+            f"{entering} tag @s add {tag}",
+            f"execute as @a[tag={tag}] at @s unless dimension {dim} run tag @s remove {tag}",
+        ]
+    return "\n".join(lines) + "\n"
+
+
+# Propwash keeps all race courses of a server in world/data/propwash_race.json and matches gate
+# entities to them by UUID; a gate whose course is in another dimension gets cut loose for good. So
+# a map's courses (from upload-world) go in before the server loads it: the map's old ones out, the
+# new ones in with fresh ids and the map's dimension. Args: server file, map file, dimension.
+MERGE_COURSES = """
+import json, os, sys
+path, new, dim = sys.argv[1:]
+data = json.load(open(path)) if os.path.exists(path) else {"nextCourseId": 1, "courses": []}
+data["courses"] = [c for c in data["courses"] if c["dimension"] != dim]
+next_id = max([data.get("nextCourseId", 1)] + [c["id"] + 1 for c in data["courses"]])
+for c in json.load(open(new))["courses"] if os.path.exists(new) else []:
+    data["courses"].append({**c, "id": next_id, "dimension": dim})
+    next_id += 1
+data["nextCourseId"] = next_id
+json.dump(data, open(path + ".tmp", "w"), indent=2)
+os.replace(path + ".tmp", path)
+"""
+
+
 def map_ops(name, d, server_maps):
     store = host.data.get("world_store")
     if not store:
@@ -198,6 +233,10 @@ def map_ops(name, d, server_maps):
                          dest=f"{pack}/data/minecraft/tags/function/load.json", **OWNER))
     ops.append(files.put(name=f"{name}: maps load function", src=StringIO(map_load_function(server_maps)),
                          dest=f"{pack}/data/maps/function/load.mcfunction", **OWNER))
+    ops.append(files.put(name=f"{name}: maps tick tag", src=StringIO(TICK_TAG),
+                         dest=f"{pack}/data/minecraft/tags/function/tick.json", **OWNER))
+    ops.append(files.put(name=f"{name}: maps tick function", src=StringIO(map_tick_function(server_maps)),
+                         dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
     # Spawns and spots are Essential Commands warps, set in game; this was the old /map command.
     ops.append(files.file(name=f"{name}: no /map command", path=f"{d}/config/melius-commands/commands/map.json", present=False))
     for m in server_maps:
@@ -224,6 +263,9 @@ def map_ops(name, d, server_maps):
                     f"tar -xzf {archive} -C {dim}",
                     f"echo {m['key']} > {dim}/.key",
                     f"chown -R {MC}:{MC} {dim}",
+                    f"install -d -o {MC} -g {MC} {world}/data",
+                    f"python3 -c {shlex.quote(MERGE_COURSES)} {world}/data/propwash_race.json {dim}/propwash_race.json maps:{m['name']}",
+                    f"chown {MC}:{MC} {world}/data/propwash_race.json",
                 ],
             ))
     return ops

@@ -1,14 +1,17 @@
 """
 Pack a world save as a map, upload it to the world store and write servers/<server>/maps/<name>.toml.
 
-  uv run upload-world <save folder> <name> --author <you> [--server fpv] [--local]
+  uv run upload-world <save folder> <name> --author <you> [--title <shown name>] [--server fpv] [--local]
 
 --local uploads to the store from local/compose.yaml; otherwise the bucket from secrets/s3.env.sops.
 Only the overworld is taken; the map shows up in game as the dimension maps:<name>.
+Its Propwash race courses (data/propwash_race.json) come along and are merged in on deploy.
 """
 
 import argparse
 import hashlib
+import io
+import json
 import re
 import subprocess
 import tarfile
@@ -27,6 +30,7 @@ def main():
     parser.add_argument("save", type=Path)
     parser.add_argument("name")
     parser.add_argument("--author", required=True)
+    parser.add_argument("--title", help="name shown when entering the map (default: <name> capitalized)")
     parser.add_argument("--server", default="fpv")
     parser.add_argument("--local", action="store_true")
     args = parser.parse_args()
@@ -44,11 +48,23 @@ def main():
     if "region" not in parts:
         raise SystemExit(f"no region/ folder in {source}")
 
+    # Overworld courses only, without records (those live in data/propwash/, which isn't taken).
+    race = None
+    if (args.save / "data/propwash_race.json").is_file():
+        courses = json.loads((args.save / "data/propwash_race.json").read_text())["courses"]
+        courses = [{**c, "leaderboard": [], "archive": []} for c in courses if c["dimension"] == "minecraft:overworld"]
+        race = json.dumps({"courses": courses}).encode()
+        print(f"race courses: {len(courses)} ({sum(len(c['gates']) for c in courses)} gates)")
+
     with tempfile.TemporaryDirectory() as tmp:
         archive = Path(tmp) / "map.tar.gz"
         with tarfile.open(archive, "w:gz") as tar:
             for p in parts:
                 tar.add(source / p, arcname=p)
+            if race:
+                info = tarfile.TarInfo("propwash_race.json")
+                info.size = len(race)
+                tar.addfile(info, io.BytesIO(race))
         sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
         key = f"{args.name}-{sha256[:12]}.tar.gz"
 
@@ -72,5 +88,8 @@ def main():
 
     manifest = Path("servers", args.server, "maps", f"{args.name}.toml")
     (ROOT / manifest).parent.mkdir(exist_ok=True)
-    (ROOT / manifest).write_text(f'key = "{key}"\nsha256 = "{sha256}"\nauthor = "{args.author}"\n')
+    title = args.title or args.name.capitalize()
+    (ROOT / manifest).write_text(
+        f'key = "{key}"\nsha256 = "{sha256}"\ntitle = {json.dumps(title)}\nauthor = {json.dumps(args.author)}\n'
+    )
     print(f"uploaded {key}, wrote {manifest}")
