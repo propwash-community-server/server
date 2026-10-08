@@ -83,6 +83,8 @@ game by builders and stored in the `fpv` world. The warp `<map>` is the map's sp
 
 | Task | Command |
 |---|---|
+| List maps | `/map` |
+| Go to a map's spawn | `/map <map>` (same as `/warp tp <map>`) |
 | List warps | `/warp list` |
 | Go to one | `/warp tp <name>` |
 | Add one (builders) | `/warp set <name>` where you stand |

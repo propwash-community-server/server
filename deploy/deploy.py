@@ -215,6 +215,20 @@ os.replace(path + ".tmp", path)
 """
 
 
+def map_command(server_maps):
+    # Melius Commands: /map lists the maps, /map <name> goes to the map's spawn, the warp <name>
+    # (set in game by builders). Runs as the player with op level 2.
+    def run(command):
+        return {"command": command, "op_level": 2}
+
+    names = ", ".join(m["name"] for m in server_maps)
+    return json.dumps({
+        "id": "map",
+        "executes": [run(f"tellraw @s {json.dumps('Maps: ' + names)}")],
+        "literals": [{"id": m["name"], "executes": [run(f"warp tp {m['name']}")]} for m in server_maps],
+    }, indent=2)
+
+
 def map_ops(name, d, server_maps):
     store = host.data.get("world_store")
     if not store:
@@ -226,7 +240,8 @@ def map_ops(name, d, server_maps):
     pack_dirs = ["maps", "maps/world_clock", "maps/timeline", "maps/dimension_type", "maps/dimension", "maps/function",
                  "minecraft", "minecraft/tags", "minecraft/tags/function"]
     for path in [world, f"{world}/datapacks", pack, f"{pack}/data", *(f"{pack}/data/{p}" for p in pack_dirs),
-                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives"]:
+                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives",
+                 f"{d}/config", f"{d}/config/melius-commands", f"{d}/config/melius-commands/commands"]:
         files.directory(name=f"{name}: {path}", path=path, **OWNER)
     ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
     ops.append(files.put(name=f"{name}: maps load tag", src=StringIO(LOAD_TAG),
@@ -237,8 +252,8 @@ def map_ops(name, d, server_maps):
                          dest=f"{pack}/data/minecraft/tags/function/tick.json", **OWNER))
     ops.append(files.put(name=f"{name}: maps tick function", src=StringIO(map_tick_function(server_maps)),
                          dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
-    # Spawns and spots are Essential Commands warps, set in game; this was the old /map command.
-    ops.append(files.file(name=f"{name}: no /map command", path=f"{d}/config/melius-commands/commands/map.json", present=False))
+    ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
+                         dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
     for m in server_maps:
         for rel, data in map_pack_files(m["name"]).items():
             ops.append(files.put(
