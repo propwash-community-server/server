@@ -1,0 +1,18 @@
+type = "paper"
+port = 25567
+ram = "2G"
+jar = "paper-26.3-159.jar"
+url = "https://fill-data.papermc.io/v1/objects/2224a0b2b6b096ff4c429ad926e97977213e4f633e90cb3a49b5eeb82f94bab0/paper-26.3-159.jar"
+plugins = [
+    "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
+]
+
+# Only written when the server is first created.
+[new_world]
+motd = "Propwash Community Hub"
+level-type = "minecraft\\:flat"
+generate-structures = "false"
+difficulty = "peaceful"
+gamemode = "adventure"
+force-gamemode = "true"
+spawn-protection = "0"

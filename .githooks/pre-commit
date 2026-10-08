@@ -1,0 +1,8 @@
+#!/bin/sh
+# A .sops file sops did not write is plaintext with an innocent name.
+bad=$(git diff --cached --name-only --diff-filter=ACMR -- '*.sops' | while read -r f; do
+	git show ":$f" | grep -qE '^sops_version=|"sops": *\{' || echo "  $f"
+done)
+[ -z "$bad" ] && exit 0
+printf 'not encrypted, refusing to commit:\n%s\n' "$bad" >&2
+exit 1

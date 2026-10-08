@@ -1,0 +1,24 @@
+# One unit for every server: mc@velocity, mc@propwash-one, ...
+# Each runs inside its own tmux session so you can still open the console:
+#   mc-console propwash-one     (detach with Ctrl+B then D)
+[Unit]
+Description=Minecraft %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=mc
+Group=mc
+WorkingDirectory=/home/mc/servers/%i
+EnvironmentFile=/home/mc/servers/%i/service.env
+ExecStart=/usr/bin/tmux -L %i new-session -d -s %i ./start.sh
+# Type the stop command into the console, then wait for a clean shutdown.
+# -l types it literally (otherwise tmux reads e.g. "end" as the End key).
+ExecStop=/usr/bin/tmux -L %i send-keys -t %i -l ${STOP_CMD}
+ExecStop=/usr/bin/tmux -L %i send-keys -t %i Enter
+ExecStop=/bin/sh -c 'while /usr/bin/tmux -L %i has-session -t %i 2>/dev/null; do sleep 1; done'
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

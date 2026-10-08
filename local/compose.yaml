@@ -1,0 +1,13 @@
+name: propwash-local
+
+services:
+  vps:
+    build: .
+    container_name: propwash-local
+    privileged: true
+    tmpfs: [/run, /run/lock, /tmp]
+    ports: ["25565:25565"]
+    volumes: [mc-home:/home/mc]
+
+volumes:
+  mc-home:

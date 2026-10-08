@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Turn on Velocity modern forwarding in a Paper server's config/paper-global.yml.
+
+  paper-velocity <server dir>           apply (Paper fills in the rest on start)
+  paper-velocity --check <server dir>   print "ok" if already applied
+
+The secret is read from Velocity's forwarding.secret, so it never appears in commands.
+"""
+import os
+import sys
+
+import yaml
+
+SECRET_FILE = "/home/mc/servers/velocity/forwarding.secret"
+
+check = sys.argv[1] == "--check"
+server_dir = sys.argv[-1]
+path = os.path.join(server_dir, "config", "paper-global.yml")
+
+with open(SECRET_FILE) as f:
+    want = {"enabled": True, "online-mode": True, "secret": f.read().strip()}
+
+data = {}
+if os.path.exists(path):
+    with open(path) as f:
+        data = yaml.safe_load(f) or {}
+velocity = data.setdefault("proxies", {}).setdefault("velocity", {})
+ok = all(velocity.get(k) == v for k, v in want.items())
+
+if check:
+    print("ok" if ok else "needs-update")
+elif not ok:
+    velocity.update(want)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        yaml.safe_dump(data, f, sort_keys=False)

@@ -1,0 +1,10 @@
+type = "velocity"
+ram = "1G"
+# Only downloaded if missing: to update, change both url and jar.
+jar = "velocity.jar"
+url = "https://fill-data.papermc.io/v1/objects/35a5596a5468a035d8a32c8de5ebb0dc6b8d8f0cc3ff5169d514aca762af8aa8/velocity-4.2.0-30.jar"
+plugins = [
+    "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
+]
+# Where players land, in order.
+try = ["hub", "propwash-one"]

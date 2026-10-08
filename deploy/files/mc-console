@@ -1,0 +1,12 @@
+#!/bin/sh
+# Open a server's console: mc-console propwash-one
+# Detach (leave it running) with Ctrl+B then D.
+if [ -z "$1" ]; then
+    echo "usage: mc-console <server>"
+    ls /home/mc/servers
+    exit 1
+fi
+if [ "$(id -un)" != "mc" ]; then
+    exec sudo -u mc "$0" "$@"
+fi
+exec tmux -L "$1" attach -t "$1"

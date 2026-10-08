@@ -1,0 +1,10 @@
+# One age public key per collaborator. After changing this list:
+#   sops updatekeys secrets/*.sops
+creation_rules:
+  # Dummies for the local stack, encrypted to the committed local/age.key.
+  - path_regex: local/secrets/.*\.sops$
+    age: age1lcryex04ht7gxgcf2p78348x27mrlj84jm47r7tgj2rqllpqz9esp98neh
+  - path_regex: \.sops$
+    key_groups:
+      - age:
+          - age1n4luyzpg57v5t225l8gajakftujq8gksau2gdzv65rtpecvuzg2selw8y5  # tomas
