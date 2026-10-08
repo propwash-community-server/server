@@ -12,4 +12,5 @@ mods = [
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
     "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
+    "https://cdn.modrinth.com/data/Si383TIH/versions/dAcEMeRZ/flan-26.3-1.12.8.b-fabric.jar",
 ]

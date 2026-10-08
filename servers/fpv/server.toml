@@ -13,9 +13,23 @@ mods = [
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
     "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
+    "https://cdn.modrinth.com/data/Si383TIH/versions/dAcEMeRZ/flan-26.3-1.12.8.b-fabric.jar",
 ]
 
 # Set on every deploy: everyone in creative.
 [properties]
 gamemode = "creative"
 force-gamemode = "true"
+
+# Flan world rules: none of these, anywhere on fpv (maps included), unless in /flan bypass.
+[flan]
+deny = [
+    "break", "place", "open_container", "interact_block", "interact_sign", "anvil", "bed", "beacon",
+    "door", "fence_gate", "trapdoor", "button_lever", "pressure_plate", "noteblock", "redstone",
+    "jukebox", "enderchest", "enchantment", "itemframe_rotate", "lectern_take", "endcrystal_place",
+    "target_block", "projectiles", "trample", "bucket", "ender_pearl", "chorus_fruit",
+    "animal_interact", "hurt_animal", "hurt_named", "armorstand", "break_non_living", "archeology",
+    "wind_charge", "hurt_player",
+]
+# Drones can be used, hit and picked up; placing them is files/world/datapacks/propwash_flan.
+ignoredEntities = ["propwash:drone"]

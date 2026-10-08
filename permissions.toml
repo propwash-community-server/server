@@ -11,10 +11,11 @@ permissions = [
     "essentials.tpa",
     "essentials.tpaccept",
     "essentials.tpdeny",
+    "flan.claim.create false server=fpv",
 ]
 
 [groups.builder]
-permissions = ["worldedit.* server=fpv"]
+permissions = ["worldedit.* server=fpv", "flan.command.bypass.claim server=fpv"]
 
 [groups.staff]
 permissions = [

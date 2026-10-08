@@ -7,6 +7,7 @@ whitelists, ops or any server.properties setting except the ones it manages.
 
 import json
 import os
+import shlex
 import subprocess
 import tomllib
 from io import StringIO
@@ -107,6 +108,17 @@ class MapKey(FactBase):
         return output[0].strip() if output else None
 
 
+class JsonFile(FactBase):
+    def command(self, path):
+        return f"cat {path}"
+
+    def process(self, output):
+        return json.loads("\n".join(output))
+
+
+SET_JSON_KEYS = "import json,sys; c=json.load(open(sys.argv[1])); c.update(json.loads(sys.argv[2])); json.dump(c, open(sys.argv[1], 'w'), indent=2)"
+
+
 def jar_folder(label, folder, urls):
     # Download listed jars, delete any other jar in the folder.
     wanted = {filename(u): u for u in urls}
@@ -122,6 +134,9 @@ def jar_folder(label, folder, urls):
 def extra_files(name, d):
     # servers/<name>/files/ is copied as is into the server folder.
     src = ROOT / "servers" / name / "files"
+    # One by one: files.put would mkdir -p the parents as root.
+    for p in sorted({q.relative_to(src) for f in src.rglob("*") if f.is_file() for q in f.parents if q != src and q.is_relative_to(src)}):
+        files.directory(name=f"{name}: {p.as_posix()}/", path=f"{d}/{p.as_posix()}", **OWNER)
     return [
         files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=str(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
         for p in sorted(src.rglob("*")) if p.is_file()
@@ -333,6 +348,23 @@ for name, cfg in backends.items():
                     line=f"^{key}{sep.strip()}.*",
                     replace=f"{key}{sep}{value}",
                 ))
+
+    # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
+    # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level
+    # keys of flan_config.json. Flan rewrites the file on every start, so it's compared as data. Also
+    # only from the next deploy after the first start.
+    flan_config = f"{d}/config/flan/flan_config.json"
+    if cfg.get("flan") and host.get_fact(File, path=flan_config):
+        dims = ["minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"]
+        dims += [f"maps:{m['name']}" for m in maps.get(name, [])]
+        rules = {dim: {f"flan:{p}": "ALLFALSE" for p in cfg["flan"]["deny"]} for dim in dims}
+        wanted = {"globalDefaultPerms": rules, **{k: v for k, v in cfg["flan"].items() if k != "deny"}}
+        current = host.get_fact(JsonFile, path=flan_config)
+        if any(current.get(k) != v for k, v in wanted.items()):
+            changes.append(server.shell(
+                name=f"{name}: Flan config",
+                commands=[f"python3 -c {shlex.quote(SET_JSON_KEYS)} {flan_config} {shlex.quote(json.dumps(wanted))}"],
+            ))
 
     if cfg.get("new_world") and host.get_fact(File, path=f"{d}/server.properties") is None:
         props = "".join(f"{k}={v}\n" for k, v in cfg["new_world"].items())

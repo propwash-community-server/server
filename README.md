@@ -95,6 +95,7 @@ these sections:
 | `[properties]` | server.properties, set on every deploy |
 | `[new_world]` | server.properties, set only for a new server |
 | `[config."<path>"]` | keys in a plugin's config file (set from the second deploy, once the plugin has created the file) |
+| `[flan] deny` | [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension of the server, maps included (also from the second deploy) |
 
 The deploy never changes worlds.
 

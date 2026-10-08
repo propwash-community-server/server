@@ -53,6 +53,13 @@ On the Fabric servers, [Vanilla Permissions](https://modrinth.com/mod/vanilla-pe
 vanilla commands as `minecraft.command.<name>`. [Essential Commands](https://modrinth.com/mod/essential-commands)
 does not use LuckPerms and is configured in its own config.
 
+## Protection
+
+[Flan](https://modrinth.com/mod/flan) runs on fpv and survival. On fpv, `[flan] deny` in its
+`server.toml` stops everyone from breaking, placing or using anything, on every map. Builders and
+staff run `/flan bypass` to edit and run it again to turn it off. On survival, players claim land with
+a golden hoe.
+
 ## Bans
 
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.
