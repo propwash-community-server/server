@@ -10,12 +10,12 @@ mods = [
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
+    # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
+    "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
 ]
 
-# Set on every deploy. Everyone in creative, only ops can build: spawn protection over a
-# 3000-block radius covers the whole map (it also blocks non-ops from chests, doors and
-# buttons, and only works while the server has at least one op).
+# Set on every deploy: everyone in creative.
 [properties]
 gamemode = "creative"
 force-gamemode = "true"
-spawn-protection = "3000"

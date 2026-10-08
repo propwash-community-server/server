@@ -48,10 +48,36 @@ def read_secret(name, kind="binary"):
 secret = read_secret("forwarding.secret")
 rcon_password = read_secret("rcon.secret")
 backup_env = read_secret("backup.env", "dotenv")
+mariadb_password = read_secret("mariadb.secret")
+permissions = tomllib.loads((ROOT / "permissions.toml").read_text())
 
 
 def filename(url):
     return unquote(url.split("?")[0].rsplit("/", 1)[-1])
+
+
+def service_env(name, stop_cmd):
+    # Read by mc@.service. LuckPerms takes its settings from LUCKPERMS_* variables, so every
+    # server shares one MariaDB database and knows its own name for server= contexts.
+    env = (
+        f"STOP_CMD={stop_cmd}\n"
+        f"LUCKPERMS_SERVER={name}\n"
+        "LUCKPERMS_STORAGE_METHOD=mariadb\n"
+        "LUCKPERMS_DATA_ADDRESS=127.0.0.1\n"
+        "LUCKPERMS_DATA_DATABASE=luckperms\n"
+        "LUCKPERMS_DATA_USERNAME=minecraft\n"
+        f"LUCKPERMS_DATA_PASSWORD={mariadb_password}\n"
+    )
+    return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
+
+
+def permission_commands():
+    # permissions.toml as LuckPerms console commands. Listed groups are replaced as a whole.
+    lines = []
+    for group, cfg in permissions.get("groups", {}).items():
+        lines += [f"lp creategroup {group}", f"lp group {group} permission clear"]
+        lines += [f"lp group {group} permission set {p}" for p in cfg.get("permissions", [])]
+    return "\n".join(lines + ["lp networksync"]) + "\n"
 
 
 def start_script(path, jar, ram, args=""):
@@ -190,7 +216,7 @@ def service(name, changes):
 
 apt.packages(
     name="Install Java and tools",
-    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic"],
+    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server"],
     update=True,
     cache_time=3600,
 )
@@ -215,6 +241,19 @@ for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-resto
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
 
+# MariaDB for LuckPerms and LibertyBans (one user, `minecraft`); listens on 127.0.0.1 only
+# (Ubuntu default). Plain idempotent SQL, because pyinfra's mysql facts can't run before MariaDB is installed.
+DATABASES = ["luckperms", "libertybans"]
+mariadb_sql = "".join(f"CREATE DATABASE IF NOT EXISTS {db} CHARACTER SET utf8mb4;\n" for db in DATABASES) + "".join(
+    f"CREATE USER IF NOT EXISTS 'minecraft'@'{h}' IDENTIFIED BY '{mariadb_password}';\n"
+    f"ALTER USER 'minecraft'@'{h}' IDENTIFIED BY '{mariadb_password}';\n"
+    + "".join(f"GRANT ALL PRIVILEGES ON {db}.* TO 'minecraft'@'{h}';\n" for db in DATABASES)
+    for h in ["localhost", "127.0.0.1"]
+)
+systemd.service(name="MariaDB running", service="mariadb", running=True, enabled=True)
+sql = files.put(name="database script", src=StringIO(mariadb_sql), dest="/root/mariadb.sql", mode="600", **ROOT_OWNER)
+server.shell(name="databases + user", commands=["mysql < /root/mariadb.sql"], _if=sql.did_change)
+
 files.put(name="backup credentials", src=StringIO(backup_env + "\n"), dest="/etc/mc-backup.env", mode="600", **ROOT_OWNER)
 systemd.service(name="backup timer", service="mc-backup.timer", running=True, enabled=True, daemon_reload=True)
 
@@ -226,7 +265,7 @@ files.directory(name="velocity folder", path=v, **OWNER)
 changes = [
     files.download(name="velocity jar", src=velocity["url"], dest=f"{v}/{velocity['jar']}", **OWNER),
     start_script(f"{v}/start.sh", velocity["jar"], velocity["ram"]),
-    files.put(name="velocity: stop command", src=StringIO("STOP_CMD=end\n"), dest=f"{v}/service.env", **OWNER),
+    service_env("velocity", "end"),
     files.template(
         name="velocity.toml",
         src=str(ROOT / "servers/velocity/velocity.toml.j2"),
@@ -240,6 +279,24 @@ changes = [
     *extra_files("velocity", v),
 ]
 
+# LibertyBans writes sql.yml on first start (with its own embedded database); from the next
+# deploy it points at MariaDB. The auth-details keys are each unique in that file.
+libertybans_sql = f"{v}/plugins/libertybans/sql.yml"
+if host.get_fact(File, path=libertybans_sql):
+    for key, value in {
+        "rdms-vendor": "MARIADB",
+        "  host": "127.0.0.1",
+        "  database": "libertybans",
+        "  user": "minecraft",
+        "  password": mariadb_password,
+    }.items():
+        changes.append(files.line(
+            name=f"LibertyBans {key.strip()}",
+            path=libertybans_sql,
+            line=f"^{key}:.*",
+            replace=f"{key}: '{value}'",
+        ))
+
 service("velocity", changes)
 
 # --- Backends --------------------------------------------------------------
@@ -252,8 +309,9 @@ for name, cfg in backends.items():
     changes = [
         files.download(name=f"{name}: server jar", src=cfg["url"], dest=f"{d}/{cfg['jar']}", **OWNER),
         start_script(f"{d}/start.sh", cfg["jar"], cfg["ram"], "nogui"),
-        files.put(name=f"{name}: stop command", src=StringIO("STOP_CMD=stop\n"), dest=f"{d}/service.env", **OWNER),
+        service_env(name, "stop"),
         files.put(name=f"{name}: eula", src=StringIO("eula=true\n"), dest=f"{d}/eula.txt", **OWNER),
+        files.put(name=f"{name}: no ops", src=StringIO("[]"), dest=f"{d}/ops.json", **OWNER),
     ]
     if kind == "fabric":
         changes += jar_folder(f"{name}: mod", f"{d}/mods", cfg.get("mods", []))
@@ -286,6 +344,9 @@ for name, cfg in backends.items():
         "server-ip": "127.0.0.1",
         "server-port": cfg["port"],
         "online-mode": "false",
+        # Public network; who may do what is LuckPerms (permissions.toml), bans are LibertyBans.
+        "white-list": "false",
+        "enforce-whitelist": "false",
         "enable-rcon": "true",
         "rcon.port": cfg["port"] + 10000,
         "rcon.password": rcon_password,
@@ -307,6 +368,15 @@ for name, cfg in backends.items():
                 replace=f'secret = "{secret}"',
             )
         )
+        # hackEarlySend: LuckPerms needs the real UUID at pre-login, otherwise it kicks everyone.
+        # hackMessageChain: avoids "invalid chat signature" kicks after switching servers.
+        for key in ["hackEarlySend", "hackMessageChain"]:
+            changes.append(files.line(
+                name=f"{name}: FabricProxy-Lite {key}",
+                path=f"{d}/config/FabricProxy-Lite.toml",
+                line=f"^{key} *=.*",
+                replace=f"{key} = true",
+            ))
     elif not host.get_fact(PaperVelocityOk, server_dir=d):
         changes.append(server.shell(name=f"{name}: Velocity forwarding", commands=[f"/usr/local/bin/paper-velocity {d}"]))
 
@@ -314,3 +384,17 @@ for name, cfg in backends.items():
     files.directory(name=f"{name}: ownership", path=d, recursive=True, **OWNER)
 
     service(name, changes)
+
+# --- Permissions -----------------------------------------------------------
+
+# Applied through the hub's console only when permissions.toml changed; LuckPerms shares them
+# with every server through the database.
+perms = files.put(name="permissions", src=StringIO(permission_commands()), dest=f"/home/{MC}/permissions.lp", **OWNER)
+server.shell(
+    name="apply permissions",
+    commands=[
+        "for i in $(seq 90); do mc-rcon hub list >/dev/null 2>&1 && break; sleep 2; done",
+        f'while read -r c; do mc-rcon hub "$c"; done < /home/{MC}/permissions.lp',
+    ],
+    _if=perms.did_change,
+)

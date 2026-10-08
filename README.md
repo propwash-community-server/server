@@ -2,11 +2,16 @@
 
 Everything for the Propwash community Minecraft network, deployed to one VPS with
 [pyinfra](https://pyinfra.com): a Velocity proxy, a Paper `hub`, and Fabric + Propwash backends
-`fpv` (contributed maps; creative, only ops can build) and `survival`.
+`fpv` (contributed maps, creative) and `survival`. The network is public: no whitelist and no
+ops. Staff powers are LuckPerms groups (`permissions.toml`), shared by every server through MariaDB
+on the box, and bans are network-wide at the proxy (LibertyBans). `/hub` (or `/lobby`) goes back to
+the hub from anywhere.
 
 ```
 deploy/          inventory.py (prod + local), deploy.py, files/ (systemd units, helper scripts)
-servers/<name>/  server.toml (type, port, ram, jar, mods/plugins), files/ (copied as is), maps/ (map manifests)
+servers/<name>/  server.toml (type, port, ram, jar, mods/plugins, [properties], [config."…"]), files/ (copied as is),
+                 maps/ (map manifests)
+permissions.toml LuckPerms groups and members
 local/           Docker stand-in for the VPS + world store
 tools/           upload_world.py (`uv run upload-world`)
 access/          collaborators' SSH public keys
@@ -43,7 +48,10 @@ Getting access (once):
    Someone with access runs `sops updatekeys secrets/*.sops`.
 2. Add your SSH public key as `access/<name>.pub`; it is installed on the next deploy.
 
-`secrets/forwarding.secret.sops` holds Velocity's forwarding secret. To (re)create it from the live one:
+`secrets/` needs, encrypted with `sops -e` (same names and formats as the dummies in `local/secrets/`):
+`forwarding.secret.sops` (Velocity's forwarding secret), `rcon.secret.sops`, `mariadb.secret.sops`
+(password of the `minecraft` database user) and `backup.env.sops` (restic repository + password, S3 keys). To (re)create the
+forwarding secret from the live one:
 `ssh root@2.31.25.191 cat /home/mc/servers/velocity/forwarding.secret > fs && sops -e --input-type binary --output-type binary fs > secrets/forwarding.secret.sops && rm fs`
 
 Then, always preview first:
@@ -106,10 +114,42 @@ Every listed map whose archive the local store doesn't have becomes a blank stan
 small stone platform at `2 99 2`), so a fresh clone runs without the real bucket. `/map` still uses
 the manifest's spawn, so for a blank stand-in use `/execute in maps:<name> run tp @s 2 100 2` (op).
 
+## Server settings
+
+`servers/<name>/server.toml` beyond jars and mods:
+
+- `[properties]`: server.properties keys set on every deploy (fpv: everyone in creative). Building
+  on fpv isn't blocked yet; that needs a protection mod (open).
+- `[new_world]`: server.properties for a brand-new server only.
+- `[config."<path>"]`: top-level keys in a plugin's own config (`key: value`, or `key=value` for
+  `.properties`). Plugins write their config on first start, so these apply from the deploy after
+  a plugin is added. The hub uses it to send everyone to the Essentials spawn on join: set that
+  spot once in game with `/setspawn`.
+
+## Permissions
+
+`permissions.toml` holds the LuckPerms groups. Each entry goes to
+`lp group <name> permission set`, so contexts work (`"worldedit.* server=fpv"`). When the file
+changes, the deploy replaces every listed group as a whole through the hub's console; groups not
+listed, and who is in which group, are left alone. Essential Commands on the
+Fabric servers doesn't use LuckPerms (its own config decides who may run what).
+
+Nobody is op (every server's `ops.json` is emptied on deploy). Staff and admins are the `staff` and
+`admin` groups. Who is in them lives in LuckPerms' database (backed up), not in the repo: grant it
+in game, or from the box (also how the first admin is made) with
+`mc-rcon hub "lp user <name> parent set admin"` once the player has joined. On the Fabric servers,
+Vanilla Permissions turns vanilla commands into `minecraft.command.<name>` nodes so those groups can grant them.
+
+## Bans
+
+LibertyBans on the proxy, so a ban covers every server at once: `/ban`, `/tempban`, `/mute`,
+`/kick`, `/unban`, `/history` (staff). The data is in MariaDB (`libertybans`) and in the backups.
+
 ## Backups
 
-Every night at 04:00 (`mc-backup.timer`) all of `/home/mc/servers` goes to restic in the bucket
-(locally: the local store), without jars, libraries and logs. Saving is paused over RCON for the
+Every night at 04:00 (`mc-backup.timer`) all of `/home/mc/servers` and a dump of both databases,
+LuckPerms and LibertyBans (`/var/backups/mariadb.sql`), go to restic in the bucket (locally: the local store),
+without jars, libraries and logs. Saving is paused over RCON for the
 snapshot and always switched back on. Kept: 7 daily, 4 weekly, 6 monthly.
 
 | Task | How (as root on the box) |
@@ -117,6 +157,7 @@ snapshot and always switched back on. Kept: 7 daily, 4 weekly, 6 monthly.
 | Back up now | `systemctl start mc-backup`, log in `journalctl -u mc-backup` |
 | List snapshots | `set -a; . /etc/mc-backup.env; restic snapshots` |
 | Restore a world | `mc-restore <server> [snapshot]` (default latest; the current world is kept as `world.before-restore-<time>`) |
+| Restore permissions + bans | `restic restore latest --target / --include /var/backups/mariadb.sql`, then `mysql < /var/backups/mariadb.sql` |
 
 ## Day to day
 

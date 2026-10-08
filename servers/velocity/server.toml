@@ -7,6 +7,9 @@ plugins = [
     "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
     # /hub and /lobby
     "https://cdn.modrinth.com/data/X4gKexGh/versions/b8uGXJMq/velocity-hub-1.10-SNAPSHOT.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/tamnmXad/LuckPerms-Velocity-5.5.71.jar",
+    # Network-wide bans, mutes and kicks; data in MariaDB (sql.yml written by the deploy).
+    "https://cdn.modrinth.com/data/PgXAUxLZ/versions/TUuNKL02/LibertyBans_Release-1.2.0-M1.jar",
 ]
 # Where players land, in order.
 try = ["hub", "fpv"]

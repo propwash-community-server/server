@@ -2,6 +2,7 @@
 # Snapshot every server folder to restic (run nightly by mc-backup.timer).
 # World saving is paused for the snapshot and always switched back on.
 set -eu
+umask 077
 set -a; . /etc/mc-backup.env; set +a
 
 paused=""
@@ -22,7 +23,8 @@ for unit in $(systemctl list-units --state=active --plain --no-legend 'mc@*' | a
     mc-rcon "$s" save-all flush
 done
 
-restic backup /home/mc/servers \
+mysqldump --single-transaction --databases luckperms libertybans > /var/backups/mariadb.sql
+restic backup /home/mc/servers /var/backups/mariadb.sql \
     --exclude '*.jar' --exclude libraries --exclude logs --exclude versions --exclude .fabric
 resume
 

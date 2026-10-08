@@ -1,0 +1,37 @@
+# LuckPerms groups, applied on deploy (see README). Each entry is passed to
+# `lp group <name> permission set`, so contexts work: "worldedit.* server=fpv".
+# A listed group is replaced as a whole; groups not listed here are left alone.
+# Nobody is op: staff powers come from these groups.
+
+[groups.default]
+permissions = [
+    "essentials.spawn",
+    "essentials.home",
+    "essentials.sethome",
+    "essentials.tpa",
+    "essentials.tpaccept",
+    "essentials.tpdeny",
+]
+
+[groups.builder]
+permissions = ["worldedit.* server=fpv"]
+
+[groups.staff]
+permissions = [
+    "group.builder",
+    "minecraft.command.gamemode",
+    "minecraft.command.teleport",
+    "minecraft.command.tp",
+    "minecraft.command.give",
+    "minecraft.command.time",
+    "minecraft.command.weather",
+    "minecraft.command.effect",
+    "minecraft.command.kick",
+    "minecraft.bypass.force-gamemode",
+    "worldedit.*",
+    "essentials.*",
+    "libertybans.*",
+]
+
+[groups.admin]
+permissions = ["*"]
