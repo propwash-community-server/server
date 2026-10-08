@@ -63,17 +63,24 @@ Maps live on `fpv`. Each map is a dimension `maps:<name>`. Its archive is in a b
 
 ### Adding a map
 
-Upload the save folder (the one with `level.dat`). This also writes the `.toml` file:
+1. Upload the save folder (the one with `level.dat`). This writes `servers/fpv/maps/<name>.toml`:
 
-```
-uv run upload-world "<save folder>" mosslorn --author "milkshake_mp3" --local
-```
+   ```
+   uv run upload-world "<save folder>" flowmap --author "SHO" --local
+   ```
 
-`--author` and `--title` (by default the name, capitalized) go in the `.toml` file and are shown on
-screen to players entering the map.
+   `--local` uploads to the local store; drop it to upload to the real bucket. `--author` and
+   `--title` (by default the name, capitalized) are shown on screen to players entering the map.
+   Each upload makes a new archive, so the `.toml` file points to the last one: upload to the real
+   bucket last, and only then deploy to prod.
+2. Commit the `.toml` file and deploy. fpv restarts with the new dimension `maps:<name>`, its clock,
+   its race courses and a `/map <name>` entry.
+3. In game, a builder goes to the map and sets its spawn. Until then, `/map <name>` does nothing.
 
-Drop `--local` to upload to the real bucket. After a deploy, a builder goes to the map with
-`/execute in maps:mosslorn run tp @s <x> <y> <z>` and sets its spawn with `/warp set mosslorn`.
+   ```
+   /execute in maps:flowmap run tp @s <x> <y> <z>
+   /warp set flowmap
+   ```
 
 ### Spawns and spots
 
