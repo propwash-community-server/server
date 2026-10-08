@@ -1,10 +1,12 @@
 type = "fabric"
 port = 25568
-ram = "4G"
+ram = "3584M"
 jar = "fabric-server.jar"
 url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
 mods = [
     "https://cdn.modrinth.com/data/P7dR8mSH/versions/v2j28coa/fabric-api-0.162.0%2B26.3.jar",
     "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
     "https://mediafilez.forgecdn.net/files/9073/555/propwash-fabric-26.3-0.4.0.jar",
+    "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
+    "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
 ]

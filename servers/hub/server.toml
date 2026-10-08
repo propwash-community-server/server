@@ -1,11 +1,20 @@
 type = "paper"
 port = 25567
-ram = "2G"
+ram = "1536M"
 jar = "paper-26.3-159.jar"
 url = "https://fill-data.papermc.io/v1/objects/2224a0b2b6b096ff4c429ad926e97977213e4f633e90cb3a49b5eeb82f94bab0/paper-26.3-159.jar"
 plugins = [
     "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
+    "https://cdn.modrinth.com/data/1u6JkXh5/versions/J1eeOh6C/worldedit-bukkit-7.4.6-beta-02.jar",
+    "https://cdn.modrinth.com/data/hXiIvTyT/versions/nY6VN1XH/EssentialsX-2.22.0.jar",
+    "https://cdn.modrinth.com/data/sYpvDxGJ/versions/lc5JHiNJ/EssentialsXSpawn-2.22.0.jar",
 ]
+
+# Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
+[config."plugins/Essentials/config.yml"]
+spawn-on-join = "true"
+delay-motd = "-1"
+notify-no-new-mail = "false"
 
 # Only written when the server is first created.
 [new_world]

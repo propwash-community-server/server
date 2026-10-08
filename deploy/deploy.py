@@ -263,6 +263,19 @@ for name, cfg in backends.items():
     if maps.get(name):
         changes += map_ops(name, d, maps[name])
 
+    # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
+    # .properties). Plugins write their config on first start, so this applies from the next deploy.
+    for rel, settings in cfg.get("config", {}).items():
+        if host.get_fact(File, path=f"{d}/{rel}"):
+            sep = "=" if rel.endswith(".properties") else ": "
+            for key, value in settings.items():
+                changes.append(files.line(
+                    name=f"{name}: {rel} {key}",
+                    path=f"{d}/{rel}",
+                    line=f"^{key}{sep.strip()}.*",
+                    replace=f"{key}{sep}{value}",
+                ))
+
     if cfg.get("new_world") and host.get_fact(File, path=f"{d}/server.properties") is None:
         props = "".join(f"{k}={v}\n" for k, v in cfg["new_world"].items())
         changes.append(files.put(name=f"{name}: new world settings", src=StringIO(props), dest=f"{d}/server.properties", **OWNER))
@@ -276,6 +289,7 @@ for name, cfg in backends.items():
         "enable-rcon": "true",
         "rcon.port": cfg["port"] + 10000,
         "rcon.password": rcon_password,
+        **cfg.get("properties", {}),
     }
     for key, value in managed.items():
         changes.append(

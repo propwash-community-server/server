@@ -2,7 +2,7 @@
 
 Everything for the Propwash community Minecraft network, deployed to one VPS with
 [pyinfra](https://pyinfra.com): a Velocity proxy, a Paper `hub`, and Fabric + Propwash backends
-`fpv` (contributed maps, adventure) and `survival`.
+`fpv` (contributed maps; creative, only ops can build) and `survival`.
 
 ```
 deploy/          inventory.py (prod + local), deploy.py, files/ (systemd units, helper scripts)
@@ -125,8 +125,10 @@ snapshot and always switched back on. Kept: 7 daily, 4 weekly, 6 monthly.
 | Update a mod/plugin | swap its URL in `servers/<name>/server.toml`, deploy (old jar is removed, server restarts) |
 | Update a server jar | change both `url` and `jar`, deploy |
 | Add a server | new `servers/<name>/server.toml` with a free port, add it to `try` in `servers/velocity/server.toml` if players should land there |
+| RAM | the VPS has ~15.5 GB; keep the sum of all `ram` values under ~12 GB (now 1G + 1536M + 6G + 3584M) |
 | Console on the VPS | `mc-console <name>` |
 | Status / logs | `systemctl status mc@<name>` |
 
-Worlds, whitelists, ops and server.properties (except `server-ip`, `server-port`, `online-mode` and the RCON keys)
+Worlds, whitelists, ops and server.properties (except `server-ip`, `server-port`, `online-mode`, the RCON keys
+and a server's own `[properties]`)
 are never touched.
