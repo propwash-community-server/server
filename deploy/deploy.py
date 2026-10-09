@@ -7,6 +7,7 @@ whitelists, ops or any server.properties setting except the ones it manages.
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import tomllib
@@ -53,6 +54,7 @@ rcon_password = read_secret("rcon.secret")
 backup_env = read_secret("backup.env", "dotenv")
 mariadb_password = read_secret("mariadb.secret")
 permissions = tomllib.loads((ROOT / "permissions.toml").read_text())
+palette = tomllib.loads((ROOT / "palette.toml").read_text())
 
 
 def filename(url):
@@ -74,12 +76,69 @@ def service_env(name, stop_cmd):
     return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
 
 
+# Texts are MiniMessage, with the palette.toml colors as tags: <muted>text</muted>.
+TAG = re.compile(r"<(/?)([a-z_]+|#[0-9a-fA-F]{6})>")
+COLORS = {
+    "black": "0", "dark_blue": "1", "dark_green": "2", "dark_aqua": "3", "dark_red": "4", "dark_purple": "5",
+    "gold": "6", "gray": "7", "dark_gray": "8", "blue": "9", "green": "a", "aqua": "b", "red": "c",
+    "light_purple": "d", "yellow": "e", "white": "f",
+}
+DECORATIONS = {"bold": "l", "italic": "o", "underlined": "n", "strikethrough": "m", "obfuscated": "k"}
+
+
+def palette_tags(text):
+    # For what reads MiniMessage itself: LuckPerms prefixes, Carbon, Velocitab, the MOTD.
+    return TAG.sub(lambda m: f"<{m[1]}{palette[m[2]]}>" if m[2] in palette else m[0], text)
+
+
+def spans(text):
+    """(text, open tags) pieces of a text, for what doesn't read MiniMessage. Only colors, decorations
+    and <reset> are tags; anything else in <> (like <name> in a command) stays text."""
+    text, stack, out, pos = palette_tags(text), [], [], 0
+    for m in TAG.finditer(text):
+        tag = m[2]
+        if tag not in COLORS and tag not in DECORATIONS and not tag.startswith("#") and tag != "reset":
+            continue
+        out.append((text[pos:m.start()], list(stack)))
+        pos = m.end()
+        if tag == "reset":
+            stack = []
+        elif not m[1]:
+            stack.append(tag)
+        elif tag in stack:
+            del stack[len(stack) - 1 - stack[::-1].index(tag)]
+    return [(t, s) for t, s in out + [(text[pos:], stack)] if t]
+
+
+def color(tags):
+    colors = [t for t in tags if t in COLORS or t.startswith("#")]
+    return colors[-1] if colors else None
+
+
+def to_json(text):
+    # A text component, for tellraw and title.
+    return json.dumps(["", *(
+        {"text": t, **({"color": color(s)} if color(s) else {}), **{d: True for d in s if d in DECORATIONS}}
+        for t, s in spans(text)
+    )])
+
+
+def to_legacy(text):
+    # & codes, for Essentials text files. Each line is its own message, so each one restates its style.
+    def codes(tags):
+        c = color(tags)
+        return "&r" + ("" if not c else f"&{c}" if c.startswith("#") else f"&{COLORS[c]}") + "".join(
+            f"&{DECORATIONS[d]}" for d in tags if d in DECORATIONS)
+
+    return "".join("\n".join(codes(s) + line if line else "" for line in t.split("\n")) for t, s in spans(text))
+
+
 def permission_commands():
     # permissions.toml as LuckPerms console commands. Listed groups are replaced as a whole.
     lines = []
     for group, cfg in permissions.get("groups", {}).items():
         lines += [f"lp creategroup {group}", f"lp group {group} clear"]
-        lines += [f"lp group {group} permission set {p}" for p in cfg.get("permissions", [])]
+        lines += [f"lp group {group} permission set {palette_tags(p)}" for p in cfg.get("permissions", [])]
     return "\n".join(lines + ["lp networksync"]) + "\n"
 
 
@@ -142,14 +201,23 @@ def jar_folder(label, folder, urls):
     return ops
 
 
+def palette_file(p):
+    # A text file's contents with the palette tags expanded, or the file itself if it has none.
+    try:
+        text = p.read_text()
+    except UnicodeDecodeError:
+        return str(p)
+    return StringIO(palette_tags(text)) if palette_tags(text) != text else str(p)
+
+
 def extra_files(name, d):
-    # servers/<name>/files/ is copied as is into the server folder.
+    # servers/<name>/files/ is copied into the server folder, palette tags expanded.
     src = ROOT / "servers" / name / "files"
     # One by one: files.put would mkdir -p the parents as root.
     for p in sorted({q.relative_to(src) for f in src.rglob("*") if f.is_file() for q in f.parents if q != src and q.is_relative_to(src)}):
         files.directory(name=f"{name}: {p.as_posix()}/", path=f"{d}/{p.as_posix()}", **OWNER)
     return [
-        files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=str(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
+        files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=palette_file(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
         for p in sorted(src.rglob("*")) if p.is_file()
     ]
 
@@ -199,8 +267,8 @@ def map_tick_function(server_maps):
         tag, dim = f"map_{m['name']}", f"maps:{m['name']}"
         entering = f"execute as @a[tag=!{tag}] at @s if dimension {dim} run"
         lines += [
-            f"{entering} title @s subtitle {json.dumps('by ' + m['author'])}",
-            f"{entering} title @s title {json.dumps(m.get('title', m['name'].capitalize()))}",
+            f"{entering} title @s subtitle {to_json('<muted>by ' + m['author'])}",
+            f"{entering} title @s title {to_json('<brand>' + m.get('title', m['name'].capitalize()))}",
             f"{entering} tag @s add {tag}",
             f"execute as @a[tag={tag}] at @s unless dimension {dim} run tag @s remove {tag}",
         ]
@@ -235,7 +303,7 @@ def map_command(server_maps):
     names = ", ".join(m["name"] for m in server_maps)
     return json.dumps({
         "id": "map",
-        "executes": [run(f"tellraw @s {json.dumps('Maps: ' + names)}")],
+        "executes": [run(f"tellraw @s {to_json('<muted>Maps:</muted> ' + names)}")],
         "literals": [{"id": m["name"], "executes": [run(f"warp tp {m['name']}")]} for m in server_maps],
     }, indent=2)
 
@@ -371,6 +439,7 @@ changes = [
         backends=backends,
         try_order=velocity["try"],
         online_mode="false" if host.data.get("test") else "true",
+        motd=palette_tags(velocity["motd"]),
         **OWNER,
     ),
     files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
@@ -423,6 +492,23 @@ for name, cfg in backends.items():
     changes += extra_files(name, d)
     if maps.get(name):
         changes += map_ops(name, d, maps[name])
+
+    # /help: the server's help, then the network-wide one from the velocity server.toml.
+    if cfg.get("help"):
+        text = cfg["help"].strip() + "\n\n" + velocity.get("help", "").strip()
+        if kind == "fabric":
+            # One by one: files.put would mkdir -p the parents as root.
+            for path in ["config", "config/melius-commands", "config/melius-commands/commands"]:
+                files.directory(name=f"{name}: {path}/ for /help", path=f"{d}/{path}", **OWNER)
+            # Melius Commands, in place of vanilla /help; tellraw needs op level 2.
+            help_command = {"id": "help", "executes": [{"command": f"tellraw @s {to_json(text)}", "op_level": 2}]}
+            changes.append(files.put(name=f"{name}: /help", src=StringIO(json.dumps(help_command, indent=2)),
+                                     dest=f"{d}/config/melius-commands/commands/help.json", **OWNER))
+        else:
+            # EssentialsX /help shows help.txt when there is one. It's read on use, so no restart.
+            files.directory(name=f"{name}: Essentials folder", path=f"{d}/plugins/Essentials", **OWNER)
+            files.put(name=f"{name}: /help", src=StringIO(to_legacy(text) + "\n"),
+                      dest=f"{d}/plugins/Essentials/help.txt", **OWNER)
 
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties). Plugins write their config on first start, so this applies from the next deploy.

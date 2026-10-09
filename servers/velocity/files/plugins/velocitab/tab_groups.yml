@@ -9,7 +9,7 @@ groups:
 - name: default
   headers: []
   footers: []
-  format: <gray>[%server%]</gray> %prefix%%username%
+  format: <muted>[%server%]</muted> %prefix%%username%
   nametag:
     prefix: ''
     suffix: ''

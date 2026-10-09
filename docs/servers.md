@@ -9,6 +9,7 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 | `[new_world]` | server.properties, set only for a new server |
 | `[config."<path>"]` | top-level keys in a plugin's config file |
 | `[flan]` | `deny`: [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension, maps included; other keys go to Flan's config |
+| `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |
 
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files.
 The deploy never changes worlds. The proxy's `server.toml` has no port, but `expansions`
@@ -22,3 +23,13 @@ plugins that comes from the URL, for the server jar it is `jar`.
 | Add or update a mod | change its URL in `server.toml`, deploy |
 | Update a server jar | change `url` and `jar`, deploy |
 | Add a server | add `servers/<name>/server.toml` with a free port |
+
+## Colors
+
+Texts the repo writes (chat formats, the tab list, rank prefixes, the MOTD, map titles, `/map` and
+`/help`) are [MiniMessage](https://docs.advntr.dev/minimessage/format.html), and use the colors
+in [`palette.toml`](../palette.toml) as tags: `<muted>[Local]</muted>`. The deploy puts in the colors,
+and converts to a text component where MiniMessage isn't read (`tellraw`, `title`) and to `&`
+codes for Essentials. There it understands colors, `<bold>`, `<italic>`, `<underlined>`,
+`<strikethrough>` and `<reset>`; anything else in `<>` stays text, so `/map <name>` can be
+written as is. Plugins' own messages keep their colors.

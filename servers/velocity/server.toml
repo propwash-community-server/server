@@ -26,3 +26,13 @@ expansions = [
 ]
 # Where players land, in order.
 try = ["hub", "fpv"]
+# Server list MOTD, in MiniMessage with palette.toml tags.
+motd = "<brand>Propwash FPV Community Server"
+# Added to the end of every server's /help.
+help = """
+<muted>On every server:</muted>
+<accent>/hub</accent>: back to the hub
+<accent>/g</accent>, <accent>/l</accent>: chat with everyone, or only this server (<accent>/g <message></accent> sends one message)
+<accent>/msg <player> <message></accent>, <accent>/r <message></accent>: private messages
+<accent>/ignore <player></accent>: hide a player's messages
+"""

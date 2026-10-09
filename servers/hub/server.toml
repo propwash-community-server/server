@@ -13,6 +13,11 @@ plugins = [
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/oEqZsNvv/SignedVelocity-Paper-1.5.0.jar",
 ]
 
+# /help, in MiniMessage with palette.toml tags. Essentials shows 9 lines per page, network part included.
+help = """
+<brand><bold>Hub</bold></brand>: the lobby. Walk through a portal to join a server.
+"""
+
 # Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
 [config."plugins/Essentials/config.yml"]
 spawn-on-join = "true"

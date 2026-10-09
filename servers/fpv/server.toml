@@ -21,6 +21,15 @@ mods = [
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
 ]
 
+# /help, in MiniMessage with palette.toml tags.
+help = """
+<brand><bold>FPV</bold></brand>: fly Propwash drones on maps built by the community.
+<accent>/map</accent>: list the maps
+<accent>/map <name></accent>: go to a map
+<accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
+Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
+"""
+
 # Set on every deploy: everyone in creative.
 [properties]
 gamemode = "creative"

@@ -1,0 +1,10 @@
+# Colors of the texts the network writes: chat, tab list, rank prefixes, MOTD, map titles, /help.
+# Texts use them as MiniMessage tags (<muted>text</muted>); the deploy puts the color in.
+# Values are MiniMessage color names or "#rrggbb".
+brand = "#09add3"  # MOTD, map titles, /help headings
+muted = "gray"  # server tags, separators, subtitles
+dim = "dark_gray"  # [Local]
+accent = "yellow"  # commands in /help, staff chat messages
+builder = "green"
+staff = "gold"
+admin = "red"
