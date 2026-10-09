@@ -30,8 +30,8 @@ permissions = [
     "carbon.ignore",
     "carbon.ignore.unignore",
     "carbon.chatlinks",
-    # Plots: up to 9 plot cells, i.e. one 3x3 merged plot (~130x130). Merged cells each count.
-    "fabricplots.limit.9 server=plots",
+    # Plots: one 120x120 plot.
+    "fabricplots.limit.1 server=plots",
 ]
 
 [groups.builder]
@@ -50,8 +50,8 @@ permissions = [
     "minecraft.command.execute server=fpv",
     "minecraft.command.teleport server=fpv",
     "minecraft.command.tp server=fpv",
-    # Plots: two 3x3 merged plots (the highest fabricplots.limit.<n> wins).
-    "fabricplots.limit.18 server=plots",
+    # Plots: two plots (the highest fabricplots.limit.<n> wins).
+    "fabricplots.limit.2 server=plots",
 ]
 
 [groups.staff]

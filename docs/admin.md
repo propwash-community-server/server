@@ -74,20 +74,36 @@ The `plots` server is a creative plot world from [FabricPlots](https://modrinth.
 `servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
 plots doesn't run Flan.
 
-Plots are 32x32 with roads in between, fixed in the mod. For a big plot, claim a 3x3 block of
-plots and merge it (`/plot wand`, `/plot combine`): about 130x130. Merged plots each count
-against the limit, so limits are in plots: `fabricplots.limit.<n> server=plots` in
-[`permissions.toml`](../permissions.toml) (default 9, builder 18, staff 64).
+Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
+`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 1,
+builder 2, staff 64).
 
 | Task | Command |
 |---|---|
 | Claim | `/plot auto` or `/plot claim` on an empty plot, or `/plot menu` |
-| Merge | `/plot wand`, then `/plot combine` |
 | Let someone build | `/plot trust <name>` |
 | Edit any plot (staff) | `/plot admin` (opt-in, run again to stop) |
 
-The merge settings are in `[config]` of `servers/plots/server.toml`, applied from the second deploy
-(FabricPlots writes its config on first start).
+### Our FabricPlots build
+
+Upstream FabricPlots has the plot size fixed at 32 in code. We run its 26.3 branch with
+[`fabricplots-plot-size.patch`](../servers/plots/fabricplots-plot-size.patch), which reads
+`plot-size` from `config/fabricplots.properties` at startup (default 32) and derives the spawn
+from it. The jar is in the world store under `mods/`. The settings are in `[config]` of
+`servers/plots/server.toml`, applied from the second deploy (FabricPlots writes its config on
+first start). The grid is generated with the plot size, so **changing `plot-size` needs a fresh
+plots world**; keep the spawn in the datapack at `plot-size + 8`.
+
+To rebuild for a new FabricPlots or Minecraft version (JDK 25):
+
+1. Clone [draftsmith](https://github.com/beachfury/draftsmith) and
+   [fabricplots](https://github.com/beachfury/fabricplots), check out the matching branch in both.
+2. In draftsmith: `./gradlew publishToMavenLocal`.
+3. In fabricplots: `git apply <repo>/servers/plots/fabricplots-plot-size.patch`, set
+   `mod_version=<version>-plotsize` in `gradle.properties`, then `./gradlew build`.
+4. Upload `build/libs/fabricplots-*-plotsize+*.jar` to the world store as
+   `mods/fabricplots-<version>-plotsize-<mc>.jar` (no `+`), and point the url in
+   `servers/plots/server.toml` at it.
 
 ## Bans
 
