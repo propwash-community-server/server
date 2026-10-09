@@ -72,6 +72,26 @@ a golden hoe.
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.
 Its commands are `/ban`, `/tempban`, `/mute`, `/kick`, `/unban` and `/history`.
 
+## Chat
+
+[Carbon](https://modrinth.com/plugin/carbon) runs on the proxy, so chat goes across every server in
+one format, with the LuckPerms role prefix (the same one as in the tab list). It needs
+[SignedVelocity](https://modrinth.com/plugin/signedvelocity) on the proxy and every backend.
+The prefix and server name come from [MiniPlaceholders](https://modrinth.com/plugin/miniplaceholders)
+expansions (`expansions` in the velocity `server.toml`).
+
+| Channel | Command | Who |
+|---|---|---|
+| Global (default) | `/global`, `/g` | everyone, all servers |
+| Local | `/local`, `/l` | everyone, same server only |
+| Staff | `/staff`, `/sc`, or start a message with `#` | `staff` and `admin` |
+
+Typing a channel's command switches to it; `/g hello` sends one message without switching.
+Channels are [`files/plugins/carbonchat/channels/`](../servers/velocity/files/plugins/carbonchat/channels/),
+kept as Carbon rewrites them on start, so edit them in place (a reformatted file would restart the
+proxy on every deploy). Who may use a channel is `carbon.channel.<name>.see` / `.speak` in
+[`permissions.toml`](../permissions.toml).
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

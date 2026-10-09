@@ -363,6 +363,10 @@ changes = [
     ),
     files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
     *jar_folder("velocity: plugin", f"{v}/plugins", velocity.get("plugins", [])),
+    # MiniPlaceholders loads its expansions (placeholder add-ons) from its own folder, not plugins/.
+    # The parent is created as mc first, or it would be root's and MiniPlaceholders couldn't write to it.
+    files.directory(name="velocity: miniplaceholders folder", path=f"{v}/plugins/miniplaceholders", **OWNER),
+    *jar_folder("velocity: expansion", f"{v}/plugins/miniplaceholders/expansions", velocity.get("expansions", [])),
     *extra_files("velocity", v),
 ]
 

@@ -13,6 +13,23 @@ permissions = [
     "essentials.tpdeny",
     "flan.claim.create false server=fpv",
     "essentialcommands.warp.tp server=fpv",
+    # Chat (Carbon, on the proxy): global and local channels, whispers, ignoring, clickable links.
+    "carbon.channel",
+    "carbon.channel.global",
+    "carbon.channel.global.see",
+    "carbon.channel.global.speak",
+    "carbon.channel.local",
+    "carbon.channel.local.see",
+    "carbon.channel.local.speak",
+    "carbon.whisper",
+    "carbon.whisper.message",
+    "carbon.whisper.send",
+    "carbon.whisper.receive",
+    "carbon.whisper.reply",
+    "carbon.whisper.continue",
+    "carbon.ignore",
+    "carbon.ignore.unignore",
+    "carbon.chatlinks",
 ]
 
 [groups.builder]
@@ -50,6 +67,13 @@ permissions = [
     "worldedit.*",
     "essentials.*",
     "libertybans.*",
+    # Staff chat channel (/staff, /sc, or start a message with #) and chat moderation.
+    "carbon.channel.staff",
+    "carbon.channel.staff.see",
+    "carbon.channel.staff.speak",
+    "carbon.clearchat.clear",
+    "carbon.clearchat.exempt",
+    "carbon.ignore.exempt",
 ]
 
 [groups.admin]
