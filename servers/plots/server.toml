@@ -25,11 +25,16 @@ mods = [
 
 # 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
 # at startup and the grid is generated with it: changing it needs a fresh plots world.
-# Spawn is mid-road next to plot (0,0): plot-size + 8 (road 17 wide). Keep the datapack in step.
+# Spawn is the middle of the road crossing at the corner of the four spawn plots around (0,0),
+# standing on the road (y 66). Keep the plots_spawn datapack at the same spot.
 [config."config/fabricplots.properties"]
 plot-size = "120"
-spawn-x = "128"
-spawn-z = "128"
+spawn-x = "-9"
+spawn-y = "66"
+spawn-z = "-9"
+# The street sweeper rebuilds roads (removing anything built on them) except this far from spawn,
+# so the spawn area's roads can be built on: 145 blocks each way.
+street-sweeper-spawn-radius = "145"
 allow-player-combine = "false"
 # No portal system: the plot world is the whole server, so no calcite exit portals on the roads,
 # no Portal Key (compass) on claim, no /plot key. Existing portals are removed on start.
