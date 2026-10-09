@@ -26,30 +26,33 @@ def stack(request):
 def player(stack):
     harness.build_client()
     player = harness.start_client()
+    player.joined = [server.name for server in (HUB, FPV) if player.name in server.online()]
     # Players reach the other servers through the hub's portals; the test player switches directly.
     luckperms(f"user {player.name} clear")
     luckperms(f"user {player.name} clear", FPV)
     luckperms(f"user {player.name} permission set velocity.command.server")
 
-    def switched():
+    # The proxy learns about the permission a few seconds later; until then it passes /server on to
+    # the hub, which doesn't know it.
+    world = player.world()
+
+    def allowed():
+        player.clear_chat()
         player.command("/server fpv")
         try:
-            return eventually(lambda: player.name in FPV.online(), timeout=3)
-        except AssertionError:
+            player.expect_chat("Unknown or incomplete command", timeout=3)
             return False
-
-    # The proxy learns about the permission a few seconds later; until then /server is unknown.
-    eventually(switched, timeout=60, interval=1, message="/server to work for the test player")
+        except AssertionError:
+            return True
+    eventually(allowed, timeout=60, interval=1, message="/server to work for the test player")
+    player.expect_arrival(FPV, world)
     yield player
     harness.stop_client()
 
 
 @pytest.fixture(autouse=True)
 def reset(player):
-    """Each test starts with the player in the hub, with an empty inventory."""
-    if player.name not in HUB.online():
-        player.command("/hub")
-        player.expect_on(HUB)
+    """Each test starts with an empty inventory, on whichever server the last one ended (see Player.go)."""
     for server in (HUB, FPV):
         if player.name in server.online():
             server.rcon(f"clear {player.name}")
@@ -67,8 +70,7 @@ def builder(player):
 @pytest.fixture(scope="session")
 def map_spawn(player):
     """The map's spawn (its warp), set by a builder standing on the platform."""
-    player.command("/server fpv")
-    player.expect_on(FPV)
+    player.go(FPV)
     FPV.rcon(f"execute in maps:{MAP} run fill 0 99 0 4 99 4 minecraft:stone")
     FPV.rcon(f"execute in maps:{MAP} run fill 0 100 0 4 101 4 minecraft:air")
     luckperms(f"user {player.name} parent add builder", FPV)

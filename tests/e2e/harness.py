@@ -164,6 +164,15 @@ class Player:
     def command(self, command):
         self.call("execute", command)
 
+    def go(self, server, timeout=30):
+        """Switches to the server (/hub or /server) and waits until the client is in its world.
+        Switching again before that can make the proxy drop the client."""
+        if self.name in server.online():
+            return
+        world = self.world()
+        self.command("/hub" if server is HUB else f"/server {server.name}")
+        self.expect_arrival(server, world, timeout)
+
     def look_at(self, x, y, z):
         self.call("player_look_at", x, y, z)
 
@@ -196,6 +205,10 @@ class Player:
     def tab_players(self):
         return self.call("tab_players")
 
+    def world(self):
+        """The world the client is in; a server switch replaces it."""
+        return self.call("world_state")["world"]
+
     def clear_chat(self):
         self.call("chat_lines")
         self.chat = []
@@ -212,11 +225,15 @@ class Player:
         except AssertionError as e:
             raise AssertionError(f"{e}; chat was: {self.chat}") from None
 
+    def expect_arrival(self, server, world, timeout=30):
+        """Waits until the client has left `world` (from world()) and finished loading into the server."""
+        def arrived():
+            state = self.call("world_state")
+            return state["world"] not in (None, world) and state["screen"] is None and self.name in server.online()
+        eventually(arrived, timeout=timeout, message=f"{self.name} in {server.name}")
+
     def expect_dimension(self, dimension, timeout=10):
         eventually(lambda: self.dimension() == dimension, timeout=timeout, message=f"dimension {dimension}")
-
-    def expect_on(self, server, timeout=15):
-        eventually(lambda: self.name in server.online(), timeout=timeout, message=f"{self.name} on {server.name}")
 
     def expect_title(self, title, subtitle, timeout=10):
         expected = {"title": title, "subtitle": subtitle}

@@ -7,8 +7,7 @@ from harness import FPV, eventually
 @pytest.fixture
 def on_map(player, map_spawn):
     """The player on the map's platform."""
-    player.command("/server fpv")
-    player.expect_on(FPV)
+    player.go(FPV)
     FPV.rcon(f"execute in maps:{MAP} run tp {player.name} {' '.join(map(str, SPAWN))}")
     player.expect_dimension(f"maps:{MAP}")
     eventually(lambda: player.position() == list(SPAWN), message="the player on the platform")
@@ -22,15 +21,13 @@ def in_map(condition):
 
 
 def test_map_lists_every_map(player):
-    player.command("/server fpv")
-    player.expect_on(FPV)
+    player.go(FPV)
     player.command("/map")
     player.expect_chat(f"Maps: {', '.join(MAPS)}$")
 
 
 def test_map_goes_to_the_spawn_and_shows_the_title(player, map_spawn):
-    player.command("/server fpv")
-    player.expect_on(FPV)
+    player.go(FPV)
     FPV.rcon(f"execute in minecraft:overworld run tp {player.name} 0 100 0")
     player.expect_dimension("minecraft:overworld")
     player.command(f"/map {MAP}")

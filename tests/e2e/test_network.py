@@ -2,15 +2,14 @@ from harness import FPV, HUB
 
 
 def test_joining_lands_in_the_hub(player):
-    assert player.name in HUB.online()
+    assert player.joined == ["hub"]
 
 
 def test_switching_servers(player):
-    player.command("/server fpv")
-    player.expect_on(FPV)
+    player.go(HUB)
+    player.go(FPV)
     assert player.name not in HUB.online()
-    player.command("/hub")
-    player.expect_on(HUB)
+    player.go(HUB)
     assert player.name not in FPV.online()
 
 
