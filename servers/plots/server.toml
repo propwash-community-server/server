@@ -26,11 +26,11 @@ mods = [
 # 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
 # at startup and the grid is generated with it: changing it needs a fresh plots world.
 # Spawn is the middle of the road crossing at the corner of the four spawn plots around (0,0),
-# standing on the road (y 66). Keep the plots_spawn datapack at the same spot.
+# standing on the spawn build (y 69). Keep the plots_spawn datapack at the same spot.
 [config."config/fabricplots.properties"]
 plot-size = "120"
 spawn-x = "-9"
-spawn-y = "66"
+spawn-y = "69"
 spawn-z = "-9"
 # The street sweeper rebuilds roads (removing anything built on them) except this far from spawn,
 # so the spawn area's roads can be built on: 145 blocks each way.
