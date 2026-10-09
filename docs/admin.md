@@ -86,10 +86,17 @@ builder 2, staff 64).
 
 ### Our FabricPlots build
 
-Upstream FabricPlots has the plot size fixed at 32 in code. We run its 26.3 branch with
-[`fabricplots-plot-size.patch`](../servers/plots/fabricplots-plot-size.patch), which reads
-`plot-size` from `config/fabricplots.properties` at startup (default 32) and derives the spawn
-from it. The jar is in the world store under `mods/`. The settings are in `[config]` of
+Upstream FabricPlots has the plot size fixed at 32 in code and puts portals on the roads (for
+servers where the plot world sits next to a survival world). We run its 26.3 branch with
+[`fabricplots.patch`](../servers/plots/fabricplots.patch), which adds two settings to
+`config/fabricplots.properties`; both default to upstream behavior:
+
+| Setting | Default | Ours | What it does |
+|---|---|---|---|
+| `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
+| `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
+
+The jar is in the world store under `mods/`. The settings are in `[config]` of
 `servers/plots/server.toml`, applied from the second deploy (FabricPlots writes its config on
 first start). The grid is generated with the plot size, so **changing `plot-size` needs a fresh
 plots world**; keep the spawn in the datapack at `plot-size + 8`.
@@ -99,8 +106,9 @@ To rebuild for a new FabricPlots or Minecraft version (JDK 25):
 1. Clone [draftsmith](https://github.com/beachfury/draftsmith) and
    [fabricplots](https://github.com/beachfury/fabricplots), check out the matching branch in both.
 2. In draftsmith: `./gradlew publishToMavenLocal`.
-3. In fabricplots: `git apply <repo>/servers/plots/fabricplots-plot-size.patch`, set
-   `mod_version=<version>-plotsize` in `gradle.properties`, then `./gradlew build`.
+3. In fabricplots: `git apply <repo>/servers/plots/fabricplots.patch`, set
+   `mod_version=<version>-plotsize.<n>` in `gradle.properties` (a new `<n>` per build, so the
+   deploy sees a new jar name), then `./gradlew build`.
 4. Upload `build/libs/fabricplots-*-plotsize+*.jar` to the world store as
    `mods/fabricplots-<version>-plotsize-<mc>.jar` (no `+`), and point the url in
    `servers/plots/server.toml` at it.

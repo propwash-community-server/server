@@ -16,9 +16,9 @@ mods = [
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
     "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
     # Creative plot world (PlotSquared-style): claim, trust; protects plots and roads. It does the
-    # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with a "plot-size"
-    # setting, from fabricplots-plot-size.patch, in the world store. See docs/admin.md#plots.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize-26.3.jar",
+    # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with "plot-size" and
+    # "portals" settings, from fabricplots.patch, in the world store. See docs/admin.md#plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.2-26.3.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
 ]
@@ -31,6 +31,9 @@ plot-size = "120"
 spawn-x = "128"
 spawn-z = "128"
 allow-player-combine = "false"
+# No portal system: the plot world is the whole server, so no calcite exit portals on the roads,
+# no Portal Key (compass) on claim, no /plot key. Existing portals are removed on start.
+portals = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
 # plot world (files/world/datapacks/plots_spawn), where FabricPlots puts them in creative.
