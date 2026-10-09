@@ -439,7 +439,8 @@ changes = [
         backends=backends,
         try_order=velocity["try"],
         online_mode="false" if host.data.get("test") else "true",
-        motd=palette_tags(velocity["motd"]),
+        # A JSON string is also a TOML one, quotes escaped.
+        motd=json.dumps(palette_tags(velocity["motd"])),
         **OWNER,
     ),
     files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
@@ -504,11 +505,13 @@ for name, cfg in backends.items():
             help_command = {"id": "help", "executes": [{"command": f"tellraw @s {to_json(text)}", "op_level": 2}]}
             changes.append(files.put(name=f"{name}: /help", src=StringIO(json.dumps(help_command, indent=2)),
                                      dest=f"{d}/config/melius-commands/commands/help.json", **OWNER))
-        else:
+        elif kind == "paper":
             # EssentialsX /help shows help.txt when there is one. It's read on use, so no restart.
             files.directory(name=f"{name}: Essentials folder", path=f"{d}/plugins/Essentials", **OWNER)
             files.put(name=f"{name}: /help", src=StringIO(to_legacy(text) + "\n"),
                       dest=f"{d}/plugins/Essentials/help.txt", **OWNER)
+        else:
+            raise SystemExit(f"servers/{name}/server.toml has help, but /help is only made for fabric and paper")
 
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties). Plugins write their config on first start, so this applies from the next deploy.
