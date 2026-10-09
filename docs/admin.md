@@ -96,6 +96,10 @@ servers where the plot world sits next to a survival world). We run its 26.3 bra
 | `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
 | `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
 
+It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla ops use the build
+mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which
+staff and admin have on plots.
+
 The jar is in the world store under `mods/`. The settings are in `[config]` of
 `servers/plots/server.toml`, applied from the second deploy (FabricPlots writes its config on
 first start). The grid is generated with the plot size, so **changing `plot-size` needs a fresh

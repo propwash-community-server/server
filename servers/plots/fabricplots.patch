@@ -178,6 +178,21 @@ index 04ddd3f..40677e8 100644
              if (!allowed(sp, "fabricplots.portal")) return;
              g.close();
              int n = 0;
+diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
+index 70fb191..ce816a2 100644
+--- a/src/main/java/com/fabricplots/protect/PlotProtection.java
++++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
+@@ -170,6 +170,9 @@ public final class PlotProtection {
+         // On a dedicated server this is false, so real ops are gated by the permission check below.
+         if (server.isSingleplayer()) return true;
+         if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
+-        return server.isSingleplayerOwner(sp.nameAndId()) || server.getPlayerList().isOp(sp.nameAndId());
++        if (server.isSingleplayerOwner(sp.nameAndId()) || server.getPlayerList().isOp(sp.nameAndId())) return true;
++        // Staff without op: the fabricplots.admin node from a permissions mod (e.g. LuckPerms) counts too,
++        // so /plot admin's build mode actually lets them edit roads and other plots.
++        return com.fabricplots.compat.Perms.check(sp, "fabricplots.admin", false);
+     }
+ }
 diff --git a/src/main/java/com/fabricplots/protect/PortalManager.java b/src/main/java/com/fabricplots/protect/PortalManager.java
 index 4db585f..1f253ee 100644
 --- a/src/main/java/com/fabricplots/protect/PortalManager.java

@@ -17,8 +17,8 @@ mods = [
     "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
     # Creative plot world (PlotSquared-style): claim, trust; protects plots and roads. It does the
     # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with "plot-size" and
-    # "portals" settings, from fabricplots.patch, in the world store. See docs/admin.md#plots.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.2-26.3.jar",
+    # "portals" settings and a /plot admin fix, from fabricplots.patch, in the world store. See docs/admin.md#plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.3-26.3.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
 ]
