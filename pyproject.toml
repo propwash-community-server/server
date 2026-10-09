@@ -10,6 +10,7 @@ dependencies = [
 [project.scripts]
 upload-world = "tools.upload_world:main"
 e2e = "tools.e2e:main"
+check = "tools.check:main"
 
 [dependency-groups]
 dev = ["pytest==8.4.2"]
