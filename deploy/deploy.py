@@ -484,8 +484,10 @@ for name, cfg in backends.items():
     elif not host.get_fact(PaperVelocityOk, server_dir=d):
         changes.append(server.shell(name=f"{name}: Velocity forwarding", commands=[f"/usr/local/bin/paper-velocity {d}"]))
 
-    # files.line creates/edits as root, so hand everything back to mc.
-    files.directory(name=f"{name}: ownership", path=d, recursive=True, **OWNER)
+    # Files written as root (files.line, the paper-velocity helper, ...) go back to mc. A plain
+    # chown: files.directory(recursive=True) only recurses when the top folder's owner is wrong,
+    # so root-owned files inside an mc-owned folder would stay root and the server couldn't save them.
+    server.shell(name=f"{name}: ownership", commands=[f"chown -R {MC}:{MC} {d}"])
 
     service(name, changes)
 
