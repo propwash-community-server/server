@@ -30,6 +30,8 @@ permissions = [
     "carbon.ignore",
     "carbon.ignore.unignore",
     "carbon.chatlinks",
+    # Plots: up to 9 plot cells, i.e. one 3x3 merged plot (~130x130). Merged cells each count.
+    "fabricplots.limit.9 server=plots",
 ]
 
 [groups.builder]
@@ -48,6 +50,8 @@ permissions = [
     "minecraft.command.execute server=fpv",
     "minecraft.command.teleport server=fpv",
     "minecraft.command.tp server=fpv",
+    # Plots: two 3x3 merged plots (the highest fabricplots.limit.<n> wins).
+    "fabricplots.limit.18 server=plots",
 ]
 
 [groups.staff]
@@ -74,6 +78,12 @@ permissions = [
     "carbon.clearchat.clear",
     "carbon.clearchat.exempt",
     "carbon.ignore.exempt",
+    # Plots: no practical limit (64 is the highest node), and the plot staff tools, which are op-only
+    # by default (nobody is op): /plot admin to edit any plot, /plot setowner, /plot reload.
+    "fabricplots.limit.64 server=plots",
+    "fabricplots.admin server=plots",
+    "fabricplots.setowner server=plots",
+    "fabricplots.reload server=plots",
 ]
 
 [groups.admin]

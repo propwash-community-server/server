@@ -1,0 +1,36 @@
+type = "fabric"
+port = 25570
+ram = "1536M"
+jar = "fabric-server.jar"
+url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
+mods = [
+    "https://cdn.modrinth.com/data/P7dR8mSH/versions/v2j28coa/fabric-api-0.162.0%2B26.3.jar",
+    "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
+    "https://mediafilez.forgecdn.net/files/9073/555/propwash-fabric-26.3-0.4.0.jar",
+    # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
+    # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
+    "https://mediafilez.forgecdn.net/files/9076/353/justmoreparts-fabric-26.3-1.0.0.jar",
+    "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
+    "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
+    # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
+    "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
+    # Creative plot world (PlotSquared-style): claim, merge, trust; protects plots and roads.
+    # It does the protection here, so no Flan.
+    "https://cdn.modrinth.com/data/3IUvAZA3/versions/dLLjC4w4/fabricplots-1.0.2%2B26.3.jar",
+    # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
+    "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
+]
+
+# Plots are a fixed 32x32 (in code); merging 3x3 gives one ~130x130 plot. Merged cells each count
+# as a claim, so the limits in permissions.toml are in cells (fabricplots.limit.<n> server=plots).
+[config."config/fabricplots.properties"]
+allow-player-combine = "true"
+max-merge-cells = "9"
+
+# Only written when the server is first created. Nobody uses the overworld: players spawn in the
+# plot world (files/world/datapacks/plots_spawn), where FabricPlots puts them in creative.
+[new_world]
+motd = "Propwash Plots"
+level-type = "minecraft\\:flat"
+generate-structures = "false"

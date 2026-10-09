@@ -67,6 +67,28 @@ deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that h
 staff run `/flan bypass` to edit and run it again to turn it off. On survival, players claim land with
 a golden hoe.
 
+## Plots
+
+The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
+(PlotSquared-style, on Fabric so drones work). Players arrive in the plot world (the datapack in
+`servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
+plots doesn't run Flan.
+
+Plots are 32x32 with roads in between, fixed in the mod. For a big plot, claim a 3x3 block of
+plots and merge it (`/plot wand`, `/plot combine`): about 130x130. Merged plots each count
+against the limit, so limits are in plots: `fabricplots.limit.<n> server=plots` in
+[`permissions.toml`](../permissions.toml) (default 9, builder 18, staff 64).
+
+| Task | Command |
+|---|---|
+| Claim | `/plot auto` or `/plot claim` on an empty plot, or `/plot menu` |
+| Merge | `/plot wand`, then `/plot combine` |
+| Let someone build | `/plot trust <name>` |
+| Edit any plot (staff) | `/plot admin` (opt-in, run again to stop) |
+
+The merge settings are in `[config]` of `servers/plots/server.toml`, applied from the second deploy
+(FabricPlots writes its config on first start).
+
 ## Bans
 
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.
