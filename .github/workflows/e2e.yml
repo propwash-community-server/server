@@ -1,0 +1,33 @@
+# End-to-end tests (uv run e2e) on every PR that changes more than docs: the whole network in Docker, with a headless
+# client. Can also be started by hand from the Actions tab.
+name: e2e
+
+on:
+  pull_request:
+    paths-ignore: ["**.md", "docs/**"]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.12.10"
+      - name: Install sops
+        run: |
+          curl -fsSLo sops.deb https://github.com/getsops/sops/releases/download/v3.13.3/sops_3.13.3_amd64.deb
+          sudo apt-get install -y ./sops.deb
+      - run: uv run e2e --fresh -v
+      - name: Collect logs
+        if: failure()
+        run: |
+          mkdir -p tests/e2e/logs/servers
+          docker exec propwash-local sh -c 'cd /home/mc/servers && tar c */logs/latest.log' | tar x -C tests/e2e/logs/servers
+      - uses: actions/upload-artifact@v7.0.1
+        if: failure()
+        with:
+          name: e2e-logs
+          path: tests/e2e/logs/

@@ -3,10 +3,12 @@
 The PropwashFPV community server.
 
 ```
-deploy/           inventory.py (prod + local), deploy.py, files/
+deploy/           inventory.py (prod, local, test), deploy.py, files/
 servers/<name>/   server.toml, files/, maps/
 local/            Local setup via Docker
 tools/            Admin tools (`uv run <>`)
+tests/e2e/        End-to-end tests
+.github/          CI
 access/           SSH public keys
 secrets/          SOPS-encrypted secrets
 docs/             admin.md: running the production server
@@ -149,3 +151,46 @@ The deploy never changes worlds.
 | Update a server jar | change `url` and `jar`, deploy |
 | Add a server | add `servers/<name>/server.toml` with a free port |
 | RAM | keep the total `ram` under ~12 GB |
+
+## Checks and tests
+
+| Command | What it does |
+|---|---|
+| `uv run check` | Config files parse, download URLs answer, secrets are encrypted to the keys in `.sops.yaml`, `server=` contexts in `permissions.toml` name existing servers |
+| `uv run e2e` | End-to-end tests against the local stack (see below) |
+| `uv run e2e --fresh` | The same, after wiping the local stack and deploying it from scratch |
+
+CI runs `check` and `e2e --fresh` on every PR (the end-to-end tests take about seven minutes in CI).
+Once a PR into `prod` is green, promote with `git push origin dev:prod`.
+
+### End-to-end tests
+
+The tests in [`tests/e2e/`](tests/e2e/) run against the local stack deployed with the `test`
+inventory: the same containers as `local`, with the proxy in offline mode and 1 GB of RAM per server.
+A Minecraft client ([HeadlessMC](https://github.com/headlesshq/headlessmc), no window) joins as
+`Offline` with the mods from [`tests/e2e/client.toml`](tests/e2e/client.toml). Inside it,
+[Minescript](https://minescript.net) runs [`e2e_agent.py`](tests/e2e/client/e2e_agent.py), which the
+tests talk to. The servers are checked and set up through rcon. `uv run e2e` takes pytest options
+(`-k fpv`, `-x`, ...); the client log ends up in `tests/e2e/logs/`.
+
+```
+uv run pyinfra deploy/inventory.py deploy/deploy.py --limit test -y   # twice on a new stack
+uv run e2e -k fpv
+```
+
+A test gets the `player` fixture and checks the result on the server:
+
+```python
+def test_blocks_cannot_be_broken(on_map):
+    FPV.rcon(f"execute in maps:{MAP} run setblock 4 100 4 minecraft:stone")
+    on_map.look_at(4.5, 100.5, 4.5)
+    on_map.attack()
+    assert in_map("if block 4 100 4 minecraft:stone")
+```
+
+`Player` (in [`harness.py`](tests/e2e/harness.py)) can run commands, look, attack, use, pick a hotbar
+slot, and read chat, the title, the tab list and its position. Anything else Minescript offers is
+`player.call("<function>", ...)`. The `expect_*` methods wait for chat, a server, a dimension or a
+title. The test player switches servers with `/server` (players use the hub portals) and starts
+every test in the hub with an empty inventory. There is one player, so nothing that needs two
+players is tested yet.
