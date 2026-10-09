@@ -17,6 +17,8 @@ mods = [
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
     "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
     "https://cdn.modrinth.com/data/Si383TIH/versions/dAcEMeRZ/flan-26.3-1.12.8.b-fabric.jar",
+    # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
+    "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
 ]
 
 # Set on every deploy: everyone in creative.
