@@ -1,0 +1,9 @@
+# The test client: a Fabric 26.3 client run headless by HeadlessMC, driven by Minescript.
+headlessmc = "https://github.com/headlesshq/headlessmc/releases/download/3.0.0-RC4/headlessmc.jar"
+# Mods from servers/fpv/server.toml that players need too, by file name. Taken from there so the
+# client always has the same versions as the server.
+from_fpv = ["fabric-api", "propwash-fabric", "justmoreparts"]
+mods = [
+    # Runs client/e2e_agent.py, which the tests talk to.
+    "https://cdn.modrinth.com/data/KcpXWngB/versions/huKwMeg8/minescript-fabric-26.3-5.0.jar",
+]
