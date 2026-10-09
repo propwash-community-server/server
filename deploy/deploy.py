@@ -81,11 +81,18 @@ def permission_commands():
     return "\n".join(lines + ["lp networksync"]) + "\n"
 
 
-def start_script(path, jar, ram, args=""):
+# Backends wait this long (ms) for SignedVelocity's verdict on a chat message before letting it
+# through. The default of 20 ms is too short on a busy server: the vanilla message then shows up
+# next to Carbon's (double chat). The verdict normally comes within a few ms.
+BACKEND_JVM_FLAGS = "-Dio.github._4drian3d.signedvelocity.timeout=1000"
+
+
+def start_script(path, jar, ram, args="", jvm_flags=""):
+    jvm = f" {jvm_flags}" if jvm_flags else ""
     script = (
         "#!/bin/sh\n"
         "# Managed by pyinfra - edit servers/<name>/server.toml instead.\n"
-        f"exec java -Xms{ram} -Xmx{ram} -jar {jar} {args}\n"
+        f"exec java -Xms{ram} -Xmx{ram}{jvm} -jar {jar} {args}\n"
     )
     return files.put(name=f"start script {path}", src=StringIO(script), dest=path, mode="755", **OWNER)
 
@@ -399,7 +406,7 @@ for name, cfg in backends.items():
 
     changes = [
         files.download(name=f"{name}: server jar", src=cfg["url"], dest=f"{d}/{cfg['jar']}", **OWNER),
-        start_script(f"{d}/start.sh", cfg["jar"], cfg["ram"], "nogui"),
+        start_script(f"{d}/start.sh", cfg["jar"], cfg["ram"], "nogui", BACKEND_JVM_FLAGS),
         service_env(name, "stop"),
         files.put(name=f"{name}: eula", src=StringIO("eula=true\n"), dest=f"{d}/eula.txt", **OWNER),
         files.put(name=f"{name}: no ops", src=StringIO("[]"), dest=f"{d}/ops.json", **OWNER),
