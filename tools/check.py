@@ -14,6 +14,8 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 MAP_KEYS = ("key", "sha256", "author")
 
@@ -79,14 +81,16 @@ def check_urls(servers, client):
                 error(f"does not answer: {url}")
 
 
+def age_keys(rule):
+    # A rule's age keys: a comma-separated string, or lists under key_groups.
+    if "key_groups" in rule:
+        return {key for group in rule["key_groups"] for key in group.get("age", [])}
+    return {key.strip() for key in rule.get("age", "").split(",") if key.strip()}
+
+
 def sops_rules():
-    # .sops.yaml is simple enough to read without a YAML parser: each rule is a path_regex and
-    # the age keys listed under it.
-    rules = []
-    for block in re.split(r"^\s*- path_regex:", (ROOT / ".sops.yaml").read_text(), flags=re.M)[1:]:
-        regex, rest = block.split("\n", 1)
-        rules.append((re.compile(regex.strip()), set(re.findall(r"age1[0-9a-z]+", rest))))
-    return rules
+    rules = yaml.safe_load((ROOT / ".sops.yaml").read_text())["creation_rules"]
+    return [(re.compile(rule["path_regex"]), age_keys(rule)) for rule in rules]
 
 
 def check_secrets():

@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.43.109",
     "pyinfra==3.10.0",
+    "pyyaml>=6.0.3",
 ]
 
 [project.scripts]
