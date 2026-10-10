@@ -1,3 +1,4 @@
+import re
 import tomllib
 
 import pytest
@@ -9,6 +10,12 @@ MAPS = {p.stem: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/
 # The first map. The tests stand on a 5x5 stone platform at x/z 0-4, y 99 (made by map_spawn).
 MAP = next(iter(MAPS))
 SPAWN = (2.5, 100, 2.5)
+
+
+def first_line(name, key):
+    """The first line of a text in the server's server.toml, without its MiniMessage tags."""
+    text = tomllib.loads((ROOT / f"servers/{name}/server.toml").read_text())[key]
+    return re.sub(r"<[^>]+>", "", text.strip().splitlines()[0])
 
 
 def pytest_addoption(parser):
