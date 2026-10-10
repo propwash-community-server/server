@@ -186,9 +186,6 @@ class JsonFile(FactBase):
         return json.loads("\n".join(output))
 
 
-SET_JSON_KEYS = "import json,sys; c=json.load(open(sys.argv[1])); c.update(json.loads(sys.argv[2])); json.dump(c, open(sys.argv[1], 'w'), indent=2)"
-
-
 def jar_folder(label, folder, urls):
     # Download listed jars, delete any other jar in the folder.
     wanted = {filename(u): u for u in urls}
@@ -571,10 +568,8 @@ for name, cfg in backends.items():
         wanted = {"globalDefaultPerms": rules, **{k: v for k, v in cfg["flan"].items() if k != "deny"}}
         current = host.get_fact(JsonFile, path=flan_config)
         if any(current.get(k) != v for k, v in wanted.items()):
-            changes.append(server.shell(
-                name=f"{name}: Flan config",
-                commands=[f"python3 -c {shlex.quote(SET_JSON_KEYS)} {flan_config} {shlex.quote(json.dumps(wanted))}"],
-            ))
+            changes.append(files.put(name=f"{name}: Flan config", src=StringIO(json.dumps({**current, **wanted}, indent=2)),
+                                     dest=flan_config, **OWNER))
 
     if cfg.get("new_world") and host.get_fact(File, path=f"{d}/server.properties") is None:
         props = "".join(f"{k}={v}\n" for k, v in cfg["new_world"].items())
