@@ -296,15 +296,18 @@ os.replace(path + ".tmp", path)
 
 def map_command(server_maps):
     # Melius Commands: /map lists the maps, /map <name> goes to the map's spawn, the warp <name>
-    # (set in game by builders). Runs as the player with op level 2.
+    # (set in game by builders), without the warp's chat message. Dropping the map's tag shows its
+    # title again (map_tick_function), also when the player is on the map already. Runs as the
+    # player with op level 2.
     def run(command):
-        return {"command": command, "op_level": 2}
+        return {"command": command, "op_level": 2, "silent": True}
 
     names = ", ".join(m["name"] for m in server_maps)
     return json.dumps({
         "id": "map",
         "executes": [run(f"tellraw @s {to_json('<muted>Maps:</muted> ' + names)}")],
-        "literals": [{"id": m["name"], "executes": [run(f"warp tp {m['name']}")]} for m in server_maps],
+        "literals": [{"id": m["name"], "executes": [run(f"tag @s remove map_{m['name']}"), run(f"warp tp {m['name']}")]}
+                     for m in server_maps],
     }, indent=2)
 
 
