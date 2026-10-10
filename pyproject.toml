@@ -9,7 +9,8 @@ dependencies = [
 ]
 
 [project.scripts]
-upload-world = "tools.upload_world:main"
+upload = "tools.upload:main"
+apply = "tools.apply:main"
 e2e = "tools.e2e:main"
 check = "tools.check:main"
 

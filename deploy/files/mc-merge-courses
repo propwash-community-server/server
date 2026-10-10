@@ -3,7 +3,7 @@
 
 Propwash keeps all race courses of a server in world/data/propwash_race.json and matches gate
 entities to them by UUID; a gate whose course is in another dimension gets cut loose for good. So
-a map's courses (from upload-world) go in before the server loads it: the map's old ones out, the
+a map's courses (from `uv run upload`) go in before the server loads it: the map's old ones out, the
 new ones in with fresh ids and the map's dimension.
 """
 import json

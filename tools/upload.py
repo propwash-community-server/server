@@ -1,15 +1,17 @@
 """
-Pack a world save as a map, upload it to the world store and write servers/<server>/maps/<name>.toml.
+Pack a world save as a map and upload it to the world store as <server>/maps/<name>.tar.gz.
 
-  uv run upload-world <save folder> <name> --author <you> [--title <shown name>] [--server fpv] [--local]
+  uv run upload <save folder> <name> [--server fpv] [--local]
 
 --local uploads to the store from local/compose.yaml; otherwise the bucket from secrets/s3.env.sops.
 Only the overworld is taken; the map shows up in game as the dimension maps:<name>.
-Its Propwash race courses (data/propwash_race.json) come along and are merged in on deploy.
+Its Propwash race courses (data/propwash_race.json) come along.
+
+Servers are unaffected: a deploy seeds the map on a server that doesn't have it yet (once
+servers/<server>/maps/<name>.toml lists it), and `uv run apply` replaces one that does.
 """
 
 import argparse
-import hashlib
 import io
 import json
 import re
@@ -29,8 +31,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("save", type=Path)
     parser.add_argument("name")
-    parser.add_argument("--author", required=True)
-    parser.add_argument("--title", help="name shown when entering the map (default: <name> capitalized)")
     parser.add_argument("--server", default="fpv")
     parser.add_argument("--local", action="store_true")
     args = parser.parse_args()
@@ -65,8 +65,7 @@ def main():
                 info = tarfile.TarInfo("propwash_race.json")
                 info.size = len(race)
                 tar.addfile(info, io.BytesIO(race))
-        sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
-        key = f"{args.name}-{sha256[:12]}.tar.gz"
+        key = f"{args.server}/maps/{args.name}.tar.gz"
 
         if args.local:
             s3 = boto3.client("s3", endpoint_url="http://localhost:8080", config=Config(signature_version=UNSIGNED))
@@ -87,9 +86,8 @@ def main():
         s3.upload_file(str(archive), bucket, key)
 
     manifest = Path("servers", args.server, "maps", f"{args.name}.toml")
-    (ROOT / manifest).parent.mkdir(exist_ok=True)
-    title = args.title or args.name.capitalize()
-    (ROOT / manifest).write_text(
-        f'key = "{key}"\nsha256 = "{sha256}"\ntitle = {json.dumps(title)}\nauthor = {json.dumps(args.author)}\n'
-    )
-    print(f"uploaded {key}, wrote {manifest}")
+    print(f"uploaded {key}")
+    if (ROOT / manifest).exists():
+        print(f"to replace the map on a server: uv run apply {args.server} {args.name}")
+    else:
+        print(f'to add it, open a PR with {manifest}:\n  title = "<shown name>"\n  author = "<you>"')
