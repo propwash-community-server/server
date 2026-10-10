@@ -209,9 +209,6 @@ def palette_file(p):
 def extra_files(name, d):
     # servers/<name>/files/ is copied into the server folder, palette tags expanded.
     src = ROOT / "servers" / name / "files"
-    # One by one: files.put would mkdir -p the parents as root.
-    for p in sorted({q.relative_to(src) for f in src.rglob("*") if f.is_file() for q in f.parents if q != src and q.is_relative_to(src)}):
-        files.directory(name=f"{name}: {p.as_posix()}/", path=f"{d}/{p.as_posix()}", **OWNER)
     return [
         files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=palette_file(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
         for p in sorted(src.rglob("*")) if p.is_file()
@@ -295,13 +292,7 @@ def map_ops(name, d, server_maps):
     world = f"{d}/world"
     pack = f"{world}/datapacks/maps"
     ops = []
-    # One by one: files.put would mkdir -p the parents as root.
-    pack_dirs = ["maps", "maps/world_clock", "maps/timeline", "maps/dimension_type", "maps/dimension", "maps/function",
-                 "minecraft", "minecraft/tags", "minecraft/tags/function"]
-    for path in [world, f"{world}/datapacks", pack, f"{pack}/data", *(f"{pack}/data/{p}" for p in pack_dirs),
-                 f"{world}/dimensions", f"{world}/dimensions/maps", f"/home/{MC}/world-archives",
-                 f"{d}/config", f"{d}/config/melius-commands", f"{d}/config/melius-commands/commands"]:
-        files.directory(name=f"{name}: {path}", path=path, **OWNER)
+    files.directory(name="world archives folder", path=f"/home/{MC}/world-archives", **OWNER)
     ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
     ops.append(files.put(name=f"{name}: maps load tag", src=StringIO(LOAD_TAG),
                          dest=f"{pack}/data/minecraft/tags/function/load.json", **OWNER))
@@ -362,14 +353,16 @@ def welcome_ops(name, d, text):
             "scoreboard objectives add welcome.left minecraft.custom:minecraft.leave_game\n",
         "data/welcome/function/tick.mcfunction": tick,
     }
-    # One by one: files.put would mkdir -p the parents as root.
-    for path in ["world", "world/datapacks", "world/datapacks/welcome", *(
-            f"world/datapacks/welcome/{p}" for p in ["data", "data/minecraft", "data/minecraft/tags",
-                                                     "data/minecraft/tags/function", "data/welcome",
-                                                     "data/welcome/function"])]:
-        files.directory(name=f"{name}: {path}", path=f"{d}/{path}", **OWNER)
     return [files.put(name=f"{name}: welcome {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
             for rel, content in pack_files.items()]
+
+
+def ownership(name, d):
+    # Files and folders written as root (files.line, the parents files.put creates, the paper-velocity
+    # helper, ...) go back to mc. A plain chown: files.directory(recursive=True) only recurses when the
+    # top folder's owner is wrong, so root-owned files inside an mc-owned folder would stay root and
+    # the server couldn't save them.
+    server.shell(name=f"{name}: ownership", commands=[f"chown -R {MC}:{MC} {d}"])
 
 
 def service(name, changes):
@@ -453,8 +446,6 @@ changes = [
     files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
     *jar_folder("velocity: plugin", f"{v}/plugins", velocity.get("plugins", [])),
     # MiniPlaceholders loads its expansions (placeholder add-ons) from its own folder, not plugins/.
-    # The parent is created as mc first, or it would be root's and MiniPlaceholders couldn't write to it.
-    files.directory(name="velocity: miniplaceholders folder", path=f"{v}/plugins/miniplaceholders", **OWNER),
     *jar_folder("velocity: expansion", f"{v}/plugins/miniplaceholders/expansions", velocity.get("expansions", [])),
     *extra_files("velocity", v),
 ]
@@ -477,6 +468,7 @@ if host.get_fact(File, path=libertybans_sql):
             replace=f"{key}: '{value}'",
         ))
 
+ownership("velocity", v)
 service("velocity", changes)
 
 # --- Backends --------------------------------------------------------------
@@ -505,16 +497,12 @@ for name, cfg in backends.items():
     if cfg.get("help"):
         text = cfg["help"].strip() + "\n\n" + velocity.get("help", "").strip()
         if kind == "fabric":
-            # One by one: files.put would mkdir -p the parents as root.
-            for path in ["config", "config/melius-commands", "config/melius-commands/commands"]:
-                files.directory(name=f"{name}: {path}/ for /help", path=f"{d}/{path}", **OWNER)
             # Melius Commands, in place of vanilla /help; tellraw needs op level 2.
             help_command = {"id": "help", "executes": [{"command": f"tellraw @s {to_json(text)}", "op_level": 2}]}
             changes.append(files.put(name=f"{name}: /help", src=StringIO(json.dumps(help_command, indent=2)),
                                      dest=f"{d}/config/melius-commands/commands/help.json", **OWNER))
         elif kind == "paper":
             # EssentialsX /help shows help.txt when there is one. It's read on use, so no restart.
-            files.directory(name=f"{name}: Essentials folder", path=f"{d}/plugins/Essentials", **OWNER)
             files.put(name=f"{name}: /help", src=StringIO(to_legacy(text) + "\n"),
                       dest=f"{d}/plugins/Essentials/help.txt", **OWNER)
         else:
@@ -597,11 +585,7 @@ for name, cfg in backends.items():
     elif not host.get_fact(PaperVelocityOk, server_dir=d):
         changes.append(server.shell(name=f"{name}: Velocity forwarding", commands=[f"/usr/local/bin/paper-velocity {d}"]))
 
-    # Files written as root (files.line, the paper-velocity helper, ...) go back to mc. A plain
-    # chown: files.directory(recursive=True) only recurses when the top folder's owner is wrong,
-    # so root-owned files inside an mc-owned folder would stay root and the server couldn't save them.
-    server.shell(name=f"{name}: ownership", commands=[f"chown -R {MC}:{MC} {d}"])
-
+    ownership(name, d)
     service(name, changes)
 
 # --- Permissions -----------------------------------------------------------
