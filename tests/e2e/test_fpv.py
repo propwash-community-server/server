@@ -34,6 +34,13 @@ def test_map_goes_to_the_spawn_and_shows_the_title(player, map_spawn):
     player.expect_dimension(f"maps:{MAP}")
     assert player.position() == list(SPAWN)
     player.expect_title(MAPS[MAP].get("title", MAP.capitalize()), f"by {MAPS[MAP]['author']}")
+    player.expect_chat(f"^Teleported to {MAP}\\.$")
+
+
+def test_map_on_the_map_shows_the_title_again(on_map):
+    eventually(lambda: on_map.title()["title"] is None, timeout=15, message="the title to fade")
+    on_map.command(f"/map {MAP}")
+    on_map.expect_title(MAPS[MAP].get("title", MAP.capitalize()), f"by {MAPS[MAP]['author']}")
 
 
 def test_blocks_cannot_be_broken(on_map):
