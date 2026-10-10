@@ -365,6 +365,33 @@ def map_ops(name, d, server_maps):
     return ops
 
 
+def welcome_ops(name, d, text):
+    # A datapack, the same on Paper and Fabric: welcome text to players new to the server, and to
+    # those back after leaving it (the leave_game stat also counts switching servers on the proxy).
+    pack = f"{d}/world/datapacks/welcome"
+    message = to_json(text)
+    tick = (f"tellraw @a[tag=!welcomed] {message}\n"
+            f"tellraw @a[scores={{welcome.left=1..}}] {message}\n"
+            "tag @a add welcomed\n"
+            "scoreboard players reset @a[scores={welcome.left=1..}] welcome.left\n")
+    pack_files = {
+        "pack.mcmeta": json.dumps({"pack": {"description": "Join message", "min_format": 121, "max_format": 999}}),
+        "data/minecraft/tags/function/load.json": json.dumps({"values": ["welcome:load"]}),
+        "data/minecraft/tags/function/tick.json": json.dumps({"values": ["welcome:tick"]}),
+        "data/welcome/function/load.mcfunction":
+            "scoreboard objectives add welcome.left minecraft.custom:minecraft.leave_game\n",
+        "data/welcome/function/tick.mcfunction": tick,
+    }
+    # One by one: files.put would mkdir -p the parents as root.
+    for path in ["world", "world/datapacks", "world/datapacks/welcome", *(
+            f"world/datapacks/welcome/{p}" for p in ["data", "data/minecraft", "data/minecraft/tags",
+                                                     "data/minecraft/tags/function", "data/welcome",
+                                                     "data/welcome/function"])]:
+        files.directory(name=f"{name}: {path}", path=f"{d}/{path}", **OWNER)
+    return [files.put(name=f"{name}: welcome {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
+            for rel, content in pack_files.items()]
+
+
 def service(name, changes):
     # Restart only if already running and something changed, then make sure it's up.
     systemd.service(
@@ -512,6 +539,9 @@ for name, cfg in backends.items():
                       dest=f"{d}/plugins/Essentials/help.txt", **OWNER)
         else:
             raise SystemExit(f"servers/{name}/server.toml has help, but /help is only made for fabric and paper")
+
+    if cfg.get("welcome"):
+        changes += welcome_ops(name, d, cfg["welcome"].strip())
 
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties). Plugins write their config on first start, so this applies from the next deploy.

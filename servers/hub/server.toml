@@ -18,6 +18,11 @@ help = """
 <brand><bold>Hub</bold></brand>: the lobby. Walk through a portal to join a server.
 """
 
+# Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
+welcome = """
+<brand><bold>Propwash Community</bold></brand>: walk through a portal to pick a server. <accent>/help</accent> for commands.
+"""
+
 # Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
 [config."plugins/Essentials/config.yml"]
 spawn-on-join = "true"

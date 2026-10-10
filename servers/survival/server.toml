@@ -30,3 +30,8 @@ Claim land with a golden hoe; only you and players you add can build in your cla
 <accent>/home set <name></accent>, <accent>/home tp <name></accent>: your homes
 <accent>/tpa <player></accent>: ask to teleport to a player
 """
+
+# Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
+welcome = """
+<brand><bold>Survival</bold></brand>: claim land with a golden hoe. <accent>/help</accent> for more.
+"""

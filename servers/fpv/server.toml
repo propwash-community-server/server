@@ -30,6 +30,11 @@ help = """
 Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
 """
 
+# Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
+welcome = """
+<brand><bold>FPV</bold></brand>: <accent>/map</accent> to pick a map, <accent>/help</accent> for more.
+"""
+
 # Set on every deploy: everyone in creative.
 [properties]
 gamemode = "creative"
