@@ -24,7 +24,7 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 | `rcon.secret.sops` | RCON password |
 | `mariadb.secret.sops` | password of the `minecraft` database user |
 | `backup.env.sops` | [restic](https://restic.net) repository + password, S3 keys |
-| `s3.env.sops` | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (world store, for [`upload-world`](../tools/upload_world.py)) |
+| `s3.env.sops` | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (world store, for [`upload`](../tools/upload.py)) |
 
 The first three are random strings. To regenerate one, run the following; the next deploy rolls it out:
 

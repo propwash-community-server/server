@@ -1,22 +1,33 @@
 # Maps
 
-Maps live on `fpv`. Each map is a dimension `maps:<name>`, whose archive is in a bucket and
-referenced by [`servers/fpv/maps/<name>.toml`](../servers/fpv/maps/). Only the overworld terrain is
-kept; old maps are upgraded as they are explored, so the first visit can be slow.
+Maps live on `fpv`. Each map is a dimension `maps:<name>`, listed in
+[`servers/fpv/maps/<name>.toml`](../servers/fpv/maps/) with its title and author. The map is what's
+in the server's world: builders edit it there, and it's backed up with the rest of the server.
+The bucket is where maps are handed in: `fpv/maps/<name>.tar.gz` is put on a server only when
+it doesn't have the map yet (a new map, or a new server), or when someone applies it. Only the
+overworld terrain is kept; old maps are upgraded as they are explored, so the first visit can be
+slow.
 
 ## Adding a map
 
-1. Upload the save folder (the one with `level.dat`), which writes `servers/fpv/maps/<name>.toml`:
+1. Upload the save folder (the one with `level.dat`):
 
    ```
-   uv run upload-world "<save folder>" flowmap --author "SHO" --local
+   uv run upload "<save folder>" flowmap --local
    ```
 
-   `--local` uploads to the local store; drop it for the real bucket. `--author` and `--title`
-   (default: the capitalized name) are shown to players entering the map. Each upload makes a new
-   archive, so upload to the real bucket last, and only then deploy to prod.
-2. Commit the `.toml` file and deploy. fpv restarts with the new dimension, its clock, its race
-   courses and a `/map <name>` entry.
+   `--local` uploads to the local store; drop it for the real bucket. Upload to the real bucket
+   before the PR below is merged: a deploy that can't find the map's archive fails.
+2. Open a PR with `servers/fpv/maps/<name>.toml`, the title and author shown to players entering
+   the map:
+
+   ```toml
+   title = "Flowmap"
+   author = "SHO"
+   ```
+
+   Once it's merged and deployed, fpv restarts with the new dimension, its clock, its race courses
+   and a `/map <name>` entry.
 3. In game, a builder goes to the map and sets its spawn (until then, `/map <name>` does nothing):
 
    ```
@@ -49,12 +60,21 @@ Each map also has its own clock, paused at noon by default.
 | Set the map's time (builders) | `/time set <noon\|night\|ticks>`, `/time pause`, `/time resume` |
 
 [Propwash](https://www.curseforge.com/minecraft/mc-mods/propwash-fpv) race courses in the save are
-added when the map is unpacked. Only the course owner from the save can edit them.
+added when the map is put on the server (seeded or applied). Only the course owner from the save
+can edit them.
 
 ## Updating and removing
 
-To update a map, upload it again under the same name and deploy. In-game changes to it are lost,
-and its race courses (with lap times) are replaced.
+Deploys never touch a map the server already has. To replace one with a new save, upload it again
+under the same name and apply it (`--local` for the local stack; fpv restarts):
+
+```
+uv run upload "<save folder>" flowmap
+uv run apply fpv flowmap
+```
+
+In-game changes to the map are lost and its race courses (with lap times) are replaced; its warps
+stay.
 
 To remove a map, delete its `.toml` file. Servers that already have it keep it until you delete
 `world/dimensions/maps/<name>` and its files in `world/datapacks/maps/data/maps/`. Its race courses
