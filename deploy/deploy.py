@@ -270,9 +270,9 @@ def map_tick_function(server_maps):
 
 def map_command(server_maps):
     # Melius Commands: /map lists the maps, /map <name> goes to the map's spawn, the warp <name>
-    # (set in game by builders), without the warp's chat message. Dropping the map's tag shows its
-    # title again (map_tick_function), also when the player is on the map already. Runs as the
-    # player with op level 2.
+    # (set in game by builders). Dropping the map's tag shows its title again (map_tick_function),
+    # also when the player is on the map already. Runs as the player with op level 2, silent so
+    # the tag command's feedback doesn't show.
     def run(command):
         return {"command": command, "op_level": 2, "silent": True}
 

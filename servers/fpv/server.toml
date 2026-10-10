@@ -43,6 +43,8 @@ force-gamemode = "true"
 # Warps (/warp set, /warp tp) go through LuckPerms, see permissions.toml.
 [config."config/EssentialCommands.properties"]
 use_permissions_api = "true"
+# With datapacks/warp_messages, /map and /warp tp say "Teleported to <warp>." and nothing more.
+print_teleport_coordinates = "false"
 
 # Flan world rules: none of these, anywhere on fpv (maps included), unless in /flan bypass.
 [flan]
