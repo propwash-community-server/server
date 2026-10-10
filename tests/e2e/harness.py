@@ -44,7 +44,7 @@ def deploy():
 
 
 def fresh_stack():
-    """Wipes the local stack and deploys the test inventory, twice (see README)."""
+    """Wipes the local stack and deploys the test inventory, twice (see docs)."""
     subprocess.run([*COMPOSE, "down", "-v"], check=True)
     subprocess.run([*COMPOSE, "up", "-d", "--build"], check=True)
     deploy()
