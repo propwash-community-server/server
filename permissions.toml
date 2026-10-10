@@ -1,4 +1,4 @@
-# LuckPerms groups, applied on deploy (see README). Each entry is passed to
+# LuckPerms groups, applied on deploy (see docs). Each entry is passed to
 # `lp group <name> permission set`, so contexts work: "worldedit.* server=fpv".
 # A listed group is replaced as a whole; groups not listed here are left alone.
 # Nobody is op: staff powers come from these groups.

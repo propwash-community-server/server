@@ -3,13 +3,15 @@
 The PropwashFPV community server.
 
 ```
-deploy/           inventory.py (prod + local), deploy.py, files/
+deploy/           inventory.py (prod, local, test), deploy.py, files/
 servers/<name>/   server.toml, files/, maps/
 local/            Local setup via Docker
 tools/            Admin tools (`uv run <>`)
+tests/e2e/        End-to-end tests
+.github/          CI
 access/           SSH public keys
 secrets/          SOPS-encrypted secrets
-docs/             admin.md: running the production server
+docs/             Documentation
 ```
 
 ## Setup
@@ -39,15 +41,26 @@ For SOPS, install the `.deb` from its [releases](https://github.com/getsops/sops
 winget install astral-sh.uv Docker.DockerDesktop Mozilla.SOPS FiloSottile.age
 ```
 
-## Local
+On Linux, add yourself to the `docker` group (`usermod -aG docker $USER`, then log in again).
 
-This runs the [pyinfra](https://pyinfra.com) deploy against a Docker container instead of the VPS.
-It uses dummy secrets from [`local/secrets/`](local/secrets/).
+In the clone, enable the hook that refuses unencrypted secrets:
+
+```
+git config core.hooksPath .githooks
+```
+
+## Running locally
+
+This runs the [pyinfra](https://pyinfra.com) deploy against a Docker container instead of the VPS,
+with dummy secrets from [`local/secrets/`](local/secrets/).
 
 ```
 docker compose -f local/compose.yaml up -d --build
 uv run pyinfra deploy/inventory.py deploy/deploy.py --limit local -y
 ```
+
+On a new stack, deploy twice: some settings are only applied once the servers have started once
+(see [Servers and mods](docs/servers.md)).
 
 Then join `localhost:25565`. Maps and backups go to a local S3 store on `localhost:8080`.
 
@@ -56,96 +69,9 @@ Then join `localhost:25565`. Maps and backups go to a local S3 store on `localho
 | Console | `docker exec -it propwash-local mc-console hub` (detach: Ctrl+B, D) |
 | Wipe | `docker compose -f local/compose.yaml down -v` |
 
-## Maps
+## Docs
 
-Maps live on `fpv`. Each map is a dimension `maps:<name>`. Its archive is in a bucket, and
-[`servers/fpv/maps/<name>.toml`](servers/fpv/maps/) points to it.
-
-### Adding a map
-
-1. Upload the save folder (the one with `level.dat`). This writes `servers/fpv/maps/<name>.toml`:
-
-   ```
-   uv run upload-world "<save folder>" flowmap --author "SHO" --local
-   ```
-
-   `--local` uploads to the local store; drop it to upload to the real bucket. `--author` and
-   `--title` (by default the name, capitalized) are shown on screen to players entering the map.
-   Each upload makes a new archive, so the `.toml` file points to the last one: upload to the real
-   bucket last, and only then deploy to prod.
-2. Commit the `.toml` file and deploy. fpv restarts with the new dimension `maps:<name>`, its clock,
-   its race courses and a `/map <name>` entry.
-3. In game, a builder goes to the map and sets its spawn. Until then, `/map <name>` does nothing.
-
-   ```
-   /execute in maps:flowmap run tp @s <x> <y> <z>
-   /warp set flowmap
-   ```
-
-### Spawns and spots
-
-Map locations are [Essential Commands](https://modrinth.com/mod/essential-commands) warps, set in
-game by builders and stored in the `fpv` world. The warp `<map>` is the map's spawn, and
-`<map>_<spot>` is a spot on it (for example `mosslorn_waterfall`).
-
-| Task | Command |
-|---|---|
-| List maps | `/map` |
-| Go to a map's spawn | `/map <map>` (same as `/warp tp <map>`) |
-| List warps | `/warp list` |
-| Go to one | `/warp tp <name>` |
-| Add one (builders) | `/warp set <name>` where you stand |
-| Move or remove one (builders) | `/warp delete <name>`, then set it again |
-
-Only the overworld terrain is kept. Old maps are upgraded as you explore, so the first visit can
-be slow.
-
-### Time
-
-Each map has its own clock, which starts paused at noon. Builders change it in game, standing on the
-map, and it only affects that map.
-
-| Task | Command |
-|---|---|
-| Set the time | `/time set <noon\|night\|...>` or `/time set <ticks>` |
-| Let it run again | `/time resume` |
-| Stop it | `/time pause` |
-
-### Race courses
-
-[Propwash](https://www.curseforge.com/minecraft/mc-mods/propwash-fpv) race courses in the save come
-with the map. The deploy adds them to the server's courses when it unpacks the map, before the server
-loads it. Only the course owner from the save can edit them in game.
-
-### Updating and removing
-
-To update a map, upload it again under the same name and deploy. In-game changes to it are lost,
-and its race courses are replaced along with their lap times.
-
-To remove a map, delete its `.toml` file. Servers that already have it keep it until you delete
-`world/dimensions/maps/<name>` and its files in `world/datapacks/maps/data/maps/` (`dimension`,
-`dimension_type`, `world_clock` and `timeline`). Its race courses stay until deleted with
-`/propwash race delete`.
-
-Locally, a map missing from the local store is an empty platform at `2 99 2`.
-
-## Servers and mods
-
-Each server has a [`servers/<name>/server.toml`](servers/) with its jar, mod or plugin URLs, and
-these sections:
-
-| Section | Effect |
-|---|---|
-| `[properties]` | server.properties, set on every deploy |
-| `[new_world]` | server.properties, set only for a new server |
-| `[config."<path>"]` | keys in a plugin's config file (set from the second deploy, once the plugin has created the file) |
-| `[flan] deny` | [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension of the server, maps included (also from the second deploy) |
-
-The deploy never changes worlds.
-
-| Task | How |
-|---|---|
-| Add or update a mod | change its URL in `server.toml`, deploy |
-| Update a server jar | change `url` and `jar`, deploy |
-| Add a server | add `servers/<name>/server.toml` with a free port |
-| RAM | keep the total `ram` under ~12 GB |
+- [Servers and mods](docs/servers.md): `server.toml` and changing servers, mods and plugins
+- [Maps](docs/maps.md): adding, updating and removing maps on fpv
+- [Testing](docs/testing.md): checks, end-to-end tests and CI
+- [Admin](docs/admin.md): running the production server

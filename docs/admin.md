@@ -1,7 +1,6 @@
 # Admin
 
-Running the production server. The tools are the same as in the [README](../README.md#setup), plus
-[age](https://github.com/FiloSottile/age) for creating a key.
+Running the production server, with the tools from the [README](../README.md#setup).
 
 ## Access
 
@@ -70,7 +69,7 @@ a golden hoe.
 ## Bans
 
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.
-Its commands are `/ban`, `/tempban`, `/mute`, `/kick`, `/unban` and `/history`.
+Its commands include `/ban`, `/mute`, `/kick`, `/unban` and `/history`; a duration such as `/ban <player> 7d` makes it temporary.
 
 ## Chat
 
@@ -103,12 +102,13 @@ snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 | Back up now | `systemctl start mc-backup` (log: `journalctl -u mc-backup`) |
 | List snapshots | `set -a; . /etc/mc-backup.env; restic snapshots` |
 | Restore a world | [`mc-restore`](../deploy/files/mc-restore) `<server> [snapshot]` (the old world is kept as `world.before-restore-<time>`) |
-| Restore permissions + bans | `restic restore latest --target / --include /var/backups/mariadb.sql && mysql < /var/backups/mariadb.sql` |
+| Restore permissions + bans | `set -a; . /etc/mc-backup.env; restic restore latest --target / --include /var/backups/mariadb.sql && mysql < /var/backups/mariadb.sql` |
 
 ## On the VPS
 
 | Task | How |
 |---|---|
 | Console | [`mc-console`](../deploy/files/mc-console) `<name>` |
-| Status / logs | `systemctl status mc@<name>` |
+| Status | `systemctl status mc@<name>` |
+| Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |

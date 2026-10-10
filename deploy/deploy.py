@@ -27,6 +27,8 @@ OWNER = {"user": MC, "group": MC}
 # Explicit, or the docker connector keeps the deploying user's uid.
 ROOT_OWNER = {"user": "root", "group": "root"}
 LOCAL = host.data.get("local", False)
+# The test inventory runs every server with the same, smaller amount of RAM.
+RAM = host.data.get("ram")
 
 configs = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/*/server.toml"))}
 velocity = configs.pop("velocity")
@@ -360,7 +362,7 @@ files.directory(name="velocity folder", path=v, **OWNER)
 
 changes = [
     files.download(name="velocity jar", src=velocity["url"], dest=f"{v}/{velocity['jar']}", **OWNER),
-    start_script(f"{v}/start.sh", velocity["jar"], velocity["ram"]),
+    start_script(f"{v}/start.sh", velocity["jar"], RAM or velocity["ram"]),
     service_env("velocity", "end"),
     files.template(
         name="velocity.toml",
@@ -368,6 +370,7 @@ changes = [
         dest=f"{v}/velocity.toml",
         backends=backends,
         try_order=velocity["try"],
+        online_mode="false" if host.data.get("test") else "true",
         **OWNER,
     ),
     files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
@@ -408,7 +411,7 @@ for name, cfg in backends.items():
 
     changes = [
         files.download(name=f"{name}: server jar", src=cfg["url"], dest=f"{d}/{cfg['jar']}", **OWNER),
-        start_script(f"{d}/start.sh", cfg["jar"], cfg["ram"], "nogui", FABRIC_JVM_FLAGS if kind == "fabric" else ""),
+        start_script(f"{d}/start.sh", cfg["jar"], RAM or cfg["ram"], "nogui", FABRIC_JVM_FLAGS if kind == "fabric" else ""),
         service_env(name, "stop"),
         files.put(name=f"{name}: eula", src=StringIO("eula=true\n"), dest=f"{d}/eula.txt", **OWNER),
         files.put(name=f"{name}: no ops", src=StringIO("[]"), dest=f"{d}/ops.json", **OWNER),
