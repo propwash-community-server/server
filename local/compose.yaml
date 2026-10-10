@@ -17,14 +17,15 @@ services:
     ports: ["8080:8080"]
     volumes: [store:/data]
 
-  # Blank stand-in for every map in servers/*/maps/ the store doesn't have yet.
+  # Blank stand-ins for the maps in servers/*/maps/ and their warps (see seed.py).
   seed:
-    image: python:3.13-slim
-    command: ["python", "/seed_blank_maps.py"]
+    image: ghcr.io/astral-sh/uv:0.12.10-python3.13-trixie-slim
+    command: ["uv", "run", "--script", "/seed.py"]
     volumes:
-      - ./seed_blank_maps.py:/seed_blank_maps.py:ro
+      - ./seed.py:/seed.py:ro
       - ../servers:/servers:ro
       - store:/data
+      - mc-home:/home/mc
 
 volumes:
   mc-home:

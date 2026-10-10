@@ -24,6 +24,8 @@ kept; old maps are upgraded as they are explored, so the first visit can be slow
    /warp set flowmap
    ```
 
+   On the local stack, maps are blank platforms, and a new stack comes with their warps already set.
+
 ## In game
 
 Spawns and spots are [Essential Commands](https://modrinth.com/mod/essential-commands) warps stored
