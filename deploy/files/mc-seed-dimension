@@ -1,0 +1,23 @@
+#!/bin/sh
+# Put a dimension from the world store in place of the server's: mc-seed-dimension <server> <namespace:name> <store>
+# The archive is <store>/<server>/<namespace>/<name>.tar.gz. Stops the server and leaves it stopped.
+set -eu
+[ $# -eq 3 ] || { echo "usage: mc-seed-dimension <server> <namespace:name> <store>"; exit 1; }
+server=$1 dimension=$2 store=$3
+namespace=${dimension%%:*} name=${dimension#*:}
+world=/home/mc/servers/$server/world
+dir=$world/dimensions/$namespace/$name
+
+# Downloaded and unpacked next to it first: if that fails, the server keeps running unchanged.
+archive=$(mktemp)
+trap 'rm -f "$archive"' EXIT
+curl -fsSL -o "$archive" "$store/$server/$namespace/$name.tar.gz"
+rm -rf "$dir.new"
+mkdir -p "$dir.new" "$world/data"
+tar -xzf "$archive" -C "$dir.new"
+
+systemctl stop "mc@$server"
+rm -rf "$dir"
+mv "$dir.new" "$dir"
+mc-merge-courses "$world/data/propwash_race.json" "$dir/propwash_race.json" "$dimension"
+chown -R mc:mc "$world"

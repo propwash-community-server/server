@@ -3,8 +3,8 @@
 # ///
 """
 Seed the local stack, as the `seed` service in compose.yaml:
-- a blank stand-in in the store for every map in servers/*/maps/ that it doesn't have yet: void with a
-  5x5 stone platform at x/z 0-4, y 99;
+- a blank stand-in in the store (<server>/maps/<name>.tar.gz) for every map in servers/*/maps/ that
+  it doesn't have yet: void with a 5x5 stone platform at x/z 0-4, y 99;
 - a warp per map on its platform (the map's spawn, set in game by builders on prod), on servers
   that have no warps yet.
 """
@@ -12,7 +12,6 @@ Seed the local stack, as the `seed` service in compose.yaml:
 import io
 import struct
 import tarfile
-import tomllib
 import zlib
 from pathlib import Path
 
@@ -67,10 +66,9 @@ def region():
     return header + body
 
 
-STORE.mkdir(parents=True, exist_ok=True)
 for manifest in sorted(SERVERS.glob("*/maps/*.toml")):
-    key = tomllib.loads(manifest.read_text())["key"]
-    if (STORE / key).exists():
+    archive = STORE / manifest.parent.parent.name / "maps" / f"{manifest.stem}.tar.gz"
+    if archive.exists():
         continue
     mca = region()
     buf = io.BytesIO()
@@ -78,8 +76,9 @@ for manifest in sorted(SERVERS.glob("*/maps/*.toml")):
         info = tarfile.TarInfo("region/r.0.0.mca")
         info.size = len(mca)
         tar.addfile(info, io.BytesIO(mca))
-    (STORE / key).write_bytes(buf.getvalue())
-    print(f"seeded blank {key} for {manifest.stem}")
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    archive.write_bytes(buf.getvalue())
+    print(f"seeded blank {archive.relative_to(STORE)}")
 
 # Essential Commands keeps its warps in world/essentialcommands/world_data.dat.
 for maps in sorted(SERVERS.glob("*/maps")):

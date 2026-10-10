@@ -17,7 +17,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-MAP_KEYS = ("key", "sha256", "author")
+MAP_KEYS = ("author",)
 
 errors = []
 

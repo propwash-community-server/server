@@ -16,7 +16,7 @@ from urllib.parse import unquote
 
 from pyinfra import host
 from pyinfra.api import FactBase
-from pyinfra.facts.files import File, FindFiles
+from pyinfra.facts.files import Directory, File, FindFiles
 from pyinfra.operations import apt, files, server, systemd
 from pyinfra.operations.util import any_changed
 
@@ -167,16 +167,6 @@ class PaperVelocityOk(FactBase):
         return bool(output) and output[0].strip() == "ok"
 
 
-class MapKey(FactBase):
-    """Archive key a map folder was unpacked from, or None."""
-
-    def command(self, path):
-        return f"cat {path}/.key 2>/dev/null || true"
-
-    def process(self, output):
-        return output[0].strip() if output else None
-
-
 class JsonFile(FactBase):
     def command(self, path):
         return f"cat {path}"
@@ -292,7 +282,6 @@ def map_ops(name, d, server_maps):
     world = f"{d}/world"
     pack = f"{world}/datapacks/maps"
     ops = []
-    files.directory(name="world archives folder", path=f"/home/{MC}/world-archives", **OWNER)
     ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
     ops.append(files.put(name=f"{name}: maps load tag", src=StringIO(LOAD_TAG),
                          dest=f"{pack}/data/minecraft/tags/function/load.json", **OWNER))
@@ -313,26 +302,11 @@ def map_ops(name, d, server_maps):
                 **OWNER,
             ))
         dim = f"{world}/dimensions/maps/{m['name']}"
-        # Unpacked again whenever the manifest points at a different archive.
-        if host.get_fact(MapKey, path=dim) != m["key"]:
-            archive = f"/home/{MC}/world-archives/{m['key']}"
-            files.download(name=f"{name}: map {m['name']} archive", src=f"{store}/{m['key']}", dest=archive,
-                           # Locally the store holds blank stand-ins, which can't match the real hash.
-                           sha256sum=None if LOCAL else m["sha256"], **OWNER)
-            ops.append(server.shell(
-                name=f"{name}: map {m['name']} unpack",
-                commands=[
-                    f"systemctl stop mc@{name}",
-                    f"rm -rf {dim}",
-                    f"mkdir -p {dim}",
-                    f"tar -xzf {archive} -C {dim}",
-                    f"echo {m['key']} > {dim}/.key",
-                    f"chown -R {MC}:{MC} {dim}",
-                    f"install -d -o {MC} -g {MC} {world}/data",
-                    f"mc-merge-courses {world}/data/propwash_race.json {dim}/propwash_race.json maps:{m['name']}",
-                    f"chown {MC}:{MC} {world}/data/propwash_race.json",
-                ],
-            ))
+        # The world on the server is the map (builders edit it there); the store only seeds a
+        # server that doesn't have it yet. `uv run apply` replaces one that's there.
+        if host.get_fact(Directory, path=dim) is None:
+            ops.append(server.shell(name=f"{name}: map {m['name']} seed",
+                                    commands=[f"mc-seed-dimension {name} maps:{m['name']} {store}"]))
     return ops
 
 
@@ -402,7 +376,7 @@ if not LOCAL:
 
 for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
-for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses"]:
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
