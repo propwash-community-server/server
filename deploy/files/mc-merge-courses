@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Merge a map's Propwash race courses into the server's: mc-merge-courses <server file> <map file> <dimension>
+
+Propwash keeps all race courses of a server in world/data/propwash_race.json and matches gate
+entities to them by UUID; a gate whose course is in another dimension gets cut loose for good. So
+a map's courses (from upload-world) go in before the server loads it: the map's old ones out, the
+new ones in with fresh ids and the map's dimension.
+"""
+import json
+import os
+import sys
+
+path, new, dim = sys.argv[1:]
+data = json.load(open(path)) if os.path.exists(path) else {"nextCourseId": 1, "courses": []}
+data["courses"] = [c for c in data["courses"] if c["dimension"] != dim]
+next_id = max([data.get("nextCourseId", 1)] + [c["id"] + 1 for c in data["courses"]])
+for c in json.load(open(new))["courses"] if os.path.exists(new) else []:
+    data["courses"].append({**c, "id": next_id, "dimension": dim})
+    next_id += 1
+data["nextCourseId"] = next_id
+json.dump(data, open(path + ".tmp", "w"), indent=2)
+os.replace(path + ".tmp", path)

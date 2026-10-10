@@ -8,7 +8,6 @@ whitelists, ops or any server.properties setting except the ones it manages.
 import json
 import os
 import re
-import shlex
 import subprocess
 import tomllib
 from io import StringIO
@@ -272,25 +271,6 @@ def map_tick_function(server_maps):
     return "\n".join(lines) + "\n"
 
 
-# Propwash keeps all race courses of a server in world/data/propwash_race.json and matches gate
-# entities to them by UUID; a gate whose course is in another dimension gets cut loose for good. So
-# a map's courses (from upload-world) go in before the server loads it: the map's old ones out, the
-# new ones in with fresh ids and the map's dimension. Args: server file, map file, dimension.
-MERGE_COURSES = """
-import json, os, sys
-path, new, dim = sys.argv[1:]
-data = json.load(open(path)) if os.path.exists(path) else {"nextCourseId": 1, "courses": []}
-data["courses"] = [c for c in data["courses"] if c["dimension"] != dim]
-next_id = max([data.get("nextCourseId", 1)] + [c["id"] + 1 for c in data["courses"]])
-for c in json.load(open(new))["courses"] if os.path.exists(new) else []:
-    data["courses"].append({**c, "id": next_id, "dimension": dim})
-    next_id += 1
-data["nextCourseId"] = next_id
-json.dump(data, open(path + ".tmp", "w"), indent=2)
-os.replace(path + ".tmp", path)
-"""
-
-
 def map_command(server_maps):
     # Melius Commands: /map lists the maps, /map <name> goes to the map's spawn, the warp <name>
     # (set in game by builders), without the warp's chat message. Dropping the map's tag shows its
@@ -358,7 +338,7 @@ def map_ops(name, d, server_maps):
                     f"echo {m['key']} > {dim}/.key",
                     f"chown -R {MC}:{MC} {dim}",
                     f"install -d -o {MC} -g {MC} {world}/data",
-                    f"python3 -c {shlex.quote(MERGE_COURSES)} {world}/data/propwash_race.json {dim}/propwash_race.json maps:{m['name']}",
+                    f"mc-merge-courses {world}/data/propwash_race.json {dim}/propwash_race.json maps:{m['name']}",
                     f"chown {MC}:{MC} {world}/data/propwash_race.json",
                 ],
             ))
@@ -429,7 +409,7 @@ if not LOCAL:
 
 for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
-for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore"]:
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
