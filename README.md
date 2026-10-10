@@ -75,3 +75,4 @@ Then join `localhost:25565`. Maps and backups go to a local S3 store on `localho
 - [Maps](docs/maps.md): adding, updating and removing maps on fpv
 - [Testing](docs/testing.md): checks, end-to-end tests and CI
 - [Admin](docs/admin.md): running the production server
+- [Contributing](CONTRIBUTING.md): issues, pull requests and CI
