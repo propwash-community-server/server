@@ -162,3 +162,4 @@ snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
+| fpv spawn | `/execute in maps:tutorial run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#tutorial)) |

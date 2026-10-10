@@ -26,6 +26,15 @@ kept; old maps are upgraded as they are explored, so the first visit can be slow
 
    On the local stack, maps are blank platforms, and a new stack comes with their warps already set.
 
+## Tutorial
+
+Players new to fpv start at its world spawn, which is on the `tutorial` map; returning players come
+back where they left. Staff set it once, standing on the spot:
+
+```
+/execute in maps:tutorial run setworldspawn ~ ~ ~
+```
+
 ## In game
 
 Spawns and spots are [Essential Commands](https://modrinth.com/mod/essential-commands) warps stored
