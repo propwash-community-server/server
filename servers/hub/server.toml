@@ -20,7 +20,7 @@ help = """
 
 # Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
 welcome = """
-<brand><bold>Propwash Community</bold></brand>: walk through a portal to pick a server. <accent>/help</accent> for commands.
+<bold>Welcome to <brand>Propwash FPV!</brand></bold>
 """
 
 # Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
