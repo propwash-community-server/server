@@ -40,7 +40,8 @@ slow.
 ## Tutorial
 
 Players new to fpv start at its world spawn, which is on the `tutorial` map; returning players come
-back where they left. Staff set it once, standing on the spot:
+back where they left. Until it's built it is superflat (`flat = true` in its toml; other maps are void
+around their terrain). Staff set the spawn once, standing on the spot:
 
 ```
 /execute in maps:tutorial run setworldspawn ~ ~ ~

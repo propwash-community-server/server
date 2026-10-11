@@ -205,7 +205,8 @@ def extra_files(name, d):
     ]
 
 
-# Maps are void dimensions (maps:<name>) whose region files come from the store.
+# Maps are dimensions (maps:<name>) whose region files come from the store, void around them
+# (or superflat with flat = true in the map's toml).
 MAP_PACK = json.dumps({"pack": {"description": "Propwash maps", "min_format": 121, "max_format": 999}})
 # Each map has its own clock (so /time on a map only changes that map), started paused at noon once.
 # The vanilla files come from the 26.3 server jar; copy them again when upgrading Minecraft.
@@ -214,8 +215,17 @@ LOAD_TAG = json.dumps({"values": ["maps:load"]})
 TICK_TAG = json.dumps({"values": ["maps:tick"]})
 
 
-def map_pack_files(name):
+SUPERFLAT = {"biome": "minecraft:plains", "layers": [
+    {"block": "minecraft:bedrock", "height": 1},
+    {"block": "minecraft:dirt", "height": 2},
+    {"block": "minecraft:grass_block", "height": 1},
+]}
+VOID = {"biome": "minecraft:the_void", "layers": []}
+
+
+def map_pack_files(m):
     """Datapack files (path under data/ -> JSON) for the map dimension maps:<name>."""
+    name = m["name"]
     clock = f"maps:{name}"
     return {
         f"maps/world_clock/{name}.json": {},
@@ -226,7 +236,7 @@ def map_pack_files(name):
         },
         f"maps/dimension/{name}.json": {
             "type": clock,
-            "generator": {"type": "minecraft:flat", "settings": {"biome": "minecraft:the_void", "layers": []}},
+            "generator": {"type": "minecraft:flat", "settings": SUPERFLAT if m.get("flat") else VOID},
         },
     }
 
@@ -294,7 +304,7 @@ def map_ops(name, d, server_maps):
     ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
                          dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
     for m in server_maps:
-        for rel, data in map_pack_files(m["name"]).items():
+        for rel, data in map_pack_files(m).items():
             ops.append(files.put(
                 name=f"{name}: map {m['name']} {rel}",
                 src=StringIO(json.dumps(data)),
