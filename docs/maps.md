@@ -81,5 +81,5 @@ To remove a map, delete its `.toml` file. Servers that already have it keep it u
 `world/dimensions/maps/<name>` and its files in `world/datapacks/maps/data/maps/`. Its race courses
 stay until `/propwash race delete`.
 
-Locally, a map missing from the local store is a 5x5 stone platform at y 99. These are added when
-the stack starts, so run `docker compose -f local/compose.yaml up -d` again after adding a map.
+Locally, a map missing from the local store is a 5x5 stone platform at y 99 (a flat map is just
+its superflat ground). These are added when the stack starts, so run `docker compose -f local/compose.yaml up -d` again after adding a map.
