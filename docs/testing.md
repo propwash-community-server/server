@@ -38,5 +38,5 @@ def test_blocks_cannot_be_broken(on_map):
 hotbar slots, and reads chat, the title, the tab list and its position; other Minescript functions
 are `player.call("<function>", ...)`. The `expect_*` methods wait for chat, a server, a dimension or
 a title. Every test starts with an empty inventory, on the server the previous one ended on, so
-tests switch with `player.go(...)` first. There is only one player, so multiplayer behavior is not
-tested.
+tests switch with `player.go(...)` first. For what one player does to another's things, such as on
+plots, the `other` fixture starts a second client, `Other`, on its own agent port.

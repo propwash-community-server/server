@@ -92,7 +92,7 @@ class Server:
         return self.rcon(f"execute {condition}").startswith("Test passed")
 
 
-HUB, FPV = Server("hub"), Server("fpv")
+HUB, FPV, PLOTS = Server("hub"), Server("fpv"), Server("plots")
 
 
 def luckperms(command, server=HUB):
@@ -119,18 +119,21 @@ def build_client():
                     "--build-arg", f"MODS={' '.join(mods)}", str(HERE / "client")], check=True, stdout=subprocess.DEVNULL)
 
 
-def start_client():
-    subprocess.run(["docker", "rm", "-f", CLIENT], capture_output=True)
-    run("docker", "run", "-d", "--name", CLIENT, "--network", NETWORK, "-p", f"127.0.0.1:{AGENT_PORT}:{AGENT_PORT}",
-        CLIENT, "vps:25565")
-    return eventually(Player.connect, timeout=180, interval=1, message="the client to join")
+def start_client(name="Offline", port=AGENT_PORT):
+    """Starts a client that joins as `name`; each client needs its own agent port."""
+    container = f"{CLIENT}-{name.lower()}"
+    subprocess.run(["docker", "rm", "-f", container], capture_output=True)
+    run("docker", "run", "-d", "--name", container, "--network", NETWORK, "-p", f"127.0.0.1:{port}:{AGENT_PORT}",
+        CLIENT, "vps:25565", name)
+    return eventually(lambda: Player.connect(port), timeout=180, interval=1, message=f"{name} to join")
 
 
-def stop_client():
+def stop_client(name="Offline"):
+    container = f"{CLIENT}-{name.lower()}"
     LOGS.mkdir(exist_ok=True)
-    (LOGS / "client.log").write_text(subprocess.run(["docker", "logs", CLIENT], text=True, capture_output=True,
-                                                    errors="replace").stdout)
-    subprocess.run(["docker", "rm", "-f", CLIENT], capture_output=True)
+    (LOGS / f"client-{name.lower()}.log").write_text(subprocess.run(["docker", "logs", container], text=True,
+                                                                    capture_output=True, errors="replace").stdout)
+    subprocess.run(["docker", "rm", "-f", container], capture_output=True)
 
 
 class Player:
@@ -142,9 +145,9 @@ class Player:
         self.chat = []  # Chat lines read so far, oldest first; see clear_chat.
 
     @classmethod
-    def connect(cls):
+    def connect(cls, port=AGENT_PORT):
         try:
-            return cls(socket.create_connection(("127.0.0.1", AGENT_PORT), timeout=30))
+            return cls(socket.create_connection(("127.0.0.1", port), timeout=30))
         except OSError:
             return None
 
