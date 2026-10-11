@@ -47,6 +47,26 @@ welcome = """
 <brand><bold>Plots</bold></brand>: <accent>/plot auto</accent> to get a plot, <accent>/help</accent> for more.
 """
 
+# Set on every start.
+[gamerules]
+# Respawns exactly at spawn, not scattered around it.
+respawn_radius = 0
+# No mobs, fire spread, explosions or Nether.
+spawn_mobs = false
+spawn_monsters = false
+spawn_patrols = false
+spawn_phantoms = false
+spawn_wandering_traders = false
+spawn_wardens = false
+spawner_blocks_work = false
+raids = false
+mob_griefing = false
+fire_spread_radius_around_player = 0
+tnt_explodes = false
+allow_entering_nether_using_portals = false
+# No "has made the advancement" in chat.
+show_advancement_messages = false
+
 # 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
 # at startup and the grid is generated with it: changing it needs a fresh plots world.
 # Spawn is the middle of the road crossing at the corner of the four spawn plots around (0,0),

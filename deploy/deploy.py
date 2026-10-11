@@ -341,6 +341,18 @@ def welcome_ops(name, d, text):
             for rel, content in pack_files.items()]
 
 
+def gamerules_ops(name, d, rules):
+    # Game rules are saved in the world, not server.properties: a datapack sets them on every start.
+    pack = f"{d}/world/datapacks/gamerules"
+    load = "".join(f"gamerule {k} {str(v).lower() if isinstance(v, bool) else v}\n" for k, v in rules.items())
+    pack_files = {
+        "pack.mcmeta": json.dumps({"pack": {"description": "Game rules", "min_format": 121, "max_format": 999}}),
+        "data/minecraft/tags/function/load.json": json.dumps({"values": ["gamerules:load"]}),
+        "data/gamerules/function/load.mcfunction": load,
+    }
+    return [files.put(name=f"{name}: gamerules {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
+            for rel, content in pack_files.items()]
+
 def ownership(name, d):
     # Files and folders written as root (files.line, the parents files.put creates, the paper-velocity
     # helper, ...) go back to mc. A plain chown: files.directory(recursive=True) only recurses when the
@@ -505,6 +517,8 @@ for name, cfg in backends.items():
 
     if cfg.get("welcome"):
         changes += welcome_ops(name, d, cfg["welcome"].strip())
+    if cfg.get("gamerules"):
+        changes += gamerules_ops(name, d, cfg["gamerules"])
 
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties). Plugins write their config on first start, so this applies from the next deploy;

@@ -152,7 +152,7 @@ chat (the server log still has joins, leaves and AFK):
 |---|---|---|
 | hub | EssentialsX `custom-join-message`, `custom-quit-message`, `broadcast-afk-message` | `files/world/datapacks/quiet` |
 | fpv | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
-| plots | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/plots_spawn` |
+| plots | our [`mods/quiet`](../mods/quiet/) | `[gamerules]` in its `server.toml` |
 
 The quiet mod's AFK part hooks into Essential Commands (`PlayerData.setAfk`). If an Essential
 Commands update changes that, the AFK messages come back (no crash): check after updating it.
