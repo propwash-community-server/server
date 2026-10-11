@@ -78,7 +78,7 @@ for manifest in sorted(SERVERS.glob("*/maps/*.toml")):
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         if tomllib.loads(manifest.read_text()).get("flat"):
             info = tarfile.TarInfo("region")
-            info.type = tarfile.DIRTYPE
+            info.type, info.mode = tarfile.DIRTYPE, 0o755
             tar.addfile(info)
         else:
             mca = region()
