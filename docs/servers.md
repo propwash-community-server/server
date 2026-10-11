@@ -12,7 +12,8 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 | `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |
 | `welcome` | text shown in chat every time a player arrives on the server |
 
-`[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files.
+`[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
+a `.properties` file that doesn't exist yet is written with just the `[config]` keys before the first start.
 The deploy never changes worlds. The proxy's `server.toml` has no port, but `expansions`
 (MiniPlaceholders) and `try` (the servers players land on, in order).
 

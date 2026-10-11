@@ -99,9 +99,8 @@ mode (editing roads and other plots); ours also accepts the `fabricplots.admin` 
 staff and admin have on plots.
 
 The jar is in the world store under `mods/`. The settings are in `[config]` of
-`servers/plots/server.toml`, applied from the second deploy (FabricPlots writes its config on
-first start). The grid is generated with the plot size, so **changing `plot-size` needs a fresh
-plots world**; keep the spawn in the datapack and `spawn-x/y/z` at the same spot.
+`servers/plots/server.toml`, written before the first start (FabricPlots adds its defaults). The
+grid is generated with the plot size, so **changing `plot-size` needs a fresh plots world**; keep the spawn in the datapack and `spawn-x/y/z` at the same spot.
 
 To rebuild for a new FabricPlots or Minecraft version (JDK 25):
 

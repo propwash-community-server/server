@@ -496,9 +496,14 @@ for name, cfg in backends.items():
         changes += welcome_ops(name, d, cfg["welcome"].strip())
 
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
-    # .properties). Plugins write their config on first start, so this applies from the next deploy.
+    # .properties). Plugins write their config on first start, so this applies from the next deploy;
+    # a missing .properties is written with just these keys before it (FabricPlots' plot-size has to
+    # be there when the plot world is first made), and the plugin adds its defaults.
     for rel, settings in cfg.get("config", {}).items():
-        if host.get_fact(File, path=f"{d}/{rel}"):
+        if rel.endswith(".properties") and not host.get_fact(File, path=f"{d}/{rel}"):
+            content = "".join(f"{key}={value}\n" for key, value in settings.items())
+            changes.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
+        elif host.get_fact(File, path=f"{d}/{rel}"):
             sep = "=" if rel.endswith(".properties") else ": "
             for key, value in settings.items():
                 changes.append(files.line(
