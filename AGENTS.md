@@ -16,7 +16,7 @@ The PropwashFPV Minecraft network, deployed with [pyinfra](https://pyinfra.com):
 - `servers/<name>/` - `server.toml`, `files/`, `maps/` for `velocity`, `hub`, `fpv`, `plots`
 - `permissions.toml` - LuckPerms groups
 - `local/` - the local stack in Docker, with dummy secrets in `local/secrets/`
-- `tools/` - `uv run check`, `uv run e2e`, `uv run upload-world`
+- `tools/` - `uv run check`, `uv run e2e`, `uv run upload`, `uv run apply`
 - `tests/e2e/` - end-to-end tests with a headless client
 - `secrets/` - SOPS-encrypted secrets
 - `access/` - SSH public keys
