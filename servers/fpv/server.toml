@@ -41,6 +41,16 @@ welcome = """
 <brand><bold>FPV</bold></brand>: <accent>/map</accent> to pick a map, <accent>/help</accent> for more.
 """
 
+# Set on every start. Maps are for flying: no mobs (drones are placed, not spawned).
+[gamerules]
+spawn_mobs = false
+spawn_monsters = false
+spawn_patrols = false
+spawn_phantoms = false
+spawn_wandering_traders = false
+spawn_wardens = false
+spawner_blocks_work = false
+
 # Set on every deploy: everyone in creative.
 [properties]
 gamemode = "creative"
