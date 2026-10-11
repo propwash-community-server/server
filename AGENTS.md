@@ -56,4 +56,4 @@ that is not obvious.
 Commits use [conventional commit](https://www.conventionalcommits.org) prefixes: `feat`, `fix`,
 `test`, `docs`, `ci`, `refactor`, `chore`. The subject is in the imperative and short. A body is
 rare and only for what the diff does not show. Branches are named `<type>/<short-name>`, such as
-`feat/survival-border`.
+`feat/plot-limit`.

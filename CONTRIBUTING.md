@@ -17,14 +17,14 @@ updates and new maps can go straight to a pull request.
 2. Create a branch from `dev`, named `<type>/<short-name>` with a conventional commit type
    (`feat`, `fix`, `test`, `docs`, `ci`, `refactor`, `chore`):
    ```
-   git checkout -b feat/survival-border dev
+   git checkout -b feat/plot-limit dev
    ```
 3. Make the change and try it on the local stack ([README](README.md#running-locally)).
 4. Commit with a [conventional commit](https://www.conventionalcommits.org) message, such as
-   `feat: survival world border` or `fix: hub spawn after restart`. The subject is in the imperative
+   `feat: more plots for builders` or `fix: hub spawn after restart`. The subject is in the imperative
    and short; a body is only needed for what the diff does not show.
 5. Push the branch and open a pull request into `dev`. Its title is a conventional commit subject,
-   such as `feat: survival world border`, and its description says what changed and how you tested
+   such as `feat: more plots for builders`, and its description says what changed and how you tested
    it.
 
 Once a pull request into `prod` is green, a maintainer promotes `dev` with `git push origin dev:prod`.
