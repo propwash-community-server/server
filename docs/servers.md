@@ -7,7 +7,7 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 |---|---|
 | `[properties]` | server.properties, set on every deploy |
 | `[new_world]` | server.properties, set only for a new server |
-| `[config."<path>"]` | top-level keys in a plugin's config file |
+| `[config."<path>"]` | top-level keys in a plugin's config file, palette tags expanded (also on the proxy) |
 | `[gamerules]` | game rules, set on every start (a generated datapack); removing one doesn't reset it |
 | `[flan]` | `deny`: [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension, maps included; other keys go to Flan's config |
 | `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |

@@ -353,6 +353,28 @@ def gamerules_ops(name, d, rules):
     return [files.put(name=f"{name}: gamerules {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
             for rel, content in pack_files.items()]
 
+def config_ops(name, d, cfg):
+    # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
+    # .properties), palette tags expanded. Plugins write their config on first start, so this applies
+    # from the next deploy; a missing .properties is written with just these keys before it
+    # (FabricPlots' plot-size has to be there when the plot world is first made), and the plugin adds its defaults.
+    ops = []
+    for rel, settings in cfg.get("config", {}).items():
+        if rel.endswith(".properties") and not host.get_fact(File, path=f"{d}/{rel}"):
+            content = "".join(f"{key}={value}\n" for key, value in settings.items())
+            ops.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
+        elif host.get_fact(File, path=f"{d}/{rel}"):
+            sep = "=" if rel.endswith((".properties", ".hocon")) else ": "
+            for key, value in settings.items():
+                ops.append(files.line(
+                    name=f"{name}: {rel} {key}",
+                    path=f"{d}/{rel}",
+                    line=f"^{key}{sep.strip()}.*",
+                    replace=f"{key}{sep}{palette_tags(str(value))}",
+                ))
+    return ops
+
+
 def ownership(name, d):
     # Files and folders written as root (files.line, the parents files.put creates, the paper-velocity
     # helper, ...) go back to mc. A plain chown: files.directory(recursive=True) only recurses when the
@@ -444,6 +466,7 @@ changes = [
     # MiniPlaceholders loads its expansions (placeholder add-ons) from its own folder, not plugins/.
     *jar_folder("velocity: expansion", f"{v}/plugins/miniplaceholders/expansions", velocity.get("expansions", [])),
     *extra_files("velocity", v),
+    *config_ops("velocity", v, velocity),
 ]
 
 # mods/crossserver moves players with a console tp over rcon, so it gets each backend's rcon port and
@@ -520,23 +543,7 @@ for name, cfg in backends.items():
     if cfg.get("gamerules"):
         changes += gamerules_ops(name, d, cfg["gamerules"])
 
-    # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
-    # .properties). Plugins write their config on first start, so this applies from the next deploy;
-    # a missing .properties is written with just these keys before it (FabricPlots' plot-size has to
-    # be there when the plot world is first made), and the plugin adds its defaults.
-    for rel, settings in cfg.get("config", {}).items():
-        if rel.endswith(".properties") and not host.get_fact(File, path=f"{d}/{rel}"):
-            content = "".join(f"{key}={value}\n" for key, value in settings.items())
-            changes.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
-        elif host.get_fact(File, path=f"{d}/{rel}"):
-            sep = "=" if rel.endswith((".properties", ".hocon")) else ": "
-            for key, value in settings.items():
-                changes.append(files.line(
-                    name=f"{name}: {rel} {key}",
-                    path=f"{d}/{rel}",
-                    line=f"^{key}{sep.strip()}.*",
-                    replace=f"{key}{sep}{value}",
-                ))
+    changes += config_ops(name, d, cfg)
 
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
     # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level

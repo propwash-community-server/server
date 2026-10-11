@@ -139,6 +139,11 @@ expansions (`expansions` in the velocity `server.toml`).
 | Local | `/local`, `/l` | everyone, same server only |
 | Staff | `/staff`, `/sc`, or start a message with `#` | `staff` and `admin` |
 
+Joining and leaving the network is announced on every server by
+[NetworkJoinMessages](https://modrinth.com/plugin/networkjoinmessages) on the proxy (its `[config]` in
+the velocity `server.toml`); moving between servers says nothing. The servers' own join and leave
+messages are hidden (below).
+
 Typing a channel's command switches to it; `/g hello` sends one message without switching.
 Channels are [`files/plugins/carbonchat/channels/`](../servers/velocity/files/plugins/carbonchat/channels/),
 kept as Carbon rewrites them on start, so edit them in place (a reformatted file would restart the
