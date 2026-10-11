@@ -49,7 +49,7 @@ spawn-x = "-9"
 spawn-y = "69"
 spawn-z = "-9"
 # The street sweeper rebuilds roads (removing anything built on them) except this far from spawn,
-# so the spawn area's roads can be built on: 145 blocks each way.
+# so staff (in /plot admin) can build on the spawn area's roads: 145 blocks each way.
 street-sweeper-spawn-radius = "145"
 allow-player-combine = "false"
 # No portal system: the plot world is the whole server, so no calcite exit portals on the roads,
