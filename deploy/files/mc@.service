@@ -1,6 +1,6 @@
-# One unit for every server: mc@velocity, mc@survival, ...
+# One unit for every server: mc@velocity, mc@fpv, ...
 # Each runs inside its own tmux session so you can still open the console:
-#   mc-console survival     (detach with Ctrl+B then D)
+#   mc-console fpv     (detach with Ctrl+B then D)
 [Unit]
 Description=Minecraft %i
 After=network-online.target

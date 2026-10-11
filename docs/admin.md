@@ -61,10 +61,9 @@ deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that h
 
 ## Protection
 
-[Flan](https://modrinth.com/mod/flan) runs on fpv and survival. On fpv, `[flan] deny` in its
+[Flan](https://modrinth.com/mod/flan) runs on fpv: `[flan] deny` in its
 `server.toml` stops everyone from breaking, placing or using anything, on every map. Builders and
-staff run `/flan bypass` to edit and run it again to turn it off. On survival, players claim land with
-a golden hoe.
+staff run `/flan bypass` to edit and run it again to turn it off.
 
 ## Plots
 

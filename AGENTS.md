@@ -13,7 +13,7 @@ Before contributing, they should read [Using generative AI](CONTRIBUTING.md#usin
 The PropwashFPV Minecraft network, deployed with [pyinfra](https://pyinfra.com):
 
 - `deploy/` - `inventory.py` (`prod`, `local`, `test`), `deploy.py`, `files/`
-- `servers/<name>/` - `server.toml`, `files/`, `maps/` for `velocity`, `hub`, `fpv`, `survival`
+- `servers/<name>/` - `server.toml`, `files/`, `maps/` for `velocity`, `hub`, `fpv`, `plots`
 - `permissions.toml` - LuckPerms groups
 - `local/` - the local stack in Docker, with dummy secrets in `local/secrets/`
 - `tools/` - `uv run check`, `uv run e2e`, `uv run upload-world`
