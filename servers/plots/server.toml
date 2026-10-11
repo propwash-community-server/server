@@ -10,6 +10,7 @@ mods = [
     # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
     # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
     "https://mediafilez.forgecdn.net/files/9076/353/justmoreparts-fabric-26.3-1.0.0.jar",
+    "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
@@ -22,6 +23,21 @@ mods = [
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
 ]
+
+# /help, in MiniMessage with palette.toml tags.
+help = """
+<brand><bold>Plots</bold></brand>: a creative world where every player gets a 120x120 plot to build on.
+<accent>/plot auto</accent>: get a free plot
+<accent>/plot claim</accent>: claim the empty plot you stand on
+<accent>/plot menu</accent>: your plots and their settings
+<accent>/plot trust <player></accent>: let someone build on your plot
+Only you and players you trust can build on your plot.
+"""
+
+# Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
+welcome = """
+<brand><bold>Plots</bold></brand>: <accent>/plot auto</accent> to get a plot, <accent>/help</accent> for more.
+"""
 
 # 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
 # at startup and the grid is generated with it: changing it needs a fresh plots world.
