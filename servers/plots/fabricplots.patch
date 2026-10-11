@@ -1,0 +1,234 @@
+diff --git a/src/main/java/com/fabricplots/FabricPlots.java b/src/main/java/com/fabricplots/FabricPlots.java
+index c7e8ebe..8fc5341 100644
+--- a/src/main/java/com/fabricplots/FabricPlots.java
++++ b/src/main/java/com/fabricplots/FabricPlots.java
+@@ -69,6 +69,7 @@ public final class FabricPlots implements ModInitializer {
+             PlotManager.load(server);
+             PlotWorldPainter.loadDecorated(server);
+             PortalManager.load(server);
++            if (!PlotsConfig.portals) PortalManager.removeAll(server.getLevel(PLOTS_DIM));
+             PlotExpiry.load(server);
+             applyWorldRules(server);
+         });
+diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
+index a5ee575..f1ecac2 100644
+--- a/src/main/java/com/fabricplots/command/PlotCommands.java
++++ b/src/main/java/com/fabricplots/command/PlotCommands.java
+@@ -139,11 +139,11 @@ public final class PlotCommands {
+                 else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
+                 return 0;
+             }
+-            p.addItem(PortalManager.createKey(free));
++            if (PlotsConfig.portals) p.addItem(PortalManager.createKey(free));
+             PortalManager.buildExitPortal(plotsLevel(ctx), free);
+             teleport(p, plotsLevel(ctx), free);
+             msg(ctx, "Claimed plot " + free.px() + "," + free.pz() + paidNote(p, paid)
+-                    + " — happy building! (Portal Key added: light a calcite frame at your base with it.)");
++                    + " — happy building!" + (PlotsConfig.portals ? " (Portal Key added: light a calcite frame at your base with it.)" : ""));
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+@@ -166,10 +166,10 @@ public final class PlotCommands {
+                 else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
+                 return 0;
+             }
+-            p.addItem(PortalManager.createKey(pp));
++            if (PlotsConfig.portals) p.addItem(PortalManager.createKey(pp));
+             PortalManager.buildExitPortal(plotsLevel(ctx), pp);
+             msg(ctx, "Claimed plot " + pp.px() + "," + pp.pz() + paidNote(p, paid)
+-                    + ". Take the Portal Key — build a calcite frame at your base and light it with this to link a portal here.");
++                    + (PlotsConfig.portals ? ". Take the Portal Key — build a calcite frame at your base and light it with this to link a portal here." : "."));
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+@@ -257,6 +257,7 @@ public final class PlotCommands {
+             if (!staff(ctx, p, "fabricplots.reload")) return 0;
+             PlotsConfig.load();
+             FabricPlots.applyWorldRules(ctx.getSource().getServer());
++            if (!PlotsConfig.portals) PortalManager.removeAll(plotsLevel(ctx));
+             msg(ctx, "Config reloaded. allow-player-combine=" + PlotsConfig.allowPlayerCombine
+                     + ", max-merge-cells=" + PlotsConfig.maxMergeCells
+                     + ", claim-limit=" + PlotsConfig.claimLimit
+@@ -516,6 +517,7 @@ public final class PlotCommands {
+     private static int key(CommandContext<CommandSourceStack> ctx) {
+         try {
+             ServerPlayer p = ctx.getSource().getPlayerOrException();
++            if (!PlotsConfig.portals) { msg(ctx, "Portals are turned off on this server."); return 0; }
+             if (!allowed(ctx, p, "fabricplots.portal")) return 0;
+             // In the plot world, standing on a plot you may use: give that one plot's key.
+             if (p.level().dimension() == FabricPlots.PLOTS_DIM) {
+diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
+index ec8c020..22e649b 100644
+--- a/src/main/java/com/fabricplots/core/PlotConfig.java
++++ b/src/main/java/com/fabricplots/core/PlotConfig.java
+@@ -1,12 +1,24 @@
+ package com.fabricplots.core;
+ 
++import java.io.Reader;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.Properties;
++
++import net.fabricmc.loader.api.FabricLoader;
++
+ /**
+  * Tunables for the plot grid. A "cell" is one plot plus the road on its
+  * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
+  */
+ public final class PlotConfig {
+-    /** Build area of a single plot, in blocks. */
+-    public static final int PLOT_SIZE = 32;
++    /** Default for "plot-size" in config/fabricplots.properties. */
++    public static final int DEFAULT_PLOT_SIZE = 32;
++    /**
++     * Build area of a single plot, in blocks: "plot-size" in config/fabricplots.properties,
++     * read once at startup (not on /plot reload). Changing it needs a fresh plot world.
++     */
++    public static final int PLOT_SIZE = readPlotSize();
+     /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
+     public static final int ROAD_WIDTH = 17;
+     /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
+@@ -39,9 +51,28 @@ public final class PlotConfig {
+     /** How often (ticks) to scan for stale unnamed mobs. */
+     public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
+ 
+-    /** /plot world drops players here — on the road plaza near plot (0,0). */
+-    public static final int SPAWN_X = 40;
+-    public static final int SPAWN_Z = 40;
++    /** /plot world drops players here — on the road plaza near plot (0,0): mid-road, 40 at the default size. */
++    public static final int SPAWN_X = PLOT_SIZE + ROAD_WIDTH / 2;
++    public static final int SPAWN_Z = SPAWN_X;
+ 
+     private PlotConfig() {}
++
++    private static int readPlotSize() {
++        Path file;
++        try {
++            file = FabricLoader.getInstance().getConfigDir().resolve("fabricplots.properties");
++        } catch (Throwable t) { // no Fabric loader (unit tests): keep the default grid
++            return DEFAULT_PLOT_SIZE;
++        }
++        Properties p = new Properties();
++        if (Files.exists(file)) {
++            try (Reader r = Files.newBufferedReader(file)) { p.load(r); }
++            catch (Exception e) { System.err.println("[FabricPlots] Failed to read plot-size: " + e); }
++        }
++        try {
++            return Math.max(16, Math.min(512, Integer.parseInt(p.getProperty("plot-size", "" + DEFAULT_PLOT_SIZE).trim())));
++        } catch (NumberFormatException e) {
++            return DEFAULT_PLOT_SIZE;
++        }
++    }
+ }
+diff --git a/src/main/java/com/fabricplots/core/PlotsConfig.java b/src/main/java/com/fabricplots/core/PlotsConfig.java
+index 5653241..036b5d7 100644
+--- a/src/main/java/com/fabricplots/core/PlotsConfig.java
++++ b/src/main/java/com/fabricplots/core/PlotsConfig.java
+@@ -23,6 +23,7 @@ public final class PlotsConfig {
+     public static volatile boolean welcomeMessage = true;     // show the action-bar welcome on a plot
+     public static volatile int unnamedMobGraceTicks = 12000;  // how long an unnamed mob may live
+     public static volatile int mobScanIntervalTicks = 600;    // how often to sweep stale mobs
++    public static volatile boolean portals = true;             // "portals": false turns off exit portals, Portal Keys and frame portals
+     public static volatile int portalStreetSpacing = 2;       // exit portals on every Nth N-S street (1=every)
+     public static volatile boolean advanceTime = true;        // day/night cycle in the plot world
+     public static volatile boolean advanceWeather = true;     // weather cycle in the plot world
+@@ -74,6 +75,7 @@ public final class PlotsConfig {
+         mobEscapeDespawn = "despawn".equalsIgnoreCase(p.getProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport").trim());
+         mobSpawningOff = "off".equalsIgnoreCase(p.getProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot").trim());
+         mobCapPerPlot = Math.max(0, Math.min(1024, inted(p, "mob-cap-per-plot", mobCapPerPlot)));
++        portals = bool(p, "portals", portals);
+         portalStreetSpacing = Math.max(1, inted(p, "portal-street-spacing", portalStreetSpacing));
+         advanceTime = bool(p, "advance-time", advanceTime);
+         advanceWeather = bool(p, "advance-weather", advanceWeather);
+@@ -103,6 +105,7 @@ public final class PlotsConfig {
+     public static void save() {
+         if (file == null) return;
+         Properties p = new Properties();
++        p.setProperty("plot-size", Integer.toString(PlotConfig.PLOT_SIZE)); // read at startup by PlotConfig
+         p.setProperty("allow-player-combine", Boolean.toString(allowPlayerCombine));
+         p.setProperty("max-merge-cells", Integer.toString(maxMergeCells));
+         p.setProperty("claim-limit", Integer.toString(claimLimit));
+@@ -112,6 +115,7 @@ public final class PlotsConfig {
+         p.setProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport");
+         p.setProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot");
+         p.setProperty("mob-cap-per-plot", Integer.toString(mobCapPerPlot));
++        p.setProperty("portals", Boolean.toString(portals));
+         p.setProperty("portal-street-spacing", Integer.toString(portalStreetSpacing));
+         p.setProperty("advance-time", Boolean.toString(advanceTime));
+         p.setProperty("advance-weather", Boolean.toString(advanceWeather));
+@@ -137,7 +141,7 @@ public final class PlotsConfig {
+         p.setProperty("economy-currency-id", economyCurrencyId);
+         try {
+             StringWriter out = new StringWriter();
+-            p.store(out, "FabricPlots settings — edit then run /plot reload. Geometry (plot/road size, Y) needs a world regen and lives in code.");
++            p.store(out, "FabricPlots settings — edit then run /plot reload. plot-size is read at startup and needs a fresh plot world; road size and Y live in code.");
+             AtomicFiles.writeLines(file, Arrays.asList(out.toString().split("\\R", -1)));
+         } catch (Exception e) { System.err.println("[FabricPlots] Failed to write config: " + e); }
+     }
+diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
+index 04ddd3f..40677e8 100644
+--- a/src/main/java/com/fabricplots/gui/PlotMenus.java
++++ b/src/main/java/com/fabricplots/gui/PlotMenus.java
+@@ -98,7 +98,7 @@ public final class PlotMenus {
+                 g.close();
+             } else com.draftsmith.gui.DraftEditGui.open(sp);
+         }));
+-        g.setSlot(14, btn(Items.RECOVERY_COMPASS, "Portal Keys", "A key for each plot you own — usable at your base.", (i, t, a, gg) -> {
++        if (PlotsConfig.portals) g.setSlot(14, btn(Items.RECOVERY_COMPASS, "Portal Keys", "A key for each plot you own — usable at your base.", (i, t, a, gg) -> {
+             if (!allowed(sp, "fabricplots.portal")) return;
+             g.close();
+             int n = 0;
+diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
+index 70fb191..ce816a2 100644
+--- a/src/main/java/com/fabricplots/protect/PlotProtection.java
++++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
+@@ -170,6 +170,9 @@ public final class PlotProtection {
+         // On a dedicated server this is false, so real ops are gated by the permission check below.
+         if (server.isSingleplayer()) return true;
+         if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
+-        return server.isSingleplayerOwner(sp.nameAndId()) || server.getPlayerList().isOp(sp.nameAndId());
++        if (server.isSingleplayerOwner(sp.nameAndId()) || server.getPlayerList().isOp(sp.nameAndId())) return true;
++        // Staff without op: the fabricplots.admin node from a permissions mod (e.g. LuckPerms) counts too,
++        // so /plot admin's build mode actually lets them edit roads and other plots.
++        return com.fabricplots.compat.Perms.check(sp, "fabricplots.admin", false);
+     }
+ }
+diff --git a/src/main/java/com/fabricplots/protect/PortalManager.java b/src/main/java/com/fabricplots/protect/PortalManager.java
+index 4db585f..1f253ee 100644
+--- a/src/main/java/com/fabricplots/protect/PortalManager.java
++++ b/src/main/java/com/fabricplots/protect/PortalManager.java
+@@ -142,6 +142,7 @@ public final class PortalManager {
+ 
+     public static void register() {
+         UseBlockCallback.EVENT.register((player, world, hand, hit) -> {
++            if (!PlotsConfig.portals && world instanceof ServerLevel) return InteractionResult.PASS;
+             ItemStack held = player.getItemInHand(hand);
+             // CLIENT: the Key has no default right-click action, so force-forward its click to the server.
+             if (!(world instanceof ServerLevel level) || !(player instanceof ServerPlayer sp)) {
+@@ -359,7 +360,7 @@ public final class PortalManager {
+ 
+     /** Build the exit portal for a freshly-claimed plot cell (no-op if it has no portal street or already exists). */
+     public static void buildExitPortal(ServerLevel plots, PlotPos cell) {
+-        if (plots == null) return;
++        if (plots == null || !PlotsConfig.portals) return;
+         int streetPx = portalStreetFor(cell.px());
+         if (streetPx == Integer.MIN_VALUE) return;
+         // Skip streets that are interior to a merge (dissolved to grass — not a real road).
+@@ -438,6 +439,17 @@ public final class PortalManager {
+         return live.size();
+     }
+ 
++    /** With portals off: remove every portal in the plot world (exit portals and lit frames). */
++    public static int removeAll(ServerLevel plots) {
++        if (plots == null) return 0;
++        Set<Portal> all = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
++        for (Portal p : ACTIVE.values()) if (p.dim == plots.dimension()) all.add(p);
++        for (Portal p : FRAMES.values()) if (p.dim == plots.dimension()) all.add(p);
++        for (Portal p : all) destroyPortal(plots, p);
++        if (!all.isEmpty()) save();
++        return all.size();
++    }
++
+     /** True if a block belongs to a live portal in the plot world — the painter must leave these alone. */
+     public static boolean isProtected(BlockPos pos) {
+         if (ACTIVE.containsKey(key(FabricPlots.PLOTS_DIM, pos))) return true;

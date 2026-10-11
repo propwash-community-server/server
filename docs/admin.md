@@ -66,6 +66,56 @@ deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that h
 staff run `/flan bypass` to edit and run it again to turn it off. On survival, players claim land with
 a golden hoe.
 
+## Plots
+
+The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
+(PlotSquared-style, on Fabric so drones work). Players arrive in the plot world (the datapack in
+`servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
+plots doesn't run Flan.
+
+Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
+`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 1,
+builder 2, staff 64).
+
+| Task | Command |
+|---|---|
+| Claim | `/plot auto` or `/plot claim` on an empty plot, or `/plot menu` |
+| Let someone build | `/plot trust <name>` |
+| Edit any plot (staff) | `/plot admin` (opt-in, run again to stop) |
+
+### Our FabricPlots build
+
+Upstream FabricPlots has the plot size fixed at 32 in code and puts portals on the roads (for
+servers where the plot world sits next to a survival world). We run its 26.3 branch with
+[`fabricplots.patch`](../servers/plots/fabricplots.patch), which adds two settings to
+`config/fabricplots.properties`; both default to upstream behavior:
+
+| Setting | Default | Ours | What it does |
+|---|---|---|---|
+| `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
+| `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
+
+It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla ops use the build
+mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which
+staff and admin have on plots.
+
+The jar is in the world store under `mods/`. The settings are in `[config]` of
+`servers/plots/server.toml`, applied from the second deploy (FabricPlots writes its config on
+first start). The grid is generated with the plot size, so **changing `plot-size` needs a fresh
+plots world**; keep the spawn in the datapack and `spawn-x/y/z` at the same spot.
+
+To rebuild for a new FabricPlots or Minecraft version (JDK 25):
+
+1. Clone [draftsmith](https://github.com/beachfury/draftsmith) and
+   [fabricplots](https://github.com/beachfury/fabricplots), check out the matching branch in both.
+2. In draftsmith: `./gradlew publishToMavenLocal`.
+3. In fabricplots: `git apply <repo>/servers/plots/fabricplots.patch`, set
+   `mod_version=<version>-plotsize.<n>` in `gradle.properties` (a new `<n>` per build, so the
+   deploy sees a new jar name), then `./gradlew build`.
+4. Upload `build/libs/fabricplots-*-plotsize+*.jar` to the world store as
+   `mods/fabricplots-<version>-plotsize-<mc>.jar` (no `+`), and point the url in
+   `servers/plots/server.toml` at it.
+
 ## Bans
 
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.

@@ -1,0 +1,48 @@
+type = "fabric"
+port = 25570
+ram = "1536M"
+jar = "fabric-server.jar"
+url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
+mods = [
+    "https://cdn.modrinth.com/data/P7dR8mSH/versions/v2j28coa/fabric-api-0.162.0%2B26.3.jar",
+    "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
+    "https://mediafilez.forgecdn.net/files/9073/555/propwash-fabric-26.3-0.4.0.jar",
+    # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
+    # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
+    "https://mediafilez.forgecdn.net/files/9076/353/justmoreparts-fabric-26.3-1.0.0.jar",
+    "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
+    "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
+    # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
+    "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
+    # Creative plot world (PlotSquared-style): claim, trust; protects plots and roads. It does the
+    # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with "plot-size" and
+    # "portals" settings and a /plot admin fix, from fabricplots.patch, in the world store. See docs/admin.md#plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.3-26.3.jar",
+    # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
+    "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
+]
+
+# 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
+# at startup and the grid is generated with it: changing it needs a fresh plots world.
+# Spawn is the middle of the road crossing at the corner of the four spawn plots around (0,0),
+# standing on the spawn build (y 69). Keep the plots_spawn datapack at the same spot.
+[config."config/fabricplots.properties"]
+plot-size = "120"
+spawn-x = "-9"
+spawn-y = "69"
+spawn-z = "-9"
+# The street sweeper rebuilds roads (removing anything built on them) except this far from spawn,
+# so the spawn area's roads can be built on: 145 blocks each way.
+street-sweeper-spawn-radius = "145"
+allow-player-combine = "false"
+# No portal system: the plot world is the whole server, so no calcite exit portals on the roads,
+# no Portal Key (compass) on claim, no /plot key. Existing portals are removed on start.
+portals = "false"
+
+# Only written when the server is first created. Nobody uses the overworld: players spawn in the
+# plot world (files/world/datapacks/plots_spawn), where FabricPlots puts them in creative.
+[new_world]
+motd = "Propwash Plots"
+level-type = "minecraft\\:flat"
+generate-structures = "false"
