@@ -43,6 +43,11 @@ def test_map_on_the_map_shows_the_title_again(on_map):
     on_map.expect_title(MAPS[MAP].get("title", MAP.capitalize()), f"by {MAPS[MAP]['author']}")
 
 
+def test_the_map_has_its_world_border():
+    size = MAPS[MAP]["border"]["size"]
+    assert f"{size} block" in FPV.rcon(f"execute in maps:{MAP} run worldborder get")
+
+
 def test_blocks_cannot_be_broken(on_map):
     FPV.rcon(f"execute in maps:{MAP} run setblock 4 100 4 minecraft:stone")
     on_map.look_at(4.5, 100.5, 4.5)

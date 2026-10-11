@@ -19,12 +19,16 @@ slow.
    `--local` uploads to the local store; drop it for the real bucket. Upload to the real bucket
    before the PR below is merged: a deploy that can't find the map's archive fails.
 2. Open a PR with `servers/fpv/maps/<name>.toml`, the title and author shown to players entering
-   the map:
+   the map, and its world border (center and size in blocks, a square around the built part):
 
    ```toml
    title = "Flowmap"
    author = "SHO"
+   border = { x = 24, z = 32, size = 224 }
    ```
+
+   Past the border, only void would be generated. It is set on every start, so changing it
+   takes effect on the next deploy.
 
    Once it's merged and deployed, fpv restarts with the new dimension, its clock, its race courses
    and a `/map <name>` entry.

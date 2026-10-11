@@ -249,6 +249,9 @@ def map_load_function(server_maps):
             f"{unset} time of maps:{m['name']} set noon",
             f"{unset} time of maps:{m['name']} pause",
             f"scoreboard players set {m['name']} maps_clock 1",
+            # Each dimension has its own border; without one, flying out generates void forever.
+            f"execute in maps:{m['name']} run worldborder center {m['border']['x']} {m['border']['z']}",
+            f"execute in maps:{m['name']} run worldborder set {m['border']['size']}",
         ]
     return "\n".join(lines) + "\n"
 

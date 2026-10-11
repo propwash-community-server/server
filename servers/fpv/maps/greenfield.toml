@@ -1,2 +1,3 @@
 title = "Greenfield"
 author = "Greenfield Team (greenfieldmc.net)"
+border = { x = 1280, z = -768, size = 10752 }
