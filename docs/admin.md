@@ -145,14 +145,17 @@ kept as Carbon rewrites them on start, so edit them in place (a reformatted file
 proxy on every deploy). Who may use a channel is `carbon.channel.<name>.see` / `.speak` in
 [`permissions.toml`](../permissions.toml).
 
-No server says "joined the game", "left the game" or "has made the advancement" in chat (the server
-log still has joins and leaves):
+No server says "joined the game", "left the game", "is now AFK" or "has made the advancement" in
+chat (the server log still has joins, leaves and AFK):
 
-| Server | Join and leave | Advancements |
+| Server | Join, leave and AFK | Advancements |
 |---|---|---|
-| hub | EssentialsX `custom-join-message` / `custom-quit-message` | `files/world/datapacks/quiet` |
+| hub | EssentialsX `custom-join-message`, `custom-quit-message`, `broadcast-afk-message` | `files/world/datapacks/quiet` |
 | fpv | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
 | plots | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/plots_spawn` |
+
+The quiet mod's AFK part hooks into Essential Commands (`PlayerData.setAfk`). If an Essential
+Commands update changes that, the AFK messages come back (no crash): check after updating it.
 
 The game rule is `show_advancement_messages`. Paper keeps game rules per dimension, so the hub's
 datapack also sets it in `maps:mountains`, its spawn map. Players still see their own advancement

@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "community.propwash.quiet.mixin",
   "compatibilityLevel": "JAVA_25",
-  "server": ["PlayerListMixin", "ServerGamePacketListenerImplMixin"],
+  "server": ["PlayerListMixin", "ServerGamePacketListenerImplMixin", "EssentialCommandsAfkMixin"],
   "injectors": {
     "defaultRequire": 1
   }
