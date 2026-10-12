@@ -145,6 +145,24 @@ kept as Carbon rewrites them on start, so edit them in place (a reformatted file
 proxy on every deploy). Who may use a channel is `carbon.channel.<name>.see` / `.speak` in
 [`permissions.toml`](../permissions.toml).
 
+No server says "joined the game", "left the game" or "has made the advancement" in chat (the server
+log still has joins and leaves):
+
+| Server | Join and leave | Advancements |
+|---|---|---|
+| hub | EssentialsX `custom-join-message` / `custom-quit-message` | `files/world/datapacks/quiet` |
+| fpv | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
+| plots | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/plots_spawn` |
+
+The game rule is `show_advancement_messages`. Paper keeps game rules per dimension, so the hub's
+datapack also sets it in `maps:mountains`, its spawn map. Players still see their own advancement
+pop-up; advancements stay on, since the fpv datapacks use them.
+
+To change the quiet mod (JDK 25): edit [`mods/quiet`](../mods/quiet/), raise `mod_version` in its
+`gradle.properties`, `./gradlew build` there, upload `build/libs/quiet-<version>+<mc>.jar` to the
+world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in the fpv and plots
+`server.toml`.
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

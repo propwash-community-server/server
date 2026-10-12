@@ -18,3 +18,6 @@ gamerule mob_griefing false
 gamerule fire_spread_radius_around_player 0
 gamerule tnt_explodes false
 gamerule allow_entering_nether_using_portals false
+
+# No "has made the advancement" in chat.
+gamerule show_advancement_messages false
