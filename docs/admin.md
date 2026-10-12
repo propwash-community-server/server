@@ -175,6 +175,36 @@ edit it, raise the version in `gradle.properties` and `Warmup.java`, `./gradlew 
 `build/libs/warmup-<version>.jar` to the world store as `mods/warmup-<version>.jar`, and change the
 URL in the velocity `server.toml`.
 
+## Vanish
+
+`/v` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
+server switches: not in any tab list, the server list or `/list`, not drawn at all (no invisibility
+particles), not in name suggestions, and commands, `/tpa` and `/msg` don't find you. Public chat is
+off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanished players
+(`propwash.vanish.see`, `vanish.feature.view`, `essentials.vanish.see`, `carbon.whisper.vanished`).
+
+| Part | Does |
+|---|---|
+| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`; keeps who is vanished; Velocitab tab list, server list, blocks chat; tells Carbon |
+| [Vanish](https://modrinth.com/mod/vanish) (fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
+| EssentialsX `/vanish` (hub) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
+| our Carbon build | leaves vanished players out of `/msg` and its suggestions |
+
+`/v` toggles on the proxy and is sent on to the server you're on as its own `/vanish on|off`.
+Admins' `*` excludes `essentials.vanish.effect` (the invisibility effect) and
+`essentials.silentjoin.vanish`, which `/v` sets per player. The Paper servers are listed in
+`files/plugins/vanish/config.properties`.
+
+Carbon on Velocity doesn't know about vanish (its check is a TODO that says nobody is), so we run
+Carbon with [`servers/velocity/carbon-vanish.patch`](../servers/velocity/carbon-vanish.patch), which
+asks `mods/vanish`. To rebuild it for a new Carbon (JDK 25): clone
+[Carbon](https://github.com/Hexaoxide/Carbon) at the release tag, `git apply` the patch, set
+`projectVersion=<version>-vanish.<n>` in `gradle.properties`, then
+`./gradlew :carbonchat-velocity:build -x test -x spotlessCheck`, upload
+`velocity/build/libs/carbonchat-velocity-<version>-vanish.<n>.jar` to the world store under `mods/`
+and change the URL in the velocity `server.toml`. `mods/vanish` is rebuilt like `mods/warmup`
+(version in `gradle.properties` and `Vanish.java`).
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

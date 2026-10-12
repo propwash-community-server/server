@@ -20,7 +20,9 @@ mods = [
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.1.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
+    # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
+    "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
@@ -47,6 +49,10 @@ force-gamemode = "true"
 use_permissions_api = "true"
 # With datapacks/warp_messages, /map and /warp tp say "Teleported to <warp>." and nothing more.
 print_teleport_coordinates = "false"
+
+# Vanish (/v): no fake "left the game" / "joined the game" when vanishing, like every other join message.
+[config."config/vanish.hocon"]
+send-join-disconnect-message = "false"
 
 # Flan world rules: none of these, anywhere on fpv (maps included), unless in /flan bypass.
 [flan]

@@ -93,6 +93,11 @@ permissions = [
     "carbon.clearchat.clear",
     "carbon.clearchat.exempt",
     "carbon.ignore.exempt",
+    # Seeing vanished players (/v, docs/admin.md#vanish): tab list, each server, /msg.
+    "propwash.vanish.see",
+    "vanish.feature.view",
+    "essentials.vanish.see",
+    "carbon.whisper.vanished",
     # Plots: no practical limit (64 is the highest node), and the plot staff tools, which are op-only
     # by default (nobody is op): /plot admin to edit any plot, /plot setowner, /plot reload.
     "fabricplots.limit.64 server=plots",
@@ -102,4 +107,12 @@ permissions = [
 ]
 
 [groups.admin]
-permissions = ["weight.300", '"prefix.300.<admin>[Admin]</admin> "', "*"]
+permissions = [
+    "weight.300",
+    '"prefix.300.<admin>[Admin]</admin> "',
+    "*",
+    # Not from "*": the invisibility effect (and its particles) of EssentialsX's /vanish, and arriving
+    # vanished on the hub, which mods/vanish sets per player only while they are vanished.
+    "essentials.vanish.effect false",
+    "essentials.silentjoin.vanish false",
+]
