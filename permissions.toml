@@ -37,6 +37,14 @@ permissions = [
     "carbon.chatlinks",
     # Plots: one 120x120 plot.
     "fabricplots.limit.1 server=plots",
+    # Plots build tools (DraftSmith, inside FabricPlots): only edit plots the player can build on,
+    # at most 65,536 blocks per edit. Not draftsmith.admin, which edits outside plots.
+    "draftsmith.use server=plots",
+    "draftsmith.wand server=plots",
+    "draftsmith.edit server=plots",
+    "draftsmith.shapes server=plots",
+    "draftsmith.brush server=plots",
+    "draftsmith.measure server=plots",
 ]
 
 [groups.builder]
