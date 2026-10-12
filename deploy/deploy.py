@@ -30,13 +30,13 @@ LOCAL = host.data.get("local", False)
 # The test inventory runs every server with the same, smaller amount of RAM.
 RAM = host.data.get("ram")
 
-configs = {p.parent.name: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/*/server.toml"))}
+configs = {p.parent.name: tomllib.loads(p.read_text(encoding="utf-8")) for p in sorted(ROOT.glob("servers/*/server.toml"))}
 velocity = configs.pop("velocity")
 backends = configs
 
 maps = {}
 for p in sorted(ROOT.glob("servers/*/maps/*.toml")):
-    maps.setdefault(p.parent.parent.name, []).append({"name": p.stem, **tomllib.loads(p.read_text())})
+    maps.setdefault(p.parent.parent.name, []).append({"name": p.stem, **tomllib.loads(p.read_text(encoding="utf-8"))})
 
 
 def read_secret(name, kind="binary"):
@@ -52,8 +52,8 @@ secret = read_secret("forwarding.secret")
 rcon_password = read_secret("rcon.secret")
 backup_env = read_secret("backup.env", "dotenv")
 mariadb_password = read_secret("mariadb.secret")
-permissions = tomllib.loads((ROOT / "permissions.toml").read_text())
-palette = tomllib.loads((ROOT / "palette.toml").read_text())
+permissions = tomllib.loads((ROOT / "permissions.toml").read_text(encoding="utf-8"))
+palette = tomllib.loads((ROOT / "palette.toml").read_text(encoding="utf-8"))
 
 
 def filename(url):
@@ -190,7 +190,7 @@ def jar_folder(label, folder, urls):
 def palette_file(p):
     # A text file's contents with the palette tags expanded, or the file itself if it has none.
     try:
-        text = p.read_text()
+        text = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         return str(p)
     return StringIO(palette_tags(text)) if palette_tags(text) != text else str(p)
@@ -210,7 +210,7 @@ def extra_files(name, d):
 MAP_PACK = json.dumps({"pack": {"description": "Propwash maps", "min_format": 121, "max_format": 999}})
 # Each map has its own clock (so /time on a map only changes that map), started paused at noon once.
 # The vanilla files come from the 26.3 server jar; copy them again when upgrading Minecraft.
-VANILLA = {p.stem: json.loads(p.read_text()) for p in (ROOT / "deploy/vanilla").glob("*.json")}
+VANILLA = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "deploy/vanilla").glob("*.json")}
 LOAD_TAG = json.dumps({"values": ["maps:load"]})
 TICK_TAG = json.dumps({"values": ["maps:tick"]})
 
@@ -380,7 +380,7 @@ if not LOCAL:
     )
 
     # Additive for now: switch to delete_keys=True once every current key is in access/.
-    keys = [p.read_text().strip() for p in sorted(ROOT.glob("access/*.pub"))]
+    keys = [p.read_text(encoding="utf-8").strip() for p in sorted(ROOT.glob("access/*.pub"))]
     if keys:
         server.user_authorized_keys(name="root SSH keys", user="root", public_keys=keys)
 
