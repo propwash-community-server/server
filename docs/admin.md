@@ -170,7 +170,17 @@ world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in t
 
 For two minutes after the proxy starts, nobody can join ("The server is starting. Try again in N
 seconds."), so the servers have time to load after a restart. Staff and admin can
-(`warmup.bypass`). It's our Velocity plugin [`mods/warmup`](../mods/warmup/); to change it (JDK 25),
+(`warmup.bypass`).
+
+| Task | Command (admin, `warmup.admin`) |
+|---|---|
+| Let everyone in before the two minutes are up | `/open` |
+| Kick everyone but staff from every server and keep them out ("The server is temporarily closed to the public. Try again soon.") | `/lockdown` |
+| End a lockdown | `/open` |
+
+A lockdown stays on through a proxy restart until `/open`. Both commands are logged in the proxy log.
+
+It's our Velocity plugin [`mods/warmup`](../mods/warmup/); to change it (JDK 25),
 edit it, raise the version in `gradle.properties` and `Warmup.java`, `./gradlew build` there, upload
 `build/libs/warmup-<version>.jar` to the world store as `mods/warmup-<version>.jar`, and change the
 URL in the velocity `server.toml`.
