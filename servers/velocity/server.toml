@@ -18,6 +18,9 @@ plugins = [
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/OxMy0xf6/SignedVelocity-Proxy-1.5.0.jar",
     # Placeholders for chat formats: <luckperms_prefix>, <player_current_server>.
     "https://cdn.modrinth.com/data/HQyibRsN/versions/Kpbing8i/MiniPlaceholders-Velocity-3.2.0.jar",
+    # Nobody joins in the first two minutes after the proxy starts (except warmup.bypass), so the
+    # servers have time to load; our mods/warmup, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/warmup-1.0.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [

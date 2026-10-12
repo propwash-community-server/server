@@ -84,6 +84,8 @@ permissions = [
     "worldedit.*",
     "essentials.*",
     "libertybans.*",
+    # Joining in the first two minutes after a proxy restart (mods/warmup).
+    "warmup.bypass",
     # Staff chat channel (/staff, /sc, or start a message with #) and chat moderation.
     "carbon.channel.staff",
     "carbon.channel.staff.see",

@@ -166,6 +166,15 @@ To change the quiet mod (JDK 25): edit [`mods/quiet`](../mods/quiet/), raise `mo
 world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in the fpv and plots
 `server.toml`.
 
+## Startup
+
+For two minutes after the proxy starts, nobody can join ("The server is starting. Try again in N
+seconds."), so the servers have time to load after a restart. Staff and admin can
+(`warmup.bypass`). It's our Velocity plugin [`mods/warmup`](../mods/warmup/); to change it (JDK 25),
+edit it, raise the version in `gradle.properties` and `Warmup.java`, `./gradlew build` there, upload
+`build/libs/warmup-<version>.jar` to the world store as `mods/warmup-<version>.jar`, and change the
+URL in the velocity `server.toml`.
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

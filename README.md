@@ -5,7 +5,7 @@ The PropwashFPV community server.
 ```
 deploy/           inventory.py (prod, local, test), deploy.py, files/
 servers/<name>/   server.toml, files/, maps/
-mods/             Our own small Fabric mods
+mods/             Our own small mods and plugins
 local/            Local setup via Docker
 tools/            Admin tools (`uv run <>`)
 tests/e2e/        End-to-end tests
