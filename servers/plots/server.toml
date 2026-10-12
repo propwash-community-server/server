@@ -31,6 +31,8 @@ help = """
 <accent>/plot claim</accent>: claim the empty plot you stand on
 <accent>/plot menu</accent>: your plots and their settings
 <accent>/plot trust <player></accent>: let someone build on your plot
+<accent>/draft</accent>: build tools (fill, copy and paste, shapes, brushes, undo)
+<accent>/draft wand</accent>: select two corners for the build tools
 Only you and players you trust can build on your plot.
 """
 

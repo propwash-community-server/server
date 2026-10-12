@@ -82,6 +82,12 @@ builder 2, staff 64).
 | Let someone build | `/plot trust <name>` |
 | Edit any plot (staff) | `/plot admin` (opt-in, run again to stop) |
 
+Everyone has the build tools built into FabricPlots ([DraftSmith](https://github.com/beachfury/draftsmith)):
+`/draft` opens them, `/draft wand` selects corners. They only change blocks on plots the player can
+build on and refuse edits over 65,536 blocks (fixed in the mod). The `draftsmith.*` nodes are in
+[`permissions.toml`](../permissions.toml); `draftsmith.admin` (editing outside plots) is left out.
+WorldEdit can't be limited to plots, so on plots it stays with staff.
+
 ### Our FabricPlots build
 
 Upstream FabricPlots has the plot size fixed at 32 in code and puts portals on the roads (for
