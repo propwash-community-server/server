@@ -35,6 +35,8 @@ custom-join-message = "''"
 custom-quit-message = "''"
 # "You are now AFK" only to the player, not to everyone.
 broadcast-afk-message = "false"
+# Players /v made vanished (essentials.silentjoin.vanish, set by mods/vanish) arrive vanished.
+allow-silent-join-quit = "true"
 
 # Only written when the server is first created.
 [new_world]

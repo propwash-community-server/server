@@ -13,7 +13,9 @@ plugins = [
     # Network-wide TAB list: server and LuckPerms role per player.
     "https://cdn.modrinth.com/data/Q10irTG0/versions/7gyD0ard/Velocitab-1.7.11-b34b3ec.jar",
     # Network-wide chat: global, local (per server) and staff channels, files/plugins/carbonchat/channels/.
-    "https://cdn.modrinth.com/data/QzooIsZI/versions/A8tY8WPX/carbonchat-velocity-3.0.0-beta.39.jar",
+    # Our build with carbon-vanish.patch, so /msg and its name suggestions leave out vanished players
+    # (mods/vanish); see docs/admin.md#vanish.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/carbonchat-velocity-3.0.0-beta.39-vanish.1.jar",
     # Lets the proxy handle signed chat; also needed on every backend.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/OxMy0xf6/SignedVelocity-Proxy-1.5.0.jar",
     # Placeholders for chat formats: <luckperms_prefix>, <player_current_server>.
@@ -21,6 +23,8 @@ plugins = [
     # Nobody joins in the first two minutes after the proxy starts (except warmup.bypass), so the
     # servers have time to load; our mods/warmup, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/warmup-1.0.0.jar",
+    # Network-wide /v: our mods/vanish, built and uploaded by hand; see docs/admin.md#vanish.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/vanish-1.0.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [

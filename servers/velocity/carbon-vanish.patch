@@ -1,0 +1,36 @@
+diff --git a/velocity/src/main/java/net/draycia/carbon/velocity/users/CarbonPlayerVelocity.java b/velocity/src/main/java/net/draycia/carbon/velocity/users/CarbonPlayerVelocity.java
+index 7c0a0ee..ceca35b 100644
+--- a/velocity/src/main/java/net/draycia/carbon/velocity/users/CarbonPlayerVelocity.java
++++ b/velocity/src/main/java/net/draycia/carbon/velocity/users/CarbonPlayerVelocity.java
+@@ -21,10 +21,13 @@ package net.draycia.carbon.velocity.users;
+ 
+ import com.google.inject.assistedinject.Assisted;
+ import com.google.inject.assistedinject.AssistedInject;
++import com.velocitypowered.api.plugin.PluginContainer;
+ import com.velocitypowered.api.proxy.Player;
+ import com.velocitypowered.api.proxy.ProxyServer;
+ import java.util.Locale;
+ import java.util.Optional;
++import java.util.UUID;
++import java.util.function.Predicate;
+ import net.draycia.carbon.api.users.CarbonPlayer;
+ import net.draycia.carbon.api.util.InventorySlot;
+ import net.draycia.carbon.common.users.CarbonPlayerCommon;
+@@ -56,9 +59,15 @@ public final class CarbonPlayerVelocity extends WrappedCarbonPlayer implements F
+     }
+ 
+     @Override
++    @SuppressWarnings("unchecked")
+     public boolean vanished() {
+-        //TODO: VelocityVanish compatibility
+-        return false;
++        // Propwash: our Velocity plugin "vanish" is a Predicate<UUID> of who is vanished (java.base
++        // type, so it crosses plugin class loaders). Without it, nobody is vanished.
++        return this.server.getPluginManager().getPlugin("vanish")
++            .flatMap(PluginContainer::getInstance)
++            .filter(Predicate.class::isInstance)
++            .map(plugin -> ((Predicate<UUID>) plugin).test(this.uuid()))
++            .orElse(false);
+     }
+ 
+     public Optional<Player> player() {

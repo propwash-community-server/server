@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+version = project.plugin_version
+base.archivesName = 'vanish'
+
+repositories {
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://repo.william278.net/releases/' }
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly "com.velocitypowered:velocity-api:${project.velocity_version}"
+    annotationProcessor "com.velocitypowered:velocity-api:${project.velocity_version}"
+    compileOnly 'net.luckperms:api:5.4'
+    // Only the API classes are used; same API as the 1.7.11 we run.
+    compileOnly('net.william278:velocitab:1.7.9') { transitive = false }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}

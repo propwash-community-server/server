@@ -504,7 +504,7 @@ for name, cfg in backends.items():
             content = "".join(f"{key}={value}\n" for key, value in settings.items())
             changes.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
         elif host.get_fact(File, path=f"{d}/{rel}"):
-            sep = "=" if rel.endswith(".properties") else ": "
+            sep = "=" if rel.endswith((".properties", ".hocon")) else ": "
             for key, value in settings.items():
                 changes.append(files.line(
                     name=f"{name}: {rel} {key}",
