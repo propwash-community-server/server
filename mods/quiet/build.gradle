@@ -1,0 +1,25 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
+    id 'java'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+base.archivesName = 'quiet'
+
+dependencies {
+    // Minecraft 26.x ships with Mojang's names, so no mappings.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}

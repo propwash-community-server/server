@@ -30,6 +30,11 @@ delay-motd = "-1"
 notify-no-new-mail = "false"
 # Nested under newbies:, hence the indent. '' = no kit on first join (the default gives stone tools).
 "  kit" = "''"
+# No "joined the game" / "left the game" in chat ('' hides them; none would be vanilla's).
+custom-join-message = "''"
+custom-quit-message = "''"
+# "You are now AFK" only to the player, not to everyone.
+broadcast-afk-message = "false"
 
 # Only written when the server is first created.
 [new_world]

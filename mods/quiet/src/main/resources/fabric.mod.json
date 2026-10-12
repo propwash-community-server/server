@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "quiet",
+  "version": "${version}",
+  "name": "Quiet",
+  "description": "No \"joined the game\" / \"left the game\" or Essential Commands AFK chat messages; they still go to the server log.",
+  "license": "MIT",
+  "environment": "server",
+  "mixins": ["quiet.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3"
+  }
+}

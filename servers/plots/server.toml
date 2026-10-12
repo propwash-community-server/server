@@ -22,6 +22,8 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.3-26.3.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
+    # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.1.0-26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
