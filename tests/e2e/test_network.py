@@ -1,7 +1,7 @@
 import pytest
 
 import harness
-from harness import FPV, HUB, Server, servers
+from harness import FPV, HUB, Server, eventually, servers
 
 
 def test_joining_lands_in_the_hub(player):
@@ -18,6 +18,11 @@ def test_switching_servers(player):
 
 def test_tab_list_shows_the_player(player):
     assert player.name in player.tab_players()
+
+
+def test_tab_list_shows_the_server(player):
+    player.go(HUB)
+    eventually(lambda: f"[hub] {player.name}" in player.tab_names(), message="the server in the tab list")
 
 
 @pytest.mark.parametrize("name", servers())

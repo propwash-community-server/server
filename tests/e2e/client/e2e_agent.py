@@ -43,6 +43,13 @@ def tab_players():
     return [str(p.getProfile().name()) for p in connection.getListedOnlinePlayers()]
 
 
+def tab_names():
+    """The players' entries in the tab list, as shown."""
+    connection = JavaClass("net.minecraft.client.Minecraft").getInstance().getConnection()
+    names = [(p.getTabListDisplayName(), p.getProfile().name()) for p in connection.getListedOnlinePlayers()]
+    return [str(name) if shown is None else str(shown.getString()) for shown, name in names]
+
+
 def world_state():
     """Which world the client is in (a new one on every server switch, None while there is none),
     and the screen open, e.g. while it loads."""
@@ -51,7 +58,7 @@ def world_state():
     return {"world": world, "screen": minescript.screen_name()}
 
 
-CALLS = {f.__name__: f for f in (chat_lines, title, tab_players, world_state)}
+CALLS = {f.__name__: f for f in (chat_lines, title, tab_players, tab_names, world_state)}
 
 
 def plain(value):

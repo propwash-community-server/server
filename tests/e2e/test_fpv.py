@@ -48,6 +48,10 @@ def test_the_map_has_its_world_border():
     assert f"{size} block" in FPV.rcon(f"execute in maps:{MAP} run worldborder get")
 
 
+def test_the_tab_list_shows_the_map(on_map):
+    eventually(lambda: f"[fpv: {MAP}] {on_map.name}" in on_map.tab_names(), message="the map in the tab list")
+
+
 def test_blocks_cannot_be_broken(on_map):
     FPV.rcon(f"execute in maps:{MAP} run setblock 4 100 4 minecraft:stone")
     on_map.look_at(4.5, 100.5, 4.5)

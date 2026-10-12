@@ -208,6 +208,9 @@ class Player:
     def tab_players(self):
         return self.call("tab_players")
 
+    def tab_names(self):
+        return self.call("tab_names")
+
     def world(self):
         """The world the client is in; a server switch replaces it."""
         return self.call("world_state")["world"]
