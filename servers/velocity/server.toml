@@ -10,8 +10,10 @@ plugins = [
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/tamnmXad/LuckPerms-Velocity-5.5.71.jar",
     # Network-wide bans, mutes and kicks; data in MariaDB (sql.yml written by the deploy).
     "https://cdn.modrinth.com/data/PgXAUxLZ/versions/TUuNKL02/LibertyBans_Release-1.2.0-M1.jar",
-    # Network-wide TAB list: server and LuckPerms role per player.
-    "https://cdn.modrinth.com/data/Q10irTG0/versions/7gyD0ard/Velocitab-1.7.11-b34b3ec.jar",
+    # Network-wide TAB list: server (and map on fpv, from TAB-Bridge) and LuckPerms role per player.
+    "https://cdn.modrinth.com/data/gG7VFbG0/versions/UDraViyI/TAB%20v6.2.0.jar",
+    # Scoreboard teams for TAB, which sort the tab list.
+    "https://github.com/NEZNAMY/VelocityScoreboardAPI/releases/download/2.1.1/VelocityScoreboardAPIv.2.1.1.jar",
     # Network-wide chat: global, local (per server) and staff channels, files/plugins/carbonchat/channels/.
     # Our build with carbon-vanish.patch, so /msg and its name suggestions leave out vanished players
     # (mods/vanish); see docs/admin.md#vanish.

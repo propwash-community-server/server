@@ -1,0 +1,109 @@
+# TAB's config.yml, written by the deploy; entries per player are in files/plugins/tab/groups.yml.
+# https://github.com/NEZNAMY/TAB/wiki
+# TAB rewrites the file (and the deploy then restarts the proxy) when a key is missing, so unused
+# features still have their keys.
+header-footer:
+  enabled: false
+
+tablist-name-formatting:
+  enabled: true
+  disable-condition: ""
+
+scoreboard-teams:
+  enabled: true
+  enable-collision: false
+  invisible-nametags: false
+  # Highest role first, as the prefix in permissions.toml says.
+  sorting-types:
+    - "PLACEHOLDER_HIGH_TO_LOW:%luckperms-weight%"
+    - "PLACEHOLDER_A_TO_Z:%server%"
+    - "PLACEHOLDER_A_TO_Z:%player%"
+  case-sensitive-sorting: false
+  can-see-friendly-invisibles: false
+  disable-condition: ""
+
+playerlist-objective:
+  enabled: false
+  title: TAB
+  value: ""
+  render-type: INTEGER
+
+belowname-objective:
+  enabled: false
+  fancy-value-default: NPC
+  fancy-value: ""
+
+prevent-spectator-effect:
+  enabled: false
+
+bossbar:
+  enabled: false
+
+scoreboard:
+  enabled: false
+
+layout:
+  enabled: false
+
+ping-spoof:
+  enabled: false
+
+# Everyone sees the players of every server.
+global-playerlist:
+  enabled: true
+  display-others-as-spectators: false
+  display-vanished-players-as-spectators: true
+  isolate-unlisted-servers: false
+  update-latency: false
+  spy-servers: []
+  server-groups: {}
+
+placeholders:
+  date-format: "dd.MM.yyyy"
+  time-format: "HH:mm:ss"
+  time-offset: 0
+  register-tab-expansion: false
+  locale: en-US
+
+placeholder-refresh-intervals:
+  default-refresh-interval: 500
+
+# TAB-Bridge on fpv reports a map's dimension maps:<name> as the world world_<name>, and fpv's
+# overworld as world. Other servers have no TAB-Bridge, so there %world% is still the last fpv one.
+placeholder-output-replacements:
+  "%world%":
+{%- for m in maps %}
+    "world_{{ m.name }}": ": {{ m.name }}"
+{%- endfor %}
+    else: ""
+
+conditions:
+  map:
+    conditions:
+      - "%server%=fpv"
+    true: "%world%"
+    false: ""
+
+assign-groups-by-permissions: false
+primary-group-finding-list:
+  - default
+permission-refresh-interval: 1000
+debug: false
+
+mysql:
+  enabled: false
+
+proxy-support:
+  enabled: false
+
+components:
+  minimessage-support: true
+  disable-shadow-for-heads: true
+
+config-version: 7
+
+use-bukkit-permissions-manager: false
+use-online-uuid-in-tablist: true
+compensate-for-packetevents-bug: false
+per-world-playerlist:
+  enabled: false

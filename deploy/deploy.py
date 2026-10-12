@@ -86,7 +86,7 @@ DECORATIONS = {"bold": "l", "italic": "o", "underlined": "n", "strikethrough": "
 
 
 def palette_tags(text):
-    # For what reads MiniMessage itself: LuckPerms prefixes, Carbon, Velocitab, the MOTD.
+    # For what reads MiniMessage itself: LuckPerms prefixes, Carbon, TAB, the MOTD.
     return TAG.sub(lambda m: f"<{m[1]}{palette[m[2]]}>" if m[2] in palette else m[0], text)
 
 
@@ -469,6 +469,13 @@ changes = [
     # MiniPlaceholders loads its expansions (placeholder add-ons) from its own folder, not plugins/.
     *jar_folder("velocity: expansion", f"{v}/plugins/miniplaceholders/expansions", velocity.get("expansions", [])),
     *extra_files("velocity", v),
+    files.template(
+        name="velocity: TAB config.yml",
+        src=str(ROOT / "servers/velocity/tab.yml.j2"),
+        dest=f"{v}/plugins/tab/config.yml",
+        maps=maps.get("fpv", []),
+        **OWNER,
+    ),
     *config_ops("velocity", v, velocity),
 ]
 

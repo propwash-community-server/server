@@ -25,6 +25,8 @@ mods = [
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
     "https://cdn.modrinth.com/data/jrDKjZP7/versions/uySsk7v8/InvView-1.4.22-26.3%2B.jar",
+    # Tells the proxy's tab list (TAB) which map each player is on.
+    "https://cdn.modrinth.com/data/kG3hVbBX/versions/Jl1SwQoK/TAB-Bridge%20v6.2.3%20-%20Fabric.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
