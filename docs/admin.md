@@ -264,4 +264,5 @@ snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
+| Hub portals | [`/portal create`](https://advancedportals.sekwah.com) in game, then `systemctl restart mc@hub`: AdvancedPortals 2.8.0 only sets up portals fully when loading them, and a new one throws an error when it refuses a player |
 | fpv spawn | `/execute in maps:tutorial run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#tutorial)) |
