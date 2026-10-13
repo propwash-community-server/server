@@ -1,0 +1,10 @@
+
+<staff><bold>Staff</bold></staff> <muted>(only staff and admin see this; <accent>/help staff</accent> or <accent>/help admin</accent> shows just this part)</muted>
+<accent>#<message></accent>, <accent>/sc</accent>: staff chat
+<accent>/ban <player> [7d]</accent>, <accent>/mute</accent>, <accent>/kick</accent>, <accent>/unban</accent>, <accent>/history</accent>: on every server
+<accent>/plot admin</accent>: edit any plot (plots; again to stop), <accent>/plot setowner</accent>
+<accent>/flan bypass</accent>: build on fpv maps; <accent>/warp set <name></accent>, <accent>/time set</accent> on a map
+<admin><bold>Admin</bold></admin>
+<accent>/v</accent>: vanish on every server (again to show yourself)
+<accent>/lockdown</accent>: kick everyone but staff and keep them out; <accent>/open</accent> ends it
+<accent>/open</accent>: let everyone in during the two minutes after a restart

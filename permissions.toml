@@ -86,6 +86,8 @@ permissions = [
     "libertybans.*",
     # Joining in the first two minutes after a proxy restart (mods/warmup).
     "warmup.bypass",
+    # The staff part of /help (mods/staffhelp).
+    "propwash.help.staff",
     # Staff chat channel (/staff, /sc, or start a message with #) and chat moderation.
     "carbon.channel.staff",
     "carbon.channel.staff.see",

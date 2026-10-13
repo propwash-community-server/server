@@ -26,6 +26,9 @@ plugins = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/warmup-1.1.0.jar",
     # Network-wide /v: our mods/vanish, built and uploaded by hand; see docs/admin.md#vanish.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/vanish-1.0.0.jar",
+    # The staff part of /help (files/plugins/staffhelp/help.txt): our mods/staffhelp, built and
+    # uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.0.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
