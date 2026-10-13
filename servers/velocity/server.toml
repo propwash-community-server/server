@@ -25,10 +25,8 @@ plugins = [
     "https://cdn.modrinth.com/data/JPkVT6IT/versions/1MJzJZCs/NetworkJoinMessages-3.6.2.jar",
     # Placeholders for chat formats: <luckperms_prefix>, <player_current_server>.
     "https://cdn.modrinth.com/data/HQyibRsN/versions/Kpbing8i/MiniPlaceholders-Velocity-3.2.0.jar",
-    # Nobody joins in the first two minutes after the proxy starts, so the servers have time to load,
-    # or during /lockdown (except warmup.bypass); /open ends either. Our mods/warmup, built and
-    # uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/warmup-1.1.0.jar",
+    # /maintenance on|off: kicks everyone but staff (maintenance.bypass) and keeps them out until off.
+    "https://cdn.modrinth.com/data/VCAqN1ln/versions/qRSrfs7M/Maintenance-Velocity-5.1.0.jar",
     # Network-wide /v: our mods/vanish, built and uploaded by hand; see docs/admin.md#vanish.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/vanish-1.1.0.jar",
     # The staff part of /help (files/plugins/staffhelp/help.txt): our mods/staffhelp, built and

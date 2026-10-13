@@ -141,20 +141,20 @@ expansions (`expansions` in the velocity `server.toml`).
 | Local | `/local`, `/l` | everyone, same server only |
 | Staff | `/staff`, `/sc`, or start a message with `#` | `staff` and `admin` |
 
-[NetworkJoinMessages](https://modrinth.com/plugin/networkjoinmessages) on the proxy tells everyone when
-a player joins the network (with the server they land on) or leaves it, and tells the players on a
-server when someone arrives there from another one; the server they left says nothing. A leave is held
-back 1.5 seconds, so a quick reconnect says nothing either. Vanished players are never announced
-(mods/vanish gives them `networkjoinmessages.silent`). Its config is
-[`files/plugins/networkjoinmessages/config.yml`](../servers/velocity/files/plugins/networkjoinmessages/config.yml),
-kept as the plugin rewrites it on start (like Carbon's channels below), so edit it in place.
-The servers' own join and leave messages are hidden (below).
-
 Typing a channel's command switches to it; `/g hello` sends one message without switching.
 Channels are [`files/plugins/carbonchat/channels/`](../servers/velocity/files/plugins/carbonchat/channels/),
 kept as Carbon rewrites them on start, so edit them in place (a reformatted file would restart the
 proxy on every deploy). Who may use a channel is `carbon.channel.<name>.see` / `.speak` in
 [`permissions.toml`](../permissions.toml).
+
+[NetworkJoinMessages](https://modrinth.com/plugin/networkjoinmessages) on the proxy tells everyone
+when a player joins the network (with the server they land on, or "for the first time") or leaves
+it, and tells the players on a server when someone arrives there from another one; the server they
+left says nothing. A leave is held back 1.5 seconds, so a quick reconnect says nothing either.
+Vanished players are never announced (mods/vanish gives them `networkjoinmessages.silent`). Its
+config is
+[`files/plugins/networkjoinmessages/config.yml`](../servers/velocity/files/plugins/networkjoinmessages/config.yml),
+kept as the plugin rewrites it on start (like Carbon's channels above), so edit it in place.
 
 No server says "joined the game", "left the game", "is now AFK" or "has made the advancement" in
 chat (the server log still has joins, leaves and AFK):
@@ -177,24 +177,23 @@ To change the quiet mod (JDK 25): edit [`mods/quiet`](../mods/quiet/), raise `mo
 world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in the fpv and plots
 `server.toml`.
 
-## Startup
+## Maintenance
 
-For two minutes after the proxy starts, nobody can join ("The server is starting. Try again in N
-seconds."), so the servers have time to load after a restart. Staff and admin can
-(`warmup.bypass`).
+[Maintenance](https://modrinth.com/plugin/maintenance) on the proxy closes the network to everyone but
+staff and admin (`maintenance.bypass`). Turning it on kicks everyone else, and they get "The server
+is currently under maintenance!" until it's off; it stays on through a restart. The server list shows
+it too. Its commands need `maintenance.admin` (admins, through `*`).
 
-| Task | Command (admin, `warmup.admin`) |
+| Task | Command |
 |---|---|
-| Let everyone in before the two minutes are up | `/open` |
-| Kick everyone but staff from every server and keep them out ("The server is temporarily closed to the public. Try again soon.") | `/lockdown` |
-| End a lockdown | `/open` |
+| Close the network | `/maintenance on` |
+| Open it again | `/maintenance off` |
+| Close it after a while (e.g. `10m`) | `/maintenance starttimer <time>` |
+| Open it again after a while | `/maintenance endtimer <time>` |
+| Close it after a while, for a while | `/maintenance scheduletimer <in> <for>` |
 
-A lockdown stays on through a proxy restart until `/open`. Both commands are logged in the proxy log.
-
-It's our Velocity plugin [`mods/warmup`](../mods/warmup/); to change it (JDK 25),
-edit it, raise the version in `gradle.properties` and `Warmup.java`, `./gradlew build` there, upload
-`build/libs/warmup-<version>.jar` to the world store as `mods/warmup-<version>.jar`, and change the
-URL in the velocity `server.toml`.
+After a proxy restart, players join as soon as the proxy is up; while the hub is still starting, they
+land on fpv (the velocity `try` list), and with neither up, they're told to try again later.
 
 ## Teleporting and invsee
 
@@ -237,8 +236,8 @@ off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanishe
 
 `/v` toggles on the proxy and is sent on to the server you're on as its own `/vanish on|off`.
 Admins' `*` excludes `essentials.vanish.effect` (the invisibility effect),
-`essentials.silentjoin.vanish` and `networkjoinmessages.silent`, which `/v` sets per player. The Paper servers are listed in
-`files/plugins/vanish/config.properties`.
+`essentials.silentjoin.vanish` and `networkjoinmessages.silent`, which `/v` sets per player. The
+Paper servers are listed in `files/plugins/vanish/config.properties`.
 
 Carbon on Velocity doesn't know about vanish (its check is a TODO that says nobody is), so we run
 Carbon with [`servers/velocity/carbon-vanish.patch`](../servers/velocity/carbon-vanish.patch), which
@@ -247,8 +246,11 @@ asks `mods/vanish`. To rebuild it for a new Carbon (JDK 25): clone
 `projectVersion=<version>-vanish.<n>` in `gradle.properties`, then
 `./gradlew :carbonchat-velocity:build -x test -x spotlessCheck`, upload
 `velocity/build/libs/carbonchat-velocity-<version>-vanish.<n>.jar` to the world store under `mods/`
-and change the URL in the velocity `server.toml`. `mods/vanish` is rebuilt like `mods/warmup`
-(version in `gradle.properties` and `Vanish.java`).
+and change the URL in the velocity `server.toml`.
+
+To change `mods/vanish` (JDK 25): edit it, raise the version in `gradle.properties` and `Vanish.java`,
+`./gradlew build` there, upload `build/libs/vanish-<version>.jar` to the world store as
+`mods/vanish-<version>.jar`, and change the URL in the velocity `server.toml`.
 
 ## Backups
 

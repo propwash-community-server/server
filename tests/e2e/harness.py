@@ -60,14 +60,6 @@ def wait_for_servers(timeout=300):
         eventually(lambda: Server(name).ready(), timeout=timeout, interval=2, message=f"{name} to start")
 
 
-def wait_for_warmup():
-    """mods/warmup turns players away for two minutes after the proxy starts."""
-    started = int(run("docker", "exec", CONTAINER, "systemctl", "show", "mc@velocity", "--value",
-                      "-p", "ActiveEnterTimestampMonotonic")) / 1e6
-    uptime = float(run("docker", "exec", CONTAINER, "cat", "/proc/uptime").split()[0])
-    time.sleep(max(0, started + 125 - uptime))
-
-
 # --- Servers ------------------------------------------------------------------
 
 

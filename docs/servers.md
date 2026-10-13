@@ -17,7 +17,7 @@ Staff and admin (`propwash.help.staff`) also get the staff part of `/help`, from
 [`servers/velocity/files/plugins/staffhelp/help.txt`](../servers/velocity/files/plugins/staffhelp/help.txt)
 (same tags), after the server's own; `/help staff` (or `/help admin`) shows only that part. Changing it restarts the proxy
 on deploy, like any file in `servers/velocity/files/`. It's our Velocity plugin
-[`mods/staffhelp`](../mods/staffhelp/), rebuilt like `mods/warmup`.
+[`mods/staffhelp`](../mods/staffhelp/), rebuilt like `mods/vanish` (see [Vanish](admin.md#vanish)).
 
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
 a `.properties` file that doesn't exist yet is written with just the `[config]` keys before the first start.

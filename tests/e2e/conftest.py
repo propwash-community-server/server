@@ -30,7 +30,6 @@ def stack(request):
     if request.config.getoption("--fresh"):
         harness.fresh_stack()
     harness.wait_for_servers()
-    harness.wait_for_warmup()
 
 
 def switch_directly(player, server):

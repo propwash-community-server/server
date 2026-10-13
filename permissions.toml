@@ -80,8 +80,8 @@ permissions = [
     "worldedit.*",
     "essentials.*",
     "libertybans.*",
-    # Joining in the first two minutes after a proxy restart (mods/warmup).
-    "warmup.bypass",
+    # Joining during /maintenance.
+    "maintenance.bypass",
     # The staff part of /help (mods/staffhelp).
     "propwash.help.staff",
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the

@@ -9,5 +9,4 @@
 <accent>/flan bypass</accent>: build on fpv maps; <accent>/warp set <name></accent>, <accent>/time set</accent> on a map
 <admin><bold>Admin</bold></admin>
 <accent>/v</accent>: vanish on every server (again to show yourself)
-<accent>/lockdown</accent>: kick everyone but staff and keep them out; <accent>/open</accent> ends it
-<accent>/open</accent>: let everyone in during the two minutes after a restart
+<accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it
