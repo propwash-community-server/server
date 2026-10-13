@@ -102,6 +102,7 @@ permissions = [
     "carbon.ignore.exempt",
     # Seeing vanished players (/v, docs/admin.md#vanish): tab list, each server, /msg.
     "propwash.vanish.see",
+    "tab.seevanished",
     "vanish.feature.view",
     "essentials.vanish.see",
     "carbon.whisper.vanished",
@@ -119,7 +120,9 @@ permissions = [
     '"prefix.300.<admin>[Admin]</admin> "',
     "*",
     # Not from "*": the invisibility effect (and its particles) of EssentialsX's /vanish, and arriving
-    # vanished on the hub, which mods/vanish sets per player only while they are vanished.
+    # vanished on the hub or unannounced on the network, which mods/vanish sets per player only while
+    # they are vanished.
     "essentials.vanish.effect false",
     "essentials.silentjoin.vanish false",
+    "networkjoinmessages.silent false",
 ]

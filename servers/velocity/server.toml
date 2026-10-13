@@ -20,7 +20,8 @@ plugins = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/carbonchat-velocity-3.0.0-beta.39-vanish.1.jar",
     # Lets the proxy handle signed chat; also needed on every backend.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/OxMy0xf6/SignedVelocity-Proxy-1.5.0.jar",
-    # Join and leave messages for the whole network, not each server (those are hidden).
+    # Joining and leaving the network, told to everyone, and arriving from another server, told to that
+    # server (files/plugins/networkjoinmessages/config.yml); each server's own messages are hidden.
     "https://cdn.modrinth.com/data/JPkVT6IT/versions/1MJzJZCs/NetworkJoinMessages-3.6.2.jar",
     # Placeholders for chat formats: <luckperms_prefix>, <player_current_server>.
     "https://cdn.modrinth.com/data/HQyibRsN/versions/Kpbing8i/MiniPlaceholders-Velocity-3.2.0.jar",
@@ -29,7 +30,7 @@ plugins = [
     # uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/warmup-1.1.0.jar",
     # Network-wide /v: our mods/vanish, built and uploaded by hand; see docs/admin.md#vanish.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/vanish-1.0.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/vanish-1.1.0.jar",
     # The staff part of /help (files/plugins/staffhelp/help.txt): our mods/staffhelp, built and
     # uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.0.0.jar",
@@ -54,11 +55,3 @@ help = """
 <accent>/msg <player> <message></accent>, <accent>/r <message></accent>: private messages
 <accent>/ignore <player></accent>: hide a player's messages
 """
-
-# Joining or leaving the network, in vanilla's wording; moving between servers says nothing. The keys
-# are nested, hence the indent.
-[config."plugins/networkjoinmessages/config.yml"]
-"  JoinNetworkMessage" = "<accent>%player% joined the game</accent>"
-"  FirstJoinNetworkMessage" = "<accent>%player% joined for the first time</accent>"
-"  LeaveNetworkMessage" = "<accent>%player% left the game</accent>"
-"  SwapServerMessageEnabled" = "false"

@@ -141,10 +141,14 @@ expansions (`expansions` in the velocity `server.toml`).
 | Local | `/local`, `/l` | everyone, same server only |
 | Staff | `/staff`, `/sc`, or start a message with `#` | `staff` and `admin` |
 
-Joining and leaving the network is announced on every server by
-[NetworkJoinMessages](https://modrinth.com/plugin/networkjoinmessages) on the proxy (its `[config]` in
-the velocity `server.toml`); moving between servers says nothing. The servers' own join and leave
-messages are hidden (below).
+[NetworkJoinMessages](https://modrinth.com/plugin/networkjoinmessages) on the proxy tells everyone when
+a player joins the network (with the server they land on) or leaves it, and tells the players on a
+server when someone arrives there from another one; the server they left says nothing. A leave is held
+back 1.5 seconds, so a quick reconnect says nothing either. Vanished players are never announced
+(mods/vanish gives them `networkjoinmessages.silent`). Its config is
+[`files/plugins/networkjoinmessages/config.yml`](../servers/velocity/files/plugins/networkjoinmessages/config.yml),
+kept as the plugin rewrites it on start (like Carbon's channels below), so edit it in place.
+The servers' own join and leave messages are hidden (below).
 
 Typing a channel's command switches to it; `/g hello` sends one message without switching.
 Channels are [`files/plugins/carbonchat/channels/`](../servers/velocity/files/plugins/carbonchat/channels/),
@@ -221,18 +225,19 @@ Staff also have Carbon's `/spy`: private messages between anyone, and other serv
 server switches: not in any tab list, the server list or `/list`, not drawn at all (no invisibility
 particles), not in name suggestions, and commands, `/tpa` and `/msg` don't find you. Public chat is
 off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanished players
-(`propwash.vanish.see`, `vanish.feature.view`, `essentials.vanish.see`, `carbon.whisper.vanished`).
+(`propwash.vanish.see`, `tab.seevanished`, `vanish.feature.view`, `essentials.vanish.see`,
+`carbon.whisper.vanished`).
 
 | Part | Does |
 |---|---|
-| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`; keeps who is vanished; Velocitab tab list, server list, blocks chat; tells Carbon |
+| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`; keeps who is vanished; TAB tab list, server list, blocks chat; tells Carbon; no join messages |
 | [Vanish](https://modrinth.com/mod/vanish) (fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
 | EssentialsX `/vanish` (hub) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
 | our Carbon build | leaves vanished players out of `/msg` and its suggestions |
 
 `/v` toggles on the proxy and is sent on to the server you're on as its own `/vanish on|off`.
-Admins' `*` excludes `essentials.vanish.effect` (the invisibility effect) and
-`essentials.silentjoin.vanish`, which `/v` sets per player. The Paper servers are listed in
+Admins' `*` excludes `essentials.vanish.effect` (the invisibility effect),
+`essentials.silentjoin.vanish` and `networkjoinmessages.silent`, which `/v` sets per player. The Paper servers are listed in
 `files/plugins/vanish/config.properties`.
 
 Carbon on Velocity doesn't know about vanish (its check is a TODO that says nobody is), so we run

@@ -28,24 +28,25 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import me.neznamy.tab.api.TabPlayer;
+import me.neznamy.tab.api.integration.VanishIntegration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.MetaNode;
 import net.luckperms.api.node.types.PermissionNode;
-import net.william278.velocitab.api.VelocitabAPI;
-import net.william278.velocitab.vanish.VanishIntegration;
 import org.slf4j.Logger;
 
 /**
  * Network-wide /v: hidden on every server (each server's own vanish, switched on as you arrive through
- * LuckPerms), in the tab list (Velocitab), the server list and chat (Carbon, which asks this plugin
- * as a Predicate of UUIDs). /v needs propwash.vanish; propwash.vanish.see sees vanished players.
+ * LuckPerms), in the tab list (TAB), the server list, join messages (NetworkJoinMessages) and chat
+ * (Carbon, which asks this plugin as a Predicate of UUIDs). /v needs propwash.vanish;
+ * propwash.vanish.see sees vanished players.
  */
-@Plugin(id = "vanish", name = "Vanish", version = "1.0.0",
+@Plugin(id = "vanish", name = "Vanish", version = "1.1.0",
         description = "Network-wide /v",
-        dependencies = {@Dependency(id = "luckperms"), @Dependency(id = "velocitab", optional = true)})
+        dependencies = {@Dependency(id = "luckperms"), @Dependency(id = "tab", optional = true)})
 public final class Vanish implements Predicate<UUID> {
     private static final String USE = "propwash.vanish";
     private static final String SEE = "propwash.vanish.see";
@@ -97,19 +98,20 @@ public final class Vanish implements Predicate<UUID> {
                         return invocation.source().hasPermission(USE);
                     }
                 });
-        if (proxy.getPluginManager().isLoaded("velocitab")) {
-            VelocitabAPI.getInstance().setVanishIntegration(new VanishIntegration() {
+        // TAB asks on its own and notices a change within half a second.
+        if (proxy.getPluginManager().isLoaded("tab")) {
+            new VanishIntegration("vanish") {
                 @Override
-                public boolean canSee(String viewer, String target) {
-                    return !isVanished(target)
-                            || proxy.getPlayer(viewer).map(p -> p.hasPermission(SEE)).orElse(false);
+                public boolean isVanished(TabPlayer player) {
+                    return vanished.contains(player.getUniqueId());
                 }
 
                 @Override
-                public boolean isVanished(String name) {
-                    return proxy.getPlayer(name).map(p -> vanished.contains(p.getUniqueId())).orElse(false);
+                public boolean canSee(TabPlayer viewer, TabPlayer target) {
+                    return !vanished.contains(target.getUniqueId())
+                            || proxy.getPlayer(viewer.getUniqueId()).map(p -> p.hasPermission(SEE)).orElse(false);
                 }
-            });
+            }.register();
         }
     }
 
@@ -144,20 +146,16 @@ public final class Vanish implements Predicate<UUID> {
         }
         save();
         // Read by each server when the player arrives: the Vanish mod (Fabric) and EssentialsX (Paper,
-        // with allow-silent-join-quit) vanish them from the first tick.
+        // with allow-silent-join-quit) vanish them from the first tick; NetworkJoinMessages doesn't
+        // announce them.
         LuckPermsProvider.get().getUserManager().modifyUser(uuid, user -> {
             user.data().clear(NodeType.META.predicate(n -> n.getMetaKey().equals("vanish_on_join")));
             user.data().add(MetaNode.builder("vanish_on_join", Boolean.toString(on)).build());
-            user.data().clear(n -> n.getKey().equals("essentials.silentjoin.vanish"));
-            user.data().add(PermissionNode.builder("essentials.silentjoin.vanish").value(on).build());
-        });
-        if (proxy.getPluginManager().isLoaded("velocitab")) {
-            if (on) {
-                VelocitabAPI.getInstance().vanishPlayer(player);
-            } else {
-                VelocitabAPI.getInstance().unVanishPlayer(player);
+            for (String node : new String[]{"essentials.silentjoin.vanish", "networkjoinmessages.silent"}) {
+                user.data().clear(n -> n.getKey().equals(node));
+                user.data().add(PermissionNode.builder(node).value(on).build());
             }
-        }
+        });
         logger.info("{} is {}", player.getUsername(), on ? "vanished" : "visible again");
     }
 

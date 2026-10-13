@@ -1,0 +1,281 @@
+# This configuration supports both legacy color codes and MiniMessage!
+# For documentation on MiniMessage visit https://docs.advntr.dev/minimessage/format.html
+
+# Set server aliases
+Servers:
+  lobby: <blue>Lobby</blue>
+  survival: <gold>Survival Server</gold>
+  mining: <blue>Mining Server</blue>
+  staff: <dark_red><click:run_command:'/server staff'><hover:show_text:'<gray>Click to TP!'>Staff Server</hover></click></dark_red>
+  ???: <gray>Unknown Server</gray>
+Messages:
+  # These player placeholders work in any of the following three message types
+  # %player%              - Player username
+  # %displayname%         - Custom name the player has according to the proxy
+  # %player_prefix%       - Player prefix (requires LuckPerms on the proxy)
+  # %player_suffix%       - Player suffix (requires LuckPerms on the proxy)
+
+  # These placeholders are available for the swap server message
+  # %to%                  - Server they are heading to
+  # %to_clean%            - Server they are heading to without formatting
+  # %from%                - Server they are coming from
+  # %from_clean%          - Server they are coming from without formatting
+  # %playercount_from%    - Amount of players where they are coming from
+  # %playercount_to%      - Amount of players where they are heading to
+  # %playercount_network% - Amount of players on the network
+
+  # Message sent when a player swaps servers - leave blank to use the list of messages defined below
+  SwapServerMessage: <accent>%player% arrived from %from%</accent>
+  
+  # A list of swap messages to be selected at random each time a player swaps servers
+  # IMPORTANT - SwapServerMessage (directly above) must be empty to enable this option
+  SwapServerMessages:
+  - <gold>%player% <gray>[%from%] (%playercount_from%) -> [%to%] (%playercount_to%)
+  - <gold>%player% <gray>[%from%] -> [%to%]
+  - <gold>%player% <yellow>just went from <gray>[%from%] <yellow>to <gray>[%to%]<yellow>!!!
+  
+  # These placeholders are available for the join and leave network messages
+  # %server_name%         - Name of the server they connected to
+  # %server_name_clean%   - Name of the server they connected to without formatting
+  # %playercount_server%  - Amount of players on the sever they joined or left
+  # %playercount_network% - Amount of players on the network
+
+  # Message sent when a player joins the network for the first time - leave blank to use the list of messages defined below
+  FirstJoinNetworkMessage: <accent>%player% joined for the first time (%server_name%)</accent>
+  
+  # A list of first join messages to be selected at random each time a player joins for the first time
+  # IMPORTANT - FirstJoinNetworkMessage (directly above) must be empty to enable this option
+  FirstJoinNetworkMessages:
+  - <gold>%displayname% <gray>(%player%) <yellow>has connected to the network for the first time!!
+  - <gold>Everyone welcome <gray>(%player%) <yellow>to the network!!
+  - <gold>(%player%) <yellow>is new here!!
+  
+  # Message sent when a player joins the network - leave blank to use the list of messages defined below
+  JoinNetworkMessage: <accent>%player% joined (%server_name%)</accent>
+  
+  # A list of join messages to be selected at random each time a player joins
+  # IMPORTANT - JoinNetworkMessage (directly above) must be empty to enable this option
+  JoinNetworkMessages:
+  - <gold>%displayname% <gray>(%player%) <yellow>has connected to the network!
+  - <gold>%displayname% <yellow>just landed!
+  - <gold>%displayname% <yellow>joined us on the network!
+  
+  # Message sent when a player leaves the network - leave blank to use the list of messages defined below
+  LeaveNetworkMessage: <accent>%player% left</accent>
+  
+  # A list of leave messages to be selected at random each time a player leaves
+  # IMPORTANT - LeaveNetworkMessage (directly above) must be empty to enable this option
+  LeaveNetworkMessages:
+  - <gold>%player% <yellow>has disconnected from the network!
+  - <gold>%player% <yellow>decided to stop playing <red>:(
+  - <gold>%player% <yellow>quit
+  - <gold>%player% <yellow>went to do something else
+  
+  # Configurable Command Messages!
+  Commands:
+    NoMoreArgumentsNeeded: No more arguments needed.
+    NoPermission: <red>You do not have the permission to use this command.
+    Spoof:
+      NoArgument: |
+        <red>Arguments:
+        - join
+        - leave
+        - swap <to> <from>
+      SwapNoArgument: |
+        <red> Arguments:
+        - join
+        - leave
+        - swap <to> <from>
+        <dark_red>Please specify <red>TO<dark_red> and <red>FROM
+      ToggleSilentNoPerm: <red>You do not have the permission to join the server silently.
+      ToggleSilent: <gray>Your silent mode has now been set to <gold>%state%
+      JoinNotification: |-
+        <gray>[NetworkJoin] You joined the server while silenced or vanished.
+        <gray>If vanished, unvanish, or if silenced use <white>/njoinspoof toggle
+        <gray>to re-enable join, leave, and swap messages.
+    ToggleJoin:
+      MissingFirstArgument: |-
+        <red>Please specify which messages you would like to disable/enable.
+        <gray>Valid arguments are:<white> join, leave, swap, all
+      MissingState: |-
+        <red>Please specify which state you would like to enter.
+        <gray>Valid arguments are: <green>on <gray>/ <red>off <gray>or <green>true <gray>/ <red>false<white>.
+      Confirmation: <gray>Receive messages for <white>%mode%<gray> has been set to <white>%state%
+      TargetNotFound: <red>Could not find a player with name %player%
+      MustSpecifyPlayer: <red>You must specify the target player when running from console
+      ConfirmationOther: <gray>Set receive messages for <white>%mode%<gray> on <white>%player%<gray> to <white>%state%
+    Reload:
+      ConfigReloaded: Config Reloaded!
+  Misc:
+    SilentPrefix: <gray>[Silent] </gray>
+    ConsoleSilentSwap: <gray>Swap message was silenced. %player% %from% -> %to%
+    ConsoleSilentJoin: <gray>Join message was silenced. %player% joined the network
+    ConsoleSilentLeave: <gray>Leave message was silenced. %player% left the network
+Settings:
+  # As PAPIProxyBridge is unable to parse placeholders for offline players, a cache for the leave network message must
+  # be implemented. For placeholders that frequently change such as experience level, armor rating, etc. you may wish
+  # for this cache to update more often.
+  # Designate how long in seconds the leave network message will be cached or use 0 to only update cache on join and
+  # server swap.
+  LeaveNetworkMessageCacheDuration: 45
+  
+  # Designate how long, in milliseconds, the plugin will wait before sending the leave network message for a player.
+  # This allows them to rejoin with no join message and cancel the sending of the leave network message altogether.
+  # Helps prevent spam from players with a weak internet connection. 1500 is recommended.
+  LeaveJoinBufferDuration: 1500
+  
+  # Should players with the networkjoinmessages.silent permission be silenced by default?
+  # It will be set to this for all players after a reboot. They can toggle it for themselves with the /njoinspoof toggle command
+  SilentJoinDefaultState: true
+  
+  # Storage backend
+  # SQL  - External SQL server (MySQL, MariaDB, or PostgreSQL). Requires filling in the SQL section below.
+  # H2   - Embedded SQL database (default). Best for most servers; no setup required.
+  # TEXT - Plain text file (joined.txt). Easiest to inspect and edit by hand. (Player data will still use H2)
+  # Changing this option requires a restart. Data is migrated automatically except when migrating from SQL.
+  FirstJoinStorageType: H2
+  
+  # Storage backend for player data
+  # Same as above, except valid options are H2 and SQL only. TEXT is not available for this interface.
+  PlayerDataStorageType: H2
+  
+  # External SQL server settings — only used when StorageType is SQL.
+  # Changes here require a restart.
+  SQL:
+    # Hostname or IP address of the SQL server.
+    Host: localhost
+    # Port — MySQL/MariaDB default is 3306, PostgreSQL default is 5432.
+    Port: 3306
+    # Name of the database to use. Must already exist.
+    Database: database
+    TablePrefix: njm_
+    Username: njm_user
+    Password: ''
+    # SQL driver to use. Accepted values: mysql, mariadb, postgresql
+    Driver: mysql
+    # Whether to require SSL/TLS for the connection (MySQL/MariaDB only).
+    UseSSL: false
+    # Seconds to wait when checking if the connection is still alive.
+    ConnectionTimeout: 5
+  
+  # Should players ignore messages by default? Re-enable with /njointoggle.
+  # Changes require a restart to affect players who joined the proxy
+  IgnoreJoinByDefault: false
+  IgnoreSwapByDefault: false
+  IgnoreLeaveByDefault: false
+  
+  # Should the following messages be enabled?
+  SwapServerMessageEnabled: true
+  FirstJoinNetworkMessageEnabled: true
+  JoinNetworkMessageEnabled: true
+  LeaveNetworkMessageEnabled: true
+  # Should other players with the networkjoinmessages.silent permission be notified of players moving silently?
+  NotifyAdminsOnSilentMove: true
+  
+  # NOTE: These do not affect silenced players. Silenced move messages will be seen by all players with the permission.
+  SwapServerMessageViewableBy:
+    # Should the swap server message be seen by the server they swapped to?
+    ServerJoined: true
+    
+    # Should the swap server message be seen by the server they swapped from?
+    ServerLeft: false
+    
+    # Should the swap server message be seen by the other servers?
+    OtherServer: false
+  FirstJoinNetworkMessageViewableBy:
+    # Should the Join Network message be seen by the server they Joined?
+    ServerJoined: true
+    
+    # Should theJoin Network message be seen by the other servers?
+    OtherServer: true
+  JoinNetworkMessageViewableBy:
+    # Should the Join Network message be seen by the server they Joined?
+    ServerJoined: true
+    
+    # Should theJoin Network message be seen by the other servers?
+    OtherServer: true
+  LeaveNetworkMessageViewableBy:
+    # Should the Leave Network message be seen by the server they left?
+    ServerLeft: true
+    
+    # Should the Leave Network message be seen by the other servers?
+    OtherServer: true
+  
+  # Servers in this list will not trigger messages.
+  # Servers listed here are case-sensitive. Check your bungee config to see how you have them listed!
+  ServerBlacklist:
+  - SomeServerName
+  - SomeOtherServerName
+  # Should the blacklist list be the only servers allowed to trigger messages? (Reverse the check)
+  UseBlacklistAsWhitelist: false
+  # When a player swaps from A to B, which one should we check? JOINED, LEFT, BOTH, ANY
+  # Behaviour will change depending on the blacklist being in blacklist or whitelist mode.
+  # example: If you set this to JOINED: BlacklistMode will prevent the message from going through if the joined server is going through.
+  #                                     WhitelistMode will only allow it if the joined server is in the list.
+  # IF set to ANY or both, ANY of them must be blacklisted/whitelisted, or BOTH of them must ble blacklisted/whitelisted.
+  SwapServerMessageRequires: ANY
+  # IgnoreFirstJoinMessagesList - Players on these servers will not see a message when someone joins the network for the first time.
+  # The global message will still be triggered if someone joins these servers directly.
+  # Case-sensitive!
+  IgnoreFirstJoinMessagesList:
+  - SomeServerNameThatShouldNotSeeFirstJoinNetworkMessages
+  - SomeOtherServerName
+  # IgnoreJoinMessagesList - Players on these servers will not see a message when someone joins the network.
+  # The global message will still be triggered if someone joins these servers directly.
+  # Case-sensitive!
+  IgnoreJoinMessagesList:
+  - SomeServerNameThatShouldNotSeeJoinNetworkMessages
+  - SomeOtherServerName
+  # IgnoreLeaveMessagesList - Players on these servers will not see a message when someone leaves the network.
+  # The global message will still be triggered if someone leaves these servers directly.
+  # Case-sensitive!
+  IgnoreLeaveMessagesList:
+  - SomeServerNameThatShouldNotSeeLeaveNetworkMessages
+  - SomeOtherServerName
+
+OtherPlugins:
+  PAPIProxyBridge:
+    # The maximum amount of time in milliseconds to wait for PlaceholderAPI placeholders before timing out
+    RequestTimeout: 1500
+  SayanVanish:
+    # Vanished players will not trigger messages aside from
+    # silent messages sent to players with networkjoinmessages.silent permission
+    TreatVanishedPlayersAsSilent: true
+    # Vanished players will not be counted in the player count placeholders
+    RemoveVanishedPlayersFromPlayerCount: true
+    # Send silent messages to players with the permission sayanvanish.vanish.use (permission must be set on the proxy)
+    NotifyVanishEnabledPlayersOnSilentMove: false
+  PremiumVanish:
+    # Vanished players will not trigger messages aside from
+    # silent messages sent to players with networkjoinmessages.silent permission
+    TreatVanishedPlayersAsSilent: true
+    # Vanished players will not be counted in the player count placeholders
+    RemoveVanishedPlayersFromPlayerCount: true
+    # Spoof a join message automatically when a player stops being vanished (shows)
+    SpoofJoinMessageOnShow: true
+    # Spoof a leave message automatically when a player vanishes (hides)
+    SpoofLeaveMessageOnHide: true
+    # Treats a player with the permission pv.joinvanished as vanished on join (permission must be set on the proxy)
+    # This is to be used in conjunction with the PremiumVanish 'AutoVanishOnJoin' option
+    TreatVanishedOnJoin: false
+    # Send silent messages to players with the permission pv.use or pv.see (permission must be set on the proxy)
+    NotifyVanishEnabledPlayersOnSilentMove: false
+    # Instead of sending silent messages to all players with pv.use or pv.see, only send silent messages to players with
+    # a greater than or equal to see level than the player who triggered the message's use level.
+    # Simply put, this setting respects the layered use/see permissions set with PremiumVanish.
+    # Requires players to rejoin upon changes to their level or setting this setting to true
+    NotifyRespectVanishLevels: false
+    # What should be the highest level for both PremiumVanish permissions?
+    # Lower amounts might improve performance with more players since they reduce the amount of permission checks
+    MaxLevel: 100
+  LimboAPI:
+    # No swap messages for players swapping to or from limbo servers
+    SuppressSwapMessages: true
+    # No join messages for players joining limbo servers
+    SuppressJoinMessages: false
+    # No leave messages for players leaving from limbo servers
+    SuppressLeaveMessages: false
+
+debug: false
+# Do not touch this
+config-version: 14
