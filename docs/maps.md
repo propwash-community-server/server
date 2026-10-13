@@ -1,8 +1,9 @@
 # Maps
 
 Maps live on `fpv`. Each map is a dimension `maps:<name>`, listed in
-[`servers/fpv/maps/<name>.toml`](../servers/fpv/maps/) with its title and author. The map is what's
-in the server's world: builders edit it there, and it's backed up with the rest of the server.
+[`servers/fpv/maps/<name>.toml`](../servers/fpv/maps/) with its title, author and world border. The
+map is what's in the server's world: builders edit it there, and it's backed up with the rest of
+the server.
 The bucket is where maps are handed in: `fpv/maps/<name>.tar.gz` is put on a server only when
 it doesn't have the map yet (a new map, or a new server), or when someone applies it. Only the
 overworld terrain is kept; old maps are upgraded as they are explored, so the first visit can be

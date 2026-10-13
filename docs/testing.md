@@ -39,4 +39,7 @@ hotbar slots, and reads chat, the title, the tab list and its position; other Mi
 are `player.call("<function>", ...)`. The `expect_*` methods wait for chat, a server, a dimension or
 a title. Every test starts with an empty inventory, on the server the previous one ended on, so
 tests switch with `player.go(...)` first. For what one player does to another's things, such as on
-plots, the `other` fixture starts a second client, `Other`, on its own agent port.
+plots, the `other` fixture starts a second client, `Other`, on its own agent port. A test that needs
+someone joining or turned away starts its own (`harness.start_client("Visitor", ...)`, with
+`wait=False` when it won't get in). `with in_group(player, "staff"):` puts a client in a LuckPerms
+group for a block, once the proxy knows about it.
