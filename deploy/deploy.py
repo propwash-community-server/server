@@ -356,6 +356,7 @@ def gamerules_ops(name, d, rules):
     return [files.put(name=f"{name}: gamerules {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
             for rel, content in pack_files.items()]
 
+
 def config_ops(name, d, cfg):
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties), palette tags expanded. Plugins write their config on first start, so this applies
@@ -364,7 +365,7 @@ def config_ops(name, d, cfg):
     ops = []
     for rel, settings in cfg.get("config", {}).items():
         if rel.endswith(".properties") and not host.get_fact(File, path=f"{d}/{rel}"):
-            content = "".join(f"{key}={value}\n" for key, value in settings.items())
+            content = "".join(f"{key}={palette_tags(str(value))}\n" for key, value in settings.items())
             ops.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
         elif host.get_fact(File, path=f"{d}/{rel}"):
             sep = "=" if rel.endswith((".properties", ".hocon")) else ": "
