@@ -41,8 +41,8 @@ allow-silent-join-quit = "true"
 # Driftpark's resource pack (furniture models), as on fpv; see servers/fpv/maps/driftpark.toml.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/driftpark-183145a2.zip'
-resource-pack-sha1 = "183145a2684b7e01622efedfd713155602c891f1"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/driftpark-569ec8f1.zip'
+resource-pack-sha1 = "569ec8f1ef00fdc925d3ba12b482c9c3c331c786"
 require-resource-pack = "false"
 
 # Only written when the server is first created.
