@@ -434,6 +434,17 @@ changes = [
     *extra_files("velocity", v),
 ]
 
+# mods/crossserver moves players with a console tp over rcon, so it gets each backend's rcon port and
+# the password (a file of its own, taken as it is). Read on every teleport, so no restart.
+files.put(
+    name="velocity: crossserver rcon ports",
+    src=StringIO("".join(f"{n}={c['port'] + 10000}\n" for n, c in backends.items())),
+    dest=f"{v}/plugins/crossserver/rcon.properties",
+    **OWNER,
+)
+files.put(name="velocity: crossserver rcon password", src=StringIO(rcon_password),
+          dest=f"{v}/plugins/crossserver/rcon.password", mode="600", **OWNER)
+
 # LibertyBans writes sql.yml on first start (with its own embedded database); from the next
 # deploy it points at MariaDB. The auth-details keys are each unique in that file.
 libertybans_sql = f"{v}/plugins/libertybans/sql.yml"
