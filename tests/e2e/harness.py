@@ -60,6 +60,14 @@ def wait_for_servers(timeout=300):
         eventually(lambda: Server(name).ready(), timeout=timeout, interval=2, message=f"{name} to start")
 
 
+def wait_for_warmup():
+    """mods/warmup turns players away for two minutes after the proxy starts."""
+    started = int(run("docker", "exec", CONTAINER, "systemctl", "show", "mc@velocity", "--value",
+                      "-p", "ActiveEnterTimestampMonotonic")) / 1e6
+    uptime = float(run("docker", "exec", CONTAINER, "cat", "/proc/uptime").split()[0])
+    time.sleep(max(0, started + 125 - uptime))
+
+
 # --- Servers ------------------------------------------------------------------
 
 
@@ -119,13 +127,15 @@ def build_client():
                     "--build-arg", f"MODS={' '.join(mods)}", str(HERE / "client")], check=True, stdout=subprocess.DEVNULL)
 
 
-def start_client(name="Offline", port=AGENT_PORT):
-    """Starts a client that joins as `name`; each client needs its own agent port."""
+def start_client(name="Offline", port=AGENT_PORT, wait=True):
+    """Starts a client that joins as `name`; each client needs its own agent port. Without `wait`, for a
+    client that won't get in, it returns at once."""
     container = f"{CLIENT}-{name.lower()}"
     subprocess.run(["docker", "rm", "-f", container], capture_output=True)
     run("docker", "run", "-d", "--name", container, "--network", NETWORK, "-p", f"127.0.0.1:{port}:{AGENT_PORT}",
         CLIENT, "vps:25565", name)
-    return eventually(lambda: Player.connect(port), timeout=180, interval=1, message=f"{name} to join")
+    if wait:
+        return eventually(lambda: Player.connect(port), timeout=180, interval=1, message=f"{name} to join")
 
 
 def stop_client(name="Offline"):

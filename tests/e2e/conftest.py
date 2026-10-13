@@ -1,5 +1,6 @@
 import re
 import tomllib
+from contextlib import contextmanager
 
 import pytest
 
@@ -10,6 +11,8 @@ MAPS = {p.stem: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/
 # The first map. The tests stand on a 5x5 stone platform at x/z 0-4, y 99 (made by map_spawn).
 MAP = next(iter(MAPS))
 SPAWN = (2.5, 100, 2.5)
+# The first line of the staff part of /help (mods/staffhelp).
+STAFF_HELP = r"Staff \(only staff and admin see this"
 
 
 def first_line(name, key):
@@ -27,6 +30,7 @@ def stack(request):
     if request.config.getoption("--fresh"):
         harness.fresh_stack()
     harness.wait_for_servers()
+    harness.wait_for_warmup()
 
 
 def switch_directly(player, server):
@@ -50,6 +54,27 @@ def switch_directly(player, server):
             return True
     eventually(allowed, timeout=60, interval=1, message=f"/server to work for {player.name}")
     player.expect_arrival(server, world)
+
+
+@contextmanager
+def in_group(client, group):
+    """The client in a LuckPerms group (staff or admin) until the block ends."""
+    luckperms(f"user {client.name} parent add {group}")
+    try:
+        # The proxy learns about the group a few seconds later; it answers /help staff only then (before,
+        # the server shows its own /help).
+        def allowed():
+            client.clear_chat()
+            client.command("/help staff")
+            try:
+                client.expect_chat(STAFF_HELP, timeout=3)
+                return True
+            except AssertionError:
+                return False
+        eventually(allowed, timeout=60, interval=1, message=f"the proxy to see {client.name} in {group}")
+        yield client
+    finally:
+        luckperms(f"user {client.name} parent remove {group}")
 
 
 @pytest.fixture(scope="session")
