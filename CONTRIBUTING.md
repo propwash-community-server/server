@@ -55,4 +55,4 @@ AI tools are allowed, with these rules:
 - Keep pull requests small, coherent and tested. Split large changes, and say where you are unsure.
 - Do not copy configs or code from sources whose license does not allow it.
 
-[issues]: https://github.com/ETHG/propwash-community-server/issues
+[issues]: https://github.com/propwash-community-server/server/issues
