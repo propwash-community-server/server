@@ -8,16 +8,12 @@ permissions = [
     "essentials.spawn",
     "essentials.home",
     "essentials.sethome",
-    "essentials.tpa",
-    "essentials.tpaccept",
-    "essentials.tpdeny",
     "essentials.help",
     "flan.claim.create false server=fpv",
     "essentialcommands.warp.tp server=fpv",
-    "essentialcommands.tpa server=fpv",
-    "essentialcommands.tpahere server=fpv",
-    "essentialcommands.tpaccept server=fpv",
-    "essentialcommands.tpdeny server=fpv",
+    # /tpa, /tpahere, /tpaccept, /tpdeny across servers (mods/crossserver, on the proxy; it replaces
+    # each server's own).
+    "propwash.tpa",
     # Chat (Carbon, on the proxy): global and local channels, whispers, ignoring, clickable links.
     "carbon.channel",
     "carbon.channel.global",
@@ -86,6 +82,17 @@ permissions = [
     "libertybans.*",
     # Joining in the first two minutes after a proxy restart (mods/warmup).
     "warmup.bypass",
+    # The staff part of /help (mods/staffhelp).
+    "propwash.help.staff",
+    # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the
+    # server's own too (EssentialsX via essentials.*, InvView on fpv and plots).
+    "propwash.tp",
+    "propwash.invsee",
+    "invview.command.root",
+    "invview.command.inv",
+    "invview.command.echest",
+    # /spy: see private messages and other servers' local chat (Carbon, on every server).
+    "carbon.spy",
     # Staff chat channel (/staff, /sc, or start a message with #) and chat moderation.
     "carbon.channel.staff",
     "carbon.channel.staff.see",

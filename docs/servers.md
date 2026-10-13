@@ -12,6 +12,12 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 | `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |
 | `welcome` | text shown in chat every time a player arrives on the server |
 
+Staff and admin (`propwash.help.staff`) also get the staff part of `/help`, from
+[`servers/velocity/files/plugins/staffhelp/help.txt`](../servers/velocity/files/plugins/staffhelp/help.txt)
+(same tags), after the server's own; `/help staff` (or `/help admin`) shows only that part. Changing it restarts the proxy
+on deploy, like any file in `servers/velocity/files/`. It's our Velocity plugin
+[`mods/staffhelp`](../mods/staffhelp/), rebuilt like `mods/warmup`.
+
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
 a `.properties` file that doesn't exist yet is written with just the `[config]` keys before the first start.
 The deploy never changes worlds. The proxy's `server.toml` has no port, but `expansions`

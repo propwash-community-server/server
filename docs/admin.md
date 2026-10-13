@@ -185,6 +185,29 @@ edit it, raise the version in `gradle.properties` and `Warmup.java`, `./gradlew 
 `build/libs/warmup-<version>.jar` to the world store as `mods/warmup-<version>.jar`, and change the
 URL in the velocity `server.toml`.
 
+## Teleporting and invsee
+
+Our Velocity plugin [`mods/crossserver`](../mods/crossserver/) handles these on every server, in place
+of each server's own; a player on another server is moved there first:
+
+| Task | Command | Who |
+|---|---|---|
+| Ask to go to someone / ask them to come to you | `/tpa <player>`, `/tpahere <player>` | everyone (`propwash.tpa`) |
+| Answer (clickable in the message) | `/tpaccept [player]`, `/tpdeny [player]` | everyone |
+| Go to someone | `/tp <player>` | staff (`propwash.tp`) |
+| See and change someone's inventory | `/invsee <player>` | staff (`propwash.invsee`) |
+
+Requests last two minutes. The teleport itself is a console `tp` over rcon (the deploy writes the
+ports and password to `plugins/crossserver/`), a second after arriving, since the hub sends arrivals
+to spawn. `/tp` with anything else (coordinates, someone on the same server) is the server's own.
+Each server keeps its own inventory of a player, so `/invsee` shows the one on the server they're
+on: EssentialsX `/invsee` on the hub, [InvView](https://modrinth.com/mod/invview) `/view inv` on
+fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories
+of players with `invview.protected`, which admins have through `*`. Vanished players can't be found
+by anyone who can't see them.
+
+Staff also have Carbon's `/spy`: private messages between anyone, and other servers' local chat.
+
 ## Vanish
 
 `/v` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
