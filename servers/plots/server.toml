@@ -68,6 +68,13 @@ portals = "false"
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
+# Driftpark's resource pack (furniture models), as on fpv; see servers/fpv/maps/driftpark.toml.
+[properties]
+# Escaped the way the server writes it back, so deploys don't see a change and restart.
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/driftpark-473b22e9.zip'
+resource-pack-sha1 = "473b22e95e0fda05a63846e703d56b157db90f25"
+require-resource-pack = "false"
+
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
 # plot world (files/world/datapacks/plots_spawn), where FabricPlots puts them in creative.
 [new_world]

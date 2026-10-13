@@ -45,6 +45,12 @@ welcome = """
 [properties]
 gamemode = "creative"
 force-gamemode = "true"
+# Driftpark (maps/driftpark.toml): its cars and furniture are models from this pack, invisible without
+# it. The same on every server (hub, plots), offered on joining, not required (yet); the SHA-1 is the zip's.
+# Escaped the way the server writes it back, so deploys don't see a change and restart.
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/driftpark-473b22e9.zip'
+resource-pack-sha1 = "473b22e95e0fda05a63846e703d56b157db90f25"
+require-resource-pack = "false"
 
 # Warps (/warp set, /warp tp) go through LuckPerms, see permissions.toml.
 [config."config/EssentialCommands.properties"]
@@ -68,3 +74,6 @@ deny = [
 ]
 # Drones can be used, hit and picked up; placing them is files/world/datapacks/propwash_flan.
 ignoredEntities = ["propwash:drone"]
+# Flan's claim inspection tool, a stick by default: a wooden hoe, so it doesn't clash with
+# Driftpark's furniture tool (a stick named "Drift Tool").
+inspectionItem = "minecraft:wooden_hoe"
