@@ -1,5 +1,6 @@
 title = "Driftpark"
 author = "LardTom"
+border = { x = 0, z = 0, size = 448 }
 # Two drift cars lap the track for drones to chase (files/world/datapacks/driftpark-datapack.zip;
 # operators: /function drift:help). Never /function drift:build here: it also moves fpv's world spawn
 # (the tutorial) and changes game rules. Needs the resource pack in fpv's [properties].
