@@ -59,8 +59,10 @@ picking up furniture takes a stick named `Drift Tool`. Never run `/function drif
 server: besides rebuilding the track, it moves the world spawn and changes game rules. Flan's
 inspection tool on fpv is a wooden hoe, so it doesn't clash with the Drift Tool.
 
-To update the pack, upload the new zip under a new name and change the URL and SHA-1 in the three
-`server.toml` files.
+To update Driftpark: put the new `driftpark-datapack.zip` in the three `files/world/datapacks/`, upload
+the new resource pack under a new name and change the URL and SHA-1 in the three `server.toml` files,
+deploy, then run `/function drift:reset` once on the map (it respawns the cars). The map itself only
+changes with `uv run upload` and `uv run apply fpv driftpark`.
 
 ## In game
 
