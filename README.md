@@ -36,7 +36,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 For SOPS, install the `.deb` from its [releases](https://github.com/getsops/sops/releases).
 
-### Windows (TODO: untested)
+### Windows
 
 ```
 winget install astral-sh.uv Docker.DockerDesktop Mozilla.SOPS FiloSottile.age
