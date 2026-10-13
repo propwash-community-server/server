@@ -77,3 +77,7 @@ Then join `localhost:25565`. Maps and backups go to a local S3 store on `localho
 - [Testing](docs/testing.md): checks, end-to-end tests and CI
 - [Admin](docs/admin.md): running the production server
 - [Contributing](CONTRIBUTING.md): issues, pull requests and CI
+
+## License
+
+[GPLv3](LICENSE). The maps and the Driftpark datapack and resource pack belong to their authors.
