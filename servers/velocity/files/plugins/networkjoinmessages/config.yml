@@ -170,7 +170,7 @@ Settings:
   JoinNetworkMessageEnabled: true
   LeaveNetworkMessageEnabled: true
   # Should other players with the networkjoinmessages.silent permission be notified of players moving silently?
-  NotifyAdminsOnSilentMove: true
+  NotifyAdminsOnSilentMove: false
   
   # NOTE: These do not affect silenced players. Silenced move messages will be seen by all players with the permission.
   SwapServerMessageViewableBy:
