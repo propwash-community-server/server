@@ -24,6 +24,7 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 | `rcon.secret.sops` | RCON password |
 | `mariadb.secret.sops` | password of the `minecraft` database user |
 | `backup.env.sops` | [restic](https://restic.net) repository + password, S3 keys |
+| `bridge.env.sops` | `BRIDGE_KEY_FPV`, `BRIDGE_KEY_PLOTS`: the API key of each server for the Discord bot, read by the propwash-bridge mod (optional: without a key the mod stays idle). Create it with `sops edit --input-type dotenv --output-type dotenv secrets/bridge.env.sops` |
 | `s3.env.sops` | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (world store, for [`upload`](../tools/upload.py)) |
 
 The first three are random strings. To regenerate one, run the following; the next deploy rolls it out:

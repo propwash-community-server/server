@@ -28,6 +28,9 @@ mods = [
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
     "https://cdn.modrinth.com/data/jrDKjZP7/versions/uySsk7v8/InvView-1.4.22-26.3%2B.jar",
+    # Sends status, races, records and /link to the Discord bot; the key per server is in
+    # secrets/bridge.env.sops, and without it the mod stays idle. Our mod: propwash-bridge.
+    "https://assets.itofu.net/f/propwash-bridge-0.2.0-26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
@@ -39,6 +42,7 @@ help = """
 <accent>/plot trust <player></accent>: let someone build on your plot
 <accent>/draft</accent>: build tools (fill, copy and paste, shapes, brushes, undo)
 <accent>/draft wand</accent>: select two corners for the build tools
+<accent>/link</accent>: link your Discord account
 Only you and players you trust can build on your plot.
 """
 

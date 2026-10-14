@@ -52,6 +52,9 @@ secret = read_secret("forwarding.secret")
 rcon_password = read_secret("rcon.secret")
 backup_env = read_secret("backup.env", "dotenv")
 mariadb_password = read_secret("mariadb.secret")
+# One BRIDGE_KEY_<SERVER> per server running the propwash-bridge mod; without the file (or a key) the mod stays idle.
+bridge_file = ROOT / ("local/secrets" if LOCAL else "secrets") / "bridge.env.sops"
+bridge_keys = dict(line.split("=", 1) for line in read_secret("bridge.env", "dotenv").splitlines() if "=" in line) if bridge_file.exists() else {}
 permissions = tomllib.loads((ROOT / "permissions.toml").read_text(encoding="utf-8"))
 palette = tomllib.loads((ROOT / "palette.toml").read_text(encoding="utf-8"))
 
@@ -63,6 +66,8 @@ def filename(url):
 def service_env(name, stop_cmd):
     # Read by mc@.service. LuckPerms takes its settings from LUCKPERMS_* variables, so every
     # server shares one MariaDB database and knows its own name for server= contexts.
+    # propwash-bridge takes its API key from PROPWASH_BRIDGE_API_KEY, a different one on each server.
+    key = bridge_keys.get(f"BRIDGE_KEY_{name.upper()}")
     env = (
         f"STOP_CMD={stop_cmd}\n"
         f"LUCKPERMS_SERVER={name}\n"
@@ -71,6 +76,7 @@ def service_env(name, stop_cmd):
         "LUCKPERMS_DATA_DATABASE=luckperms\n"
         "LUCKPERMS_DATA_USERNAME=minecraft\n"
         f"LUCKPERMS_DATA_PASSWORD={mariadb_password}\n"
+        + (f"PROPWASH_BRIDGE_API_KEY={key}\n" if key else "")
     )
     return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
 

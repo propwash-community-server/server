@@ -27,6 +27,9 @@ mods = [
     "https://cdn.modrinth.com/data/jrDKjZP7/versions/uySsk7v8/InvView-1.4.22-26.3%2B.jar",
     # Tells the proxy's tab list (TAB) which map each player is on.
     "https://cdn.modrinth.com/data/kG3hVbBX/versions/Jl1SwQoK/TAB-Bridge%20v6.2.3%20-%20Fabric.jar",
+    # Sends status, races, records and /link to the Discord bot; the key per server is in
+    # secrets/bridge.env.sops, and without it the mod stays idle. Our mod: propwash-bridge.
+    "https://assets.itofu.net/f/propwash-bridge-0.2.0-26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
@@ -35,6 +38,7 @@ help = """
 <accent>/map</accent>: list the maps
 <accent>/map <name></accent>: go to a map
 <accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
+<accent>/link</accent>: link your Discord account
 Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
 """
 
