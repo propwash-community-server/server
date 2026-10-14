@@ -75,10 +75,12 @@ print_teleport_coordinates = "false"
 send-join-disconnect-message = "false"
 
 # Flan world rules: none of these, anywhere on fpv (maps included), unless in /flan bypass.
+# Not in the list, so anyone can: open doors, trapdoors and fence gates, step on pressure plates,
+# press buttons and flip levers.
 [flan]
 deny = [
     "break", "place", "open_container", "interact_block", "interact_sign", "anvil", "bed", "beacon",
-    "door", "fence_gate", "trapdoor", "button_lever", "pressure_plate", "noteblock", "redstone",
+    "noteblock", "redstone",
     "jukebox", "enderchest", "enchantment", "itemframe_rotate", "lectern_take", "endcrystal_place",
     "target_block", "projectiles", "trample", "bucket", "ender_pearl", "chorus_fruit",
     "animal_interact", "hurt_animal", "hurt_named", "armorstand", "break_non_living", "archeology",
