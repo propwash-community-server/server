@@ -67,6 +67,10 @@ deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that h
 `server.toml` stops everyone from breaking, placing or using anything, on every map. Builders and
 staff run `/flan bypass` to edit and run it again to turn it off.
 
+No boats on any server: the `noboats` datapack (`files/world/datapacks/noboats` of hub, fpv and
+plots) removes every boat, chest boat and raft once a second and clears boat items from players.
+Old boats go as soon as their chunk is loaded.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
