@@ -71,6 +71,10 @@ No boats on any server: the `noboats` datapack (`files/world/datapacks/noboats` 
 plots) removes every boat, chest boat and raft once a second and clears boat items from players.
 Old boats go as soon as their chunk is loaded.
 
+No projectiles on any server either: the `noprojectiles` datapack (same place) removes arrows,
+tridents, snowballs, eggs, wind charges, ender pearls, thrown potions, bottles o' enchanting and
+firework rockets (so no elytra boosting) within a tick of being shot or thrown; the item is used up.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
