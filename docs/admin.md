@@ -79,6 +79,14 @@ Admins can be exempt from both: `/tag @s add propwash.exempt` (once on each serv
 propwash.exempt` undoes it) keeps their projectiles, their boat items and every boat within 16
 blocks of them.
 
+A dropped item (Q, out of the inventory, from the creative menu) is deleted instead of landing on
+the ground, except for `propwash.exempt` players: on fpv and plots by our Fabric mod
+[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`), on the hub by the `nodrop` datapack.
+`mods/tweaks` also makes vanishing and
+un-vanishing show at once: the Vanish mod left that to vanilla, which only re-checks who sees whom
+when someone moves into another 16-block section. That part hooks into Vanish by name; after
+updating Vanish, check that un-vanishing still shows you right away.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)

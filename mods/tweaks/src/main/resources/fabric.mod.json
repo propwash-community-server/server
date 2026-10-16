@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "tweaks",
+  "version": "${version}",
+  "name": "Tweaks",
+  "description": "Propwash server tweaks: dropped items are deleted (except for players tagged propwash.exempt); vanishing and un-vanishing (Vanish mod) show at once.",
+  "license": "MIT",
+  "environment": "server",
+  "mixins": ["tweaks.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3"
+  }
+}
