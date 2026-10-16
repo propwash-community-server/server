@@ -75,6 +75,10 @@ No projectiles on any server either: the `noprojectiles` datapack (same place) r
 tridents, snowballs, eggs, wind charges, ender pearls, thrown potions, bottles o' enchanting and
 firework rockets (so no elytra boosting) within a tick of being shot or thrown; the item is used up.
 
+Admins can be exempt from both: `/tag @s add propwash.exempt` (once on each server; `/tag @s remove
+propwash.exempt` undoes it) keeps their projectiles, their boat items and every boat within 16
+blocks of them.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
