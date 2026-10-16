@@ -9,4 +9,5 @@
 <accent>/flan bypass</accent>: build on fpv maps; <accent>/warp set <name></accent>, <accent>/time set</accent> on a map
 <admin><bold>Admin</bold></admin>
 <accent>/v</accent>: vanish on every server (again to show yourself)
+<accent>/tag @s add propwash.exempt</accent>: use boats and projectiles (on each server; remove to undo)
 <accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it
