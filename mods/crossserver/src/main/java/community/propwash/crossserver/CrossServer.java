@@ -5,6 +5,7 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.command.CommandExecuteEvent;
 import com.velocitypowered.api.event.command.CommandExecuteEvent.CommandResult;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
@@ -42,9 +43,11 @@ import org.slf4j.Logger;
  * /tp <player> (propwash.tp) move a player to the other's server first, then teleport them there with
  * a console tp over rcon. Staff /invsee (propwash.invsee) moves you to the player's server and opens
  * their inventory there (EssentialsX /invsee on Paper, InvView /view inv on Fabric). Vanished players
- * (the vanish plugin) can't be found by those who can't see them (propwash.vanish.see).
+ * (the vanish plugin) can't be found by those who can't see them (propwash.vanish.see). Admin /exempt
+ * (propwash.exempt) toggles the propwash.exempt tag (boats, projectiles, dropping items) on every server:
+ * kept here and set over rcon on each server the player arrives on.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.0.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.1.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true)})
 public final class CrossServer {
@@ -52,6 +55,7 @@ public final class CrossServer {
     private static final String TP = "propwash.tp";
     private static final String INVSEE = "propwash.invsee";
     private static final String SEE_VANISHED = "propwash.vanish.see";
+    private static final String EXEMPT = "propwash.exempt";
     private static final Duration EXPIRY = Duration.ofMinutes(2);
     // After arriving on a server: the hub sends arrivals to spawn first.
     private static final long ARRIVAL_DELAY_MS = 1000;
@@ -67,6 +71,9 @@ public final class CrossServer {
 
     // Open requests by the player asked, oldest first.
     private final Map<UUID, LinkedHashMap<UUID, Request>> requests = new ConcurrentHashMap<>();
+    // Who has /exempt on, kept across restarts: one UUID per line.
+    private final Path exemptFile;
+    private final Set<UUID> exempt = ConcurrentHashMap.newKeySet();
 
     @Inject
     public CrossServer(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) throws IOException {
@@ -76,6 +83,10 @@ public final class CrossServer {
         Properties config = load(dataDirectory.resolve("config.properties"));
         this.paperServers = Arrays.stream(config.getProperty("paper-servers", "hub").split(","))
                 .map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toSet());
+        this.exemptFile = dataDirectory.resolve("exempt");
+        if (Files.exists(exemptFile)) {
+            Files.readAllLines(exemptFile).stream().filter(l -> !l.isBlank()).map(UUID::fromString).forEach(exempt::add);
+        }
     }
 
     @Subscribe
@@ -85,6 +96,59 @@ public final class CrossServer {
         register("tpaccept", TPA, (player, args) -> answer(player, args, true), false);
         register("tpdeny", TPA, (player, args) -> answer(player, args, false), false);
         register("invsee", INVSEE, this::invsee, true);
+        proxy.getCommandManager().register(proxy.getCommandManager().metaBuilder("exempt").plugin(this).build(),
+                new SimpleCommand() {
+                    @Override
+                    public void execute(Invocation invocation) {
+                        if (invocation.source() instanceof Player player) {
+                            toggleExempt(player);
+                        }
+                    }
+
+                    @Override
+                    public boolean hasPermission(Invocation invocation) {
+                        return invocation.source().hasPermission(EXEMPT);
+                    }
+                });
+    }
+
+    private void toggleExempt(Player player) {
+        boolean on = !exempt.contains(player.getUniqueId());
+        if (on) {
+            exempt.add(player.getUniqueId());
+        } else {
+            exempt.remove(player.getUniqueId());
+        }
+        try {
+            Files.createDirectories(exemptFile.getParent());
+            Files.write(exemptFile, exempt.stream().map(UUID::toString).toList());
+        } catch (IOException e) {
+            logger.warn("Saving {} failed", exemptFile, e);
+        }
+        player.getCurrentServer().ifPresent(s -> applyExempt(player, s.getServerInfo().getName()));
+        player.sendMessage(Component.text(on
+                ? "Exempt on every server: you can use boats, projectiles and drop items. /exempt again to stop."
+                : "No longer exempt.", NamedTextColor.GRAY));
+    }
+
+    // The tag lives with the player on each server, so it's set again on every arrival.
+    @Subscribe
+    public void onArrive(ServerPostConnectEvent event) {
+        Player player = event.getPlayer();
+        player.getCurrentServer().ifPresent(s -> proxy.getScheduler()
+                .buildTask(this, () -> applyExempt(player, s.getServerInfo().getName()))
+                .delay(ARRIVAL_DELAY_MS, TimeUnit.MILLISECONDS).schedule());
+    }
+
+    private void applyExempt(Player player, String server) {
+        String command = "tag " + player.getUsername() + (exempt.contains(player.getUniqueId()) ? " add " : " remove ") + EXEMPT;
+        proxy.getScheduler().buildTask(this, () -> {
+            try {
+                Rcon.run(port(server), password(), command);
+            } catch (IOException e) {
+                logger.warn("Setting {} on {} failed", EXEMPT, server, e);
+            }
+        }).schedule();
     }
 
     // Staff /tp <player> to someone on another server; any other /tp goes on to the server as it is.
