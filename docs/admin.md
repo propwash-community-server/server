@@ -92,6 +92,10 @@ updating Vanish, check that un-vanishing still shows you right away.
 nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
 at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
 
+In the plot world everyone may use a debug stick (vanilla allows it to ops only), and `/debugstick`
+(plots) gives one, one at a time. FabricPlots' protection applies to both its clicks, so it only
+works on plots the player may build on; it changes block states, never the block itself.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
@@ -119,13 +123,14 @@ WorldEdit can't be limited to plots, so on plots it stays with staff.
 
 Upstream FabricPlots has the plot size fixed at 32 in code and puts portals on the roads (for
 servers where the plot world sits next to a survival world). We run its 26.3 branch with
-[`fabricplots.patch`](../servers/plots/fabricplots.patch), which adds two settings to
-`config/fabricplots.properties`; both default to upstream behavior:
+[`fabricplots.patch`](../servers/plots/fabricplots.patch), which adds these settings to
+`config/fabricplots.properties`; all default to upstream behavior:
 
 | Setting | Default | Ours | What it does |
 |---|---|---|---|
 | `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
 | `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
+| `free-items`, `free-blocks`, `free-entities` | (none) | Propwash drone, drone workbench, drone | Ids anyone may use anywhere, other people's plots too: items used on a block, blocks right-clicked (but not sneak-placing a block through them), entities clicked or hit |
 
 It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla ops use the build
 mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which

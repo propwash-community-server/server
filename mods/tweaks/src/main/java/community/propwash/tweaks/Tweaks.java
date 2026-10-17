@@ -13,13 +13,17 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * /mydrone: brings the player's own Propwash drone to them. No arguments, so nothing to inject: it
  * only looks for drones tagged with the player's own name (Propwash's pw_owner_<name>, the name from
  * the server), in the dimension (map) they're in and loaded, the nearest one, never while it's
- * flying, at most every 5 seconds.
+ * flying, at most every 5 seconds. /debugstick gives a debug stick in the plot world, where everyone
+ * may use one (DebugStickMixin), only one at a time.
  */
 public final class Tweaks implements ModInitializer {
     private static final long COOLDOWN_MS = 5000;
@@ -28,7 +32,10 @@ public final class Tweaks implements ModInitializer {
     @Override
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                dispatcher.register(Commands.literal("mydrone").executes(context -> myDrone(context.getSource()))));
+                {
+                    dispatcher.register(Commands.literal("mydrone").executes(context -> myDrone(context.getSource())));
+                    dispatcher.register(Commands.literal("debugstick").executes(context -> debugStick(context.getSource())));
+                });
     }
 
     private static int myDrone(CommandSourceStack source) {
@@ -70,6 +77,28 @@ public final class Tweaks implements ModInitializer {
         nearest.teleportTo(level, to.x, to.y, to.z, Set.of(), player.getYRot(), 0, true);
         nearest.setDeltaMovement(Vec3.ZERO);
         source.sendSuccess(() -> Component.literal("Your drone is here."), false);
+        return 1;
+    }
+
+    private static int debugStick(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        if (!"fabricplots:plots".equals(player.level().dimension().identifier().toString())) {
+            source.sendFailure(Component.literal("The debug stick only works in the plot world."));
+            return 0;
+        }
+        Inventory inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (inventory.getItem(i).is(Items.DEBUG_STICK)) {
+                source.sendFailure(Component.literal("You already have a debug stick."));
+                return 0;
+            }
+        }
+        inventory.add(new ItemStack(Items.DEBUG_STICK));
+        source.sendSuccess(() -> Component.literal(
+                "Debug stick: left-click a block on your plot to pick a property, right-click to change it."), false);
         return 1;
     }
 }

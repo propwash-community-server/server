@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "community.propwash.tweaks.mixin",
   "compatibilityLevel": "JAVA_25",
-  "server": ["NoDropMixin", "VanishShowMixin"],
+  "server": ["NoDropMixin", "VanishShowMixin", "DebugStickMixin"],
   "injectors": {
     "defaultRequire": 1
   }

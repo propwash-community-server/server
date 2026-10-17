@@ -212,26 +212,34 @@ index ec8c020..22e649b 100644
 +    }
  }
 diff --git a/src/main/java/com/fabricplots/core/PlotsConfig.java b/src/main/java/com/fabricplots/core/PlotsConfig.java
-index 5653241..036b5d7 100644
+index 5653241..2806cac 100644
 --- a/src/main/java/com/fabricplots/core/PlotsConfig.java
 +++ b/src/main/java/com/fabricplots/core/PlotsConfig.java
-@@ -23,6 +23,7 @@ public final class PlotsConfig {
+@@ -23,6 +23,12 @@ public final class PlotsConfig {
      public static volatile boolean welcomeMessage = true;     // show the action-bar welcome on a plot
      public static volatile int unnamedMobGraceTicks = 12000;  // how long an unnamed mob may live
      public static volatile int mobScanIntervalTicks = 600;    // how often to sweep stale mobs
 +    public static volatile boolean portals = true;             // "portals": false turns off exit portals, Portal Keys and frame portals
++    // Ids (comma-separated) anyone may use anywhere in the plot world, plot or not: items used on a
++    // block ("free-items"), blocks right-clicked ("free-blocks"), entities clicked or hit ("free-entities").
++    public static volatile java.util.Set<String> freeItems = java.util.Set.of();
++    public static volatile java.util.Set<String> freeBlocks = java.util.Set.of();
++    public static volatile java.util.Set<String> freeEntities = java.util.Set.of();
      public static volatile int portalStreetSpacing = 2;       // exit portals on every Nth N-S street (1=every)
      public static volatile boolean advanceTime = true;        // day/night cycle in the plot world
      public static volatile boolean advanceWeather = true;     // weather cycle in the plot world
-@@ -74,6 +75,7 @@ public final class PlotsConfig {
+@@ -74,6 +80,10 @@ public final class PlotsConfig {
          mobEscapeDespawn = "despawn".equalsIgnoreCase(p.getProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport").trim());
          mobSpawningOff = "off".equalsIgnoreCase(p.getProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot").trim());
          mobCapPerPlot = Math.max(0, Math.min(1024, inted(p, "mob-cap-per-plot", mobCapPerPlot)));
 +        portals = bool(p, "portals", portals);
++        freeItems = ids(p, "free-items", freeItems);
++        freeBlocks = ids(p, "free-blocks", freeBlocks);
++        freeEntities = ids(p, "free-entities", freeEntities);
          portalStreetSpacing = Math.max(1, inted(p, "portal-street-spacing", portalStreetSpacing));
          advanceTime = bool(p, "advance-time", advanceTime);
          advanceWeather = bool(p, "advance-weather", advanceWeather);
-@@ -103,6 +105,7 @@ public final class PlotsConfig {
+@@ -103,6 +113,7 @@ public final class PlotsConfig {
      public static void save() {
          if (file == null) return;
          Properties p = new Properties();
@@ -239,15 +247,18 @@ index 5653241..036b5d7 100644
          p.setProperty("allow-player-combine", Boolean.toString(allowPlayerCombine));
          p.setProperty("max-merge-cells", Integer.toString(maxMergeCells));
          p.setProperty("claim-limit", Integer.toString(claimLimit));
-@@ -112,6 +115,7 @@ public final class PlotsConfig {
+@@ -112,6 +123,10 @@ public final class PlotsConfig {
          p.setProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport");
          p.setProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot");
          p.setProperty("mob-cap-per-plot", Integer.toString(mobCapPerPlot));
 +        p.setProperty("portals", Boolean.toString(portals));
++        p.setProperty("free-items", String.join(",", freeItems));
++        p.setProperty("free-blocks", String.join(",", freeBlocks));
++        p.setProperty("free-entities", String.join(",", freeEntities));
          p.setProperty("portal-street-spacing", Integer.toString(portalStreetSpacing));
          p.setProperty("advance-time", Boolean.toString(advanceTime));
          p.setProperty("advance-weather", Boolean.toString(advanceWeather));
-@@ -137,7 +141,7 @@ public final class PlotsConfig {
+@@ -137,11 +152,19 @@ public final class PlotsConfig {
          p.setProperty("economy-currency-id", economyCurrencyId);
          try {
              StringWriter out = new StringWriter();
@@ -256,6 +267,18 @@ index 5653241..036b5d7 100644
              AtomicFiles.writeLines(file, Arrays.asList(out.toString().split("\\R", -1)));
          } catch (Exception e) { System.err.println("[FabricPlots] Failed to write config: " + e); }
      }
+ 
++    private static java.util.Set<String> ids(Properties p, String k, java.util.Set<String> def) {
++        String v = p.getProperty(k);
++        if (v == null) return def;
++        java.util.Set<String> out = new java.util.TreeSet<>();
++        for (String id : v.split(",")) if (!id.isBlank()) out.add(id.trim().toLowerCase());
++        return java.util.Collections.unmodifiableSet(out);
++    }
++
+     private static boolean bool(Properties p, String k, boolean def) {
+         String v = p.getProperty(k);
+         return v == null ? def : Boolean.parseBoolean(v.trim());
 diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
 index 04ddd3f..40677e8 100644
 --- a/src/main/java/com/fabricplots/gui/PlotMenus.java
@@ -270,10 +293,50 @@ index 04ddd3f..40677e8 100644
              g.close();
              int n = 0;
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
-index 70fb191..ce816a2 100644
+index 70fb191..7233324 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
 +++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
-@@ -170,6 +170,9 @@ public final class PlotProtection {
+@@ -4,6 +4,7 @@ import com.fabricplots.FabricPlots;
+ import com.fabricplots.core.PlotConfig;
+ import com.fabricplots.core.PlotData;
+ import com.fabricplots.core.PlotManager;
++import com.fabricplots.core.PlotsConfig;
+ import com.fabricplots.world.PlotWorldPainter;
+ 
+ import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+@@ -65,6 +66,14 @@ public final class PlotProtection {
+                 }
+                 return InteractionResult.FAIL;
+             }
++            // free-items (used on any block, e.g. placing a drone) and free-blocks (right-clicked, e.g. a
++            // workbench) are fine anywhere — but not sneak-placing a block or fluid via a free block.
++            boolean places = held.getItem() instanceof net.minecraft.world.item.BlockItem
++                    || held.getItem() instanceof net.minecraft.world.item.BucketItem;
++            if (PlotsConfig.freeItems.contains(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(held.getItem()).toString())
++                    && !places) return InteractionResult.PASS;
++            if (PlotsConfig.freeBlocks.contains(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(world.getBlockState(pos).getBlock()).toString())
++                    && !(places && player.isSecondaryUseActive())) return InteractionResult.PASS;
+             if (!allowed(player, pos)) return InteractionResult.FAIL;
+             // Placing a block (or fluid bucket) targets the clicked face's NEIGHBOUR unless the clicked
+             // block is replaceable — that landing spot must be buildable too, or you could stand on the
+@@ -98,6 +107,7 @@ public final class PlotProtection {
+             if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
+             if (!isPlots(world)) return InteractionResult.PASS;
+             if (entity instanceof ServerPlayer victim) return pvpAllowed(victim) ? InteractionResult.PASS : InteractionResult.FAIL;
++            if (freeEntity(entity)) return InteractionResult.PASS;
+             return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
+         });
+ 
+@@ -105,7 +115,7 @@ public final class PlotProtection {
+         // villagers, boats and minecarts must obey the same ownership boundary as blocks.
+         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
+             if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
+-            if (!isPlots(world) || entity instanceof ServerPlayer) return InteractionResult.PASS;
++            if (!isPlots(world) || entity instanceof ServerPlayer || freeEntity(entity)) return InteractionResult.PASS;
+             return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
+         });
+ 
+@@ -170,6 +180,14 @@ public final class PlotProtection {
          // On a dedicated server this is false, so real ops are gated by the permission check below.
          if (server.isSingleplayer()) return true;
          if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
@@ -282,6 +345,11 @@ index 70fb191..ce816a2 100644
 +        // Staff without op: the fabricplots.admin node from a permissions mod (e.g. LuckPerms) counts too,
 +        // so /plot admin's build mode actually lets them edit roads and other plots.
 +        return com.fabricplots.compat.Perms.check(sp, "fabricplots.admin", false);
++    }
++
++    /** An entity anyone may click or hit anywhere in the plot world ("free-entities"). */
++    private static boolean freeEntity(net.minecraft.world.entity.Entity entity) {
++        return PlotsConfig.freeEntities.contains(net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString());
      }
  }
 diff --git a/src/main/java/com/fabricplots/protect/PortalManager.java b/src/main/java/com/fabricplots/protect/PortalManager.java
