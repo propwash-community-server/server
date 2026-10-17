@@ -101,7 +101,7 @@ works on plots the player may build on; it changes block states, never the block
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
 (PlotSquared-style, on Fabric so drones work). Players arrive in the plot world (the datapack in
 `servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
-plots doesn't run Flan.
+plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on fpv).
 
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
 `fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 1,
@@ -131,7 +131,7 @@ servers where the plot world sits next to a survival world). We run its 26.3 bra
 | `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
 | `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
 | `minecart-cap`, `minecart-cooldown-seconds` | 0, 0 (off) | 15, 5 | Most minecarts per plot; seconds between one player's minecart placements (build admins exempt) |
-| `free-items`, `free-blocks`, `free-entities` | (none) | Propwash drone, drone workbench, drone | Ids anyone may use anywhere, other people's plots too: items used on a block, blocks right-clicked (but not sneak-placing a block through them), entities clicked or hit |
+| `free-items`, `free-blocks`, `free-entities` | (none) | Propwash drone, drone workbench, drone | Ids anyone may use anywhere, other people's plots too: items used on a block, blocks right-clicked (but not sneak-placing a block through them), entities clicked or hit (and damaged) |
 
 It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla ops use the build
 mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which

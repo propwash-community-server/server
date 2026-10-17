@@ -1,3 +1,16 @@
+diff --git a/gradle.properties b/gradle.properties
+index daaf686..d973644 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -7,7 +7,7 @@ loader_version=0.19.5
+ fabric_version=0.161.0+26.3
+ 
+ # Mod
+-mod_version=1.0.2
++mod_version=1.0.2-plotsize.7
+ draftsmith_version=1.0.1
+ sgui_version=2.2.0+26.3
+ maven_group=com.fabricplots
 diff --git a/src/main/java/com/fabricplots/FabricPlots.java b/src/main/java/com/fabricplots/FabricPlots.java
 index c7e8ebe..8fc5341 100644
 --- a/src/main/java/com/fabricplots/FabricPlots.java
@@ -530,8 +543,21 @@ index 04ddd3f..0d0b666 100644
      private static Item biomeIcon(PlotData d) {
          if (d.biomeId.isBlank()) return Items.GRASS_BLOCK;
          return itemByRegistryId(PlotBiomes.iconFor(d.biomeId));
+diff --git a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java b/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
+index e6db3be..057721b 100644
+--- a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
++++ b/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
+@@ -23,7 +23,7 @@ public abstract class EntityDamageProtectionMixin {
+                                                      CallbackInfoReturnable<Boolean> cir) {
+         Entity target = (Entity) (Object) this;
+         if (target instanceof Player || !(target.level() instanceof ServerLevel level)
+-                || level.dimension() != FabricPlots.PLOTS_DIM) return;
++                || level.dimension() != FabricPlots.PLOTS_DIM || PlotProtection.freeEntity(target)) return;
+ 
+         Entity cause = source.getEntity();
+         if (!(cause instanceof ServerPlayer) && source.getDirectEntity() instanceof Projectile projectile) {
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
-index 70fb191..cb69dd9 100644
+index 70fb191..c34f560 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
 +++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
 @@ -4,6 +4,7 @@ import com.fabricplots.FabricPlots;
@@ -585,7 +611,7 @@ index 70fb191..cb69dd9 100644
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -170,6 +191,42 @@ public final class PlotProtection {
+@@ -170,6 +191,43 @@ public final class PlotProtection {
          // On a dedicated server this is false, so real ops are gated by the permission check below.
          if (server.isSingleplayer()) return true;
          if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
@@ -597,7 +623,8 @@ index 70fb191..cb69dd9 100644
 +    }
 +
 +    /** An entity anyone may click or hit anywhere in the plot world ("free-entities"). */
-+    private static boolean freeEntity(net.minecraft.world.entity.Entity entity) {
++    /** Entities anyone may hit and use anywhere in the plot world (free-entities, the Propwash drone). */
++    public static boolean freeEntity(net.minecraft.world.entity.Entity entity) {
 +        return PlotsConfig.freeEntities.contains(net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString());
 +    }
 +
