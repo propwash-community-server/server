@@ -10,4 +10,5 @@
 <admin><bold>Admin</bold></admin>
 <accent>/v</accent>: vanish on every server (again to show yourself)
 <accent>/exempt</accent>: use boats and projectiles, drop items, on every server (again to stop)
+<accent>/vote start <question></accent>: a yes/no vote on every server for 60 s; <accent>/vote end</accent> ends it early
 <accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it

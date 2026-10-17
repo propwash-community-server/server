@@ -45,9 +45,9 @@ import org.slf4j.Logger;
  * their inventory there (EssentialsX /invsee on Paper, InvView /view inv on Fabric). Vanished players
  * (the vanish plugin) can't be found by those who can't see them (propwash.vanish.see). Admin /exempt
  * (propwash.exempt) toggles the propwash.exempt tag (boats, projectiles, dropping items) on every server:
- * kept here and set over rcon on each server the player arrives on.
+ * kept here and set over rcon on each server the player arrives on. /vote: see Vote.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.1.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.2.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true)})
 public final class CrossServer {
@@ -96,6 +96,7 @@ public final class CrossServer {
         register("tpaccept", TPA, (player, args) -> answer(player, args, true), false);
         register("tpdeny", TPA, (player, args) -> answer(player, args, false), false);
         register("invsee", INVSEE, this::invsee, true);
+        new Vote(proxy, this, logger).register();
         proxy.getCommandManager().register(proxy.getCommandManager().metaBuilder("exempt").plugin(this).build(),
                 new SimpleCommand() {
                     @Override
