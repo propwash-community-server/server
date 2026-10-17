@@ -130,11 +130,28 @@ servers where the plot world sits next to a survival world). We run its 26.3 bra
 |---|---|---|---|
 | `plot-size` | 32 | 120 | Plot size, read at startup; the spawn is derived from it |
 | `portals` | true | false | Exit portals on the roads, Portal Keys (compass) on claim, `/plot key`, frame portals; `false` also removes existing ones on start |
+| `minecart-cap`, `minecart-cooldown-seconds` | 0, 0 (off) | 15, 5 | Most minecarts per plot; seconds between one player's minecart placements (build admins exempt) |
 | `free-items`, `free-blocks`, `free-entities` | (none) | Propwash drone, drone workbench, drone | Ids anyone may use anywhere, other people's plots too: items used on a block, blocks right-clicked (but not sneak-placing a block through them), entities clicked or hit |
 
 It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla ops use the build
 mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which
 staff and admin have on plots.
+
+Plot owners set what visitors (not trusted) may use on their plot with flags: `/plot flag set <flag>
+true|false` on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
+All are off by default and building stays owner and trusted only:
+
+| Flag | Visitors may |
+|---|---|
+| `vehicle-use` | ride minecarts |
+| `vehicle-place` | place minecarts on rails |
+| `device-interact` | use buttons, levers, doors, trapdoors and fence gates |
+| `container-use` | open chests, barrels and other containers |
+| `animal-interact` | feed, ride and trade with animals and villagers |
+| `misc-interact` | use armor stands and item frames |
+
+They're saved with each plot (`fabricplots-plots.txt`); our patch adds them (PlotSquared has flags like
+these: `vehicle-use`, `device-interact` and so on).
 
 `/plot visit <player>` works for offline players too (upstream only takes online ones): it goes by
 the owner name stored with each plot and suggests those names. `/plot list` lists everyone with a
