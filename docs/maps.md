@@ -52,22 +52,28 @@ around their terrain). Staff set the spawn once, standing on the spot:
 /execute in maps:tutorial run setworldspawn ~ ~ ~
 ```
 
-## Driftpark
+## Drift Arena and Moto Arena
 
-`driftpark` (by LardTom) has two drift cars lapping the track for drones to chase, and placeable
-furniture. Both come from a datapack and a resource pack that are on every server, so furniture
-works anywhere: `files/world/datapacks/driftpark-datapack.zip` of hub, fpv and plots, and the pack
-in the world store (`fpv/resourcepacks/driftpark-<sha1>.zip`) as each server's `resource-pack`,
-offered on joining (not required). Without the pack the cars and furniture are invisible.
-Operators: `/function drift:help` (start, stop, reset the cars; furniture items). Rotating and
-picking up furniture takes a stick named `Drift Tool`. Never run `/function drift:build` on a
-server: besides rebuilding the track, it moves the world spawn and changes game rules. Flan's
-inspection tool on fpv is a wooden hoe, so it doesn't clash with the Drift Tool.
+Two maps by LardTom with animated vehicles for drones to chase, each run by its own datapack:
 
-To update Driftpark: put the new `driftpark-datapack.zip` in the three `files/world/datapacks/`, upload
-the new resource pack under a new name and change the URL and SHA-1 in the three `server.toml` files,
-deploy, then run `/function drift:reset` once on the map (it respawns the cars). The map itself only
-changes with `uv run upload` and `uv run apply fpv driftpark`.
+| Map | Vehicles | Datapack | Operators |
+|---|---|---|---|
+| `driftpark`, "Drift Arena" | two drift cars, placeable furniture | `driftpark-datapack.zip` (hub, fpv, plots, so furniture works anywhere) | `/function drift:help` |
+| `motoarena`, "Moto Arena" | bikes and a buggy | `arena-datapack.zip` (fpv) | `/function arena:help` |
+
+The datapacks are in `files/world/datapacks/` of those servers. Their models and sounds are in one
+resource pack for both, in the world store (`fpv/resourcepacks/propwash-maps-<sha1>.zip`), as the
+hub's, fpv's and plots' `resource-pack`, offered on joining (not required). Without it the vehicles
+and furniture are invisible. Rotating and picking up Drift Arena furniture takes a stick named
+`Drift Tool` (Flan's inspection tool on fpv is a wooden hoe, so they don't clash).
+
+Never run `/function drift:build` or `/function arena:build` on a server: besides rebuilding the map,
+they move the world spawn and change game rules (`arena:build` also turns on a respawn teleport).
+
+To update: put the new datapack zip in place, upload the new resource pack under a new name and change
+the URL and SHA-1 in the three `server.toml` files, deploy, then run `/function drift:reset` or
+`/function arena:reset` once on the map (it respawns the vehicles). A map itself only changes with
+`uv run upload` and `uv run apply fpv <name>`.
 
 ## In game
 
