@@ -11,7 +11,7 @@ index c7e8ebe..8fc5341 100644
              applyWorldRules(server);
          });
 diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
-index a5ee575..fd7f78b 100644
+index a5ee575..a292db3 100644
 --- a/src/main/java/com/fabricplots/command/PlotCommands.java
 +++ b/src/main/java/com/fabricplots/command/PlotCommands.java
 @@ -84,8 +84,16 @@ public final class PlotCommands {
@@ -32,17 +32,31 @@ index a5ee575..fd7f78b 100644
                                  .executes(PlotCommands::visit)))
                  .then(Commands.literal("name")
                          .then(Commands.argument("name", StringArgumentType.greedyString())
-@@ -102,7 +110,8 @@ public final class PlotCommands {
+@@ -102,7 +110,22 @@ public final class PlotCommands {
                                  .executes(PlotCommands::removeAll)))
                  .then(Commands.literal("menu").executes(PlotCommands::menu))
                  .then(Commands.literal("edit").executes(PlotCommands::listPlots)) // manage your plots — the build editor is /draft edit
 -                .then(Commands.literal("list").executes(PlotCommands::listPlots))
 +                // Everyone with a plot, click a name to visit (your own plots: /plot edit).
 +                .then(Commands.literal("list").executes(PlotCommands::listOwners))
++                // What visitors may use on your plot (PlotFlags); also in /plot menu.
++                .then(Commands.literal("flag")
++                        .executes(PlotCommands::flagList)
++                        .then(Commands.literal("help").executes(PlotCommands::flagHelp))
++                        .then(Commands.literal("list").executes(PlotCommands::flagList))
++                        .then(Commands.literal("set")
++                                .then(Commands.argument("flag", StringArgumentType.word())
++                                        .suggests((c, b) -> {
++                                            for (var f : com.fabricplots.core.PlotFlags.Flag.values())
++                                                if (f.id.startsWith(b.getRemaining().toLowerCase())) b.suggest(f.id);
++                                            return b.buildFuture();
++                                        })
++                                        .then(Commands.argument("value", com.mojang.brigadier.arguments.BoolArgumentType.bool())
++                                                .executes(PlotCommands::flagSet)))))
                  .then(Commands.literal("sethome").executes(PlotCommands::setHome))
                  .then(Commands.literal("admin").executes(PlotCommands::adminMode))
                  .then(Commands.literal("setspawn").executes(PlotCommands::setSpawn))
-@@ -139,11 +148,11 @@ public final class PlotCommands {
+@@ -139,11 +162,11 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -56,7 +70,7 @@ index a5ee575..fd7f78b 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -166,10 +175,10 @@ public final class PlotCommands {
+@@ -166,10 +189,10 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -69,7 +83,7 @@ index a5ee575..fd7f78b 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -257,6 +266,7 @@ public final class PlotCommands {
+@@ -257,6 +280,7 @@ public final class PlotCommands {
              if (!staff(ctx, p, "fabricplots.reload")) return 0;
              PlotsConfig.load();
              FabricPlots.applyWorldRules(ctx.getSource().getServer());
@@ -77,17 +91,18 @@ index a5ee575..fd7f78b 100644
              msg(ctx, "Config reloaded. allow-player-combine=" + PlotsConfig.allowPlayerCombine
                      + ", max-merge-cells=" + PlotsConfig.maxMergeCells
                      + ", claim-limit=" + PlotsConfig.claimLimit
-@@ -294,7 +304,8 @@ public final class PlotCommands {
+@@ -294,7 +318,9 @@ public final class PlotCommands {
          line(src, "/plot world", "go to the plot world");
          line(src, "/plot menu", "open the menu");
          line(src, "/plot home", "go to your plot");
 -        line(src, "/plot visit <player>", "visit a player's plot");
 +        line(src, "/plot visit <player>", "visit a player's plot (also when they're offline)");
 +        line(src, "/plot list", "everyone with a plot (click a name to visit)");
++        line(src, "/plot flag help", "what visitors may use on your plot");
          line(src, "/plot like", "like the plot you're standing on");
          line(src, "/plot leave", "return to the home world");
  
-@@ -516,6 +527,7 @@ public final class PlotCommands {
+@@ -516,6 +542,7 @@ public final class PlotCommands {
      private static int key(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -95,7 +110,7 @@ index a5ee575..fd7f78b 100644
              if (!allowed(ctx, p, "fabricplots.portal")) return 0;
              // In the plot world, standing on a plot you may use: give that one plot's key.
              if (p.level().dimension() == FabricPlots.PLOTS_DIM) {
-@@ -829,14 +841,50 @@ public final class PlotCommands {
+@@ -829,14 +856,92 @@ public final class PlotCommands {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
              if (!allowed(ctx, p, "fabricplots.visit")) return 0;
@@ -120,6 +135,48 @@ index a5ee575..fd7f78b 100644
          } catch (Exception e) { return err(ctx, e); }
      }
  
++    private static int flagHelp(CommandContext<CommandSourceStack> ctx) {
++        msg(ctx, "Flags let visitors (not trusted) use things on your plot; all off by default. Building stays trusted-only.");
++        msg(ctx, "/plot flag set <flag> true|false on your plot, /plot flag to see them, or /plot menu > your plot > Visitor permissions.");
++        for (var f : com.fabricplots.core.PlotFlags.Flag.values()) msg(ctx, f.id + ": " + f.description);
++        return 1;
++    }
++
++    private static int flagList(CommandContext<CommandSourceStack> ctx) {
++        try {
++            ServerPlayer p = ctx.getSource().getPlayerOrException();
++            PlotData d = claimedPlotHere(ctx, p, "Stand on a claimed plot to see its flags.");
++            if (d == null) return 0;
++            StringBuilder sb = new StringBuilder("Visitor flags here: ");
++            var flags = com.fabricplots.core.PlotFlags.Flag.values();
++            for (int i = 0; i < flags.length; i++) {
++                if (i > 0) sb.append(", ");
++                sb.append(flags[i].id).append(d.flags.contains(flags[i].id) ? " ON" : " off");
++            }
++            msg(ctx, sb + "  (/plot flag help)");
++            return 1;
++        } catch (Exception e) { return err(ctx, e); }
++    }
++
++    private static int flagSet(CommandContext<CommandSourceStack> ctx) {
++        try {
++            ServerPlayer p = ctx.getSource().getPlayerOrException();
++            if (!allowed(ctx, p, "fabricplots.flag")) return 0;
++            var flag = com.fabricplots.core.PlotFlags.byId(StringArgumentType.getString(ctx, "flag").toLowerCase());
++            if (flag == null) { msg(ctx, "No such flag; /plot flag help lists them."); return 0; }
++            PlotData d = claimedPlotHere(ctx, p, "Stand on your plot to set its flags.");
++            if (d == null) return 0;
++            if (!d.owner.equals(p.getUUID()) && !PlotProtection.isAdmin(p)) { msg(ctx, "Only the plot owner can set its flags."); return 0; }
++            boolean value = com.mojang.brigadier.arguments.BoolArgumentType.getBool(ctx, "value");
++            if (!PlotManager.update(d, plot -> { if (value) plot.flags.add(flag.id); else plot.flags.remove(flag.id); })) {
++                msg(ctx, "That change could not be saved; nothing was changed.");
++                return 0;
++            }
++            msg(ctx, flag.id + " is now " + (value ? "ON: visitors may " + flag.description + "." : "off."));
++            return 1;
++        } catch (Exception e) { return err(ctx, e); }
++    }
++
 +    /** Owner names of all claimed plots (not the server's), sorted. */
 +    private static List<String> ownerNames() {
 +        java.util.TreeSet<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -211,11 +268,150 @@ index ec8c020..22e649b 100644
 +        }
 +    }
  }
+diff --git a/src/main/java/com/fabricplots/core/PlotData.java b/src/main/java/com/fabricplots/core/PlotData.java
+index 2435e70..31305c0 100644
+--- a/src/main/java/com/fabricplots/core/PlotData.java
++++ b/src/main/java/com/fabricplots/core/PlotData.java
+@@ -30,6 +30,7 @@ public final class PlotData {
+     public final Set<UUID> trusted = new LinkedHashSet<>();
+     public final Set<UUID> denied = new LinkedHashSet<>();   // banned from entering this plot
+     public final Set<UUID> likes = new LinkedHashSet<>();    // players who liked this plot
++    public final Set<String> flags = new java.util.TreeSet<>(); // visitor flags that are on (PlotFlags ids)
+     public final Set<PlotPos> cells = new LinkedHashSet<>();
+ 
+     public PlotData(UUID owner, String ownerName) {
+diff --git a/src/main/java/com/fabricplots/core/PlotFlags.java b/src/main/java/com/fabricplots/core/PlotFlags.java
+new file mode 100644
+index 0000000..d798be2
+--- /dev/null
++++ b/src/main/java/com/fabricplots/core/PlotFlags.java
+@@ -0,0 +1,80 @@
++package com.fabricplots.core;
++
++import java.util.Map;
++import java.util.function.BiPredicate;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++import java.util.stream.Stream;
++import net.minecraft.core.BlockPos;
++import net.minecraft.tags.BlockTags;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.animal.Animal;
++import net.minecraft.world.entity.decoration.ArmorStand;
++import net.minecraft.world.entity.decoration.ItemFrame;
++import net.minecraft.world.entity.npc.villager.AbstractVillager;
++import net.minecraft.world.entity.vehicle.VehicleEntity;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.MinecartItem;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.LeverBlock;
++import net.minecraft.world.level.block.state.BlockState;
++
++/**
++ * Per-plot flags for visitors (players who aren't the owner or trusted): what they may use on the
++ * plot. All off by default, so a plot is as closed as before. Building (placing, breaking) is never a
++ * flag: that stays owner and trusted only.
++ */
++public final class PlotFlags {
++    private PlotFlags() {}
++
++    public enum Flag {
++        VEHICLE_USE("vehicle-use", "ride minecarts", Items.MINECART),
++        VEHICLE_PLACE("vehicle-place", "place minecarts on rails", Items.RAIL),
++        DEVICE_INTERACT("device-interact", "use buttons, levers, doors, trapdoors and fence gates", Items.LEVER),
++        CONTAINER_USE("container-use", "open chests, barrels and other containers", Items.CHEST),
++        ANIMAL_INTERACT("animal-interact", "feed, ride and trade with animals and villagers", Items.WHEAT),
++        MISC_INTERACT("misc-interact", "use armor stands and item frames", Items.ARMOR_STAND);
++
++        public final String id;
++        public final String description;
++        public final Item icon;
++
++        Flag(String id, String description, Item icon) {
++            this.id = id;
++            this.description = description;
++            this.icon = icon;
++        }
++    }
++
++    private static final Map<String, Flag> BY_ID = Stream.of(Flag.values()).collect(Collectors.toMap(f -> f.id, f -> f));
++
++    public static Flag byId(String id) {
++        return BY_ID.get(id);
++    }
++
++    public static boolean on(PlotData plot, Flag flag) {
++        return plot != null && plot.flags.contains(flag.id);
++    }
++
++    /** A block visitors may right-click on this plot because of its flags. */
++    public static boolean allowsBlock(PlotData plot, Level level, BlockPos pos, BlockState state, ItemStack held) {
++        if (on(plot, Flag.DEVICE_INTERACT) && isDevice.test(state)) return true;
++        if (on(plot, Flag.CONTAINER_USE) && isContainer.test(level, pos)) return true;
++        return on(plot, Flag.VEHICLE_PLACE) && held.getItem() instanceof MinecartItem && state.is(BlockTags.RAILS);
++    }
++
++    /** An entity visitors may click on this plot because of its flags. */
++    public static boolean allowsEntity(PlotData plot, Entity entity) {
++        if (on(plot, Flag.VEHICLE_USE) && entity instanceof VehicleEntity) return true;
++        if (on(plot, Flag.ANIMAL_INTERACT) && (entity instanceof Animal || entity instanceof AbstractVillager)) return true;
++        return on(plot, Flag.MISC_INTERACT) && (entity instanceof ArmorStand || entity instanceof ItemFrame);
++    }
++
++    private static final Predicate<BlockState> isDevice = state -> state.is(BlockTags.DOORS) || state.is(BlockTags.TRAPDOORS)
++            || state.is(BlockTags.FENCE_GATES) || state.is(BlockTags.BUTTONS) || state.getBlock() instanceof LeverBlock;
++
++    private static final BiPredicate<Level, BlockPos> isContainer = (level, pos) ->
++            level.getBlockEntity(pos) instanceof net.minecraft.world.Container;
++}
+diff --git a/src/main/java/com/fabricplots/core/PlotManager.java b/src/main/java/com/fabricplots/core/PlotManager.java
+index f1ee48a..e8a1e0a 100644
+--- a/src/main/java/com/fabricplots/core/PlotManager.java
++++ b/src/main/java/com/fabricplots/core/PlotManager.java
+@@ -142,6 +142,8 @@ public final class PlotManager {
+         to.spawnHostile = from.spawnHostile;
+         to.spawnPassive = from.spawnPassive;
+         to.mobCap = from.mobCap;
++        to.flags.clear();
++        to.flags.addAll(from.flags);
+         to.sidewalkPattern = from.sidewalkPattern;
+         to.wallPattern = from.wallPattern;
+         to.trusted.addAll(from.trusted);
+@@ -179,6 +181,8 @@ public final class PlotManager {
+         target.spawnHostile = source.spawnHostile;
+         target.spawnPassive = source.spawnPassive;
+         target.mobCap = source.mobCap;
++        target.flags.clear();
++        target.flags.addAll(source.flags);
+         target.sidewalkPattern = source.sidewalkPattern;
+         target.wallPattern = source.wallPattern;
+         target.paidAmount = source.paidAmount;
+@@ -340,6 +344,8 @@ public final class PlotManager {
+                 if (parts.length > 16 && !parts[16].isBlank()) d.spawnHostile = Boolean.parseBoolean(parts[16].trim());
+                 if (parts.length > 17 && !parts[17].isBlank()) d.spawnPassive = Boolean.parseBoolean(parts[17].trim());
+                 if (parts.length > 18 && !parts[18].isBlank()) { try { d.mobCap = Integer.parseInt(parts[18].trim()); } catch (NumberFormatException ignored) {} }
++                if (parts.length > 19 && !parts[19].isBlank())
++                    for (String f : parts[19].split(",")) if (PlotFlags.byId(f.trim()) != null) d.flags.add(f.trim());
+                 for (PlotPos c : d.cells) PLOTS.put(c, d);
+             } catch (Exception e) {
+                 System.err.println("[FabricPlots] Skipped bad plot line: " + line + " (" + e + ")");
+@@ -372,7 +378,8 @@ public final class PlotManager {
+             lines.add(d.owner + ";" + d.ownerName + ";" + tj + ";" + cj + ";" + d.name + ";" + dj + ";" + home
+                     + ";" + floor + ";" + d.pvp + ";" + lj + ";" + d.paidAmount
+                     + ";" + d.greeting + ";" + d.ambience + ";" + d.sidewalkPattern + ";" + d.wallPattern
+-                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap);
++                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap
++                    + ";" + String.join(",", d.flags));
+         }
+         try {
+             AtomicFiles.writeLines(saveFile, lines);
 diff --git a/src/main/java/com/fabricplots/core/PlotsConfig.java b/src/main/java/com/fabricplots/core/PlotsConfig.java
-index 5653241..2806cac 100644
+index 5653241..ede2a4b 100644
 --- a/src/main/java/com/fabricplots/core/PlotsConfig.java
 +++ b/src/main/java/com/fabricplots/core/PlotsConfig.java
-@@ -23,6 +23,12 @@ public final class PlotsConfig {
+@@ -23,6 +23,14 @@ public final class PlotsConfig {
      public static volatile boolean welcomeMessage = true;     // show the action-bar welcome on a plot
      public static volatile int unnamedMobGraceTicks = 12000;  // how long an unnamed mob may live
      public static volatile int mobScanIntervalTicks = 600;    // how often to sweep stale mobs
@@ -225,10 +421,12 @@ index 5653241..2806cac 100644
 +    public static volatile java.util.Set<String> freeItems = java.util.Set.of();
 +    public static volatile java.util.Set<String> freeBlocks = java.util.Set.of();
 +    public static volatile java.util.Set<String> freeEntities = java.util.Set.of();
++    public static volatile int minecartCap = 0;               // "minecart-cap": most minecarts per plot (0 = no limit)
++    public static volatile int minecartCooldownSeconds = 0;   // "minecart-cooldown-seconds": between one player's placements (0 = none)
      public static volatile int portalStreetSpacing = 2;       // exit portals on every Nth N-S street (1=every)
      public static volatile boolean advanceTime = true;        // day/night cycle in the plot world
      public static volatile boolean advanceWeather = true;     // weather cycle in the plot world
-@@ -74,6 +80,10 @@ public final class PlotsConfig {
+@@ -74,6 +82,12 @@ public final class PlotsConfig {
          mobEscapeDespawn = "despawn".equalsIgnoreCase(p.getProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport").trim());
          mobSpawningOff = "off".equalsIgnoreCase(p.getProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot").trim());
          mobCapPerPlot = Math.max(0, Math.min(1024, inted(p, "mob-cap-per-plot", mobCapPerPlot)));
@@ -236,10 +434,12 @@ index 5653241..2806cac 100644
 +        freeItems = ids(p, "free-items", freeItems);
 +        freeBlocks = ids(p, "free-blocks", freeBlocks);
 +        freeEntities = ids(p, "free-entities", freeEntities);
++        minecartCap = Math.max(0, inted(p, "minecart-cap", minecartCap));
++        minecartCooldownSeconds = Math.max(0, inted(p, "minecart-cooldown-seconds", minecartCooldownSeconds));
          portalStreetSpacing = Math.max(1, inted(p, "portal-street-spacing", portalStreetSpacing));
          advanceTime = bool(p, "advance-time", advanceTime);
          advanceWeather = bool(p, "advance-weather", advanceWeather);
-@@ -103,6 +113,7 @@ public final class PlotsConfig {
+@@ -103,6 +117,7 @@ public final class PlotsConfig {
      public static void save() {
          if (file == null) return;
          Properties p = new Properties();
@@ -247,7 +447,7 @@ index 5653241..2806cac 100644
          p.setProperty("allow-player-combine", Boolean.toString(allowPlayerCombine));
          p.setProperty("max-merge-cells", Integer.toString(maxMergeCells));
          p.setProperty("claim-limit", Integer.toString(claimLimit));
-@@ -112,6 +123,10 @@ public final class PlotsConfig {
+@@ -112,6 +127,12 @@ public final class PlotsConfig {
          p.setProperty("mob-escape-action", mobEscapeDespawn ? "despawn" : "teleport");
          p.setProperty("mob-spawning", mobSpawningOff ? "off" : "per-plot");
          p.setProperty("mob-cap-per-plot", Integer.toString(mobCapPerPlot));
@@ -255,10 +455,12 @@ index 5653241..2806cac 100644
 +        p.setProperty("free-items", String.join(",", freeItems));
 +        p.setProperty("free-blocks", String.join(",", freeBlocks));
 +        p.setProperty("free-entities", String.join(",", freeEntities));
++        p.setProperty("minecart-cap", Integer.toString(minecartCap));
++        p.setProperty("minecart-cooldown-seconds", Integer.toString(minecartCooldownSeconds));
          p.setProperty("portal-street-spacing", Integer.toString(portalStreetSpacing));
          p.setProperty("advance-time", Boolean.toString(advanceTime));
          p.setProperty("advance-weather", Boolean.toString(advanceWeather));
-@@ -137,11 +152,19 @@ public final class PlotsConfig {
+@@ -137,11 +158,19 @@ public final class PlotsConfig {
          p.setProperty("economy-currency-id", economyCurrencyId);
          try {
              StringWriter out = new StringWriter();
@@ -280,7 +482,7 @@ index 5653241..2806cac 100644
          String v = p.getProperty(k);
          return v == null ? def : Boolean.parseBoolean(v.trim());
 diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
-index 04ddd3f..40677e8 100644
+index 04ddd3f..0d0b666 100644
 --- a/src/main/java/com/fabricplots/gui/PlotMenus.java
 +++ b/src/main/java/com/fabricplots/gui/PlotMenus.java
 @@ -98,7 +98,7 @@ public final class PlotMenus {
@@ -292,8 +494,44 @@ index 04ddd3f..40677e8 100644
              if (!allowed(sp, "fabricplots.portal")) return;
              g.close();
              int n = 0;
+@@ -224,10 +224,35 @@ public final class PlotMenus {
+                 "Hostile: " + (d.spawnHostile ? "ON" : "OFF") + " · Passive: " + (d.spawnPassive ? "ON" : "OFF")
+                         + " — what your plot's biome may spawn.",
+                 (i, t, a, gg) -> { if (allowed(sp, "fabricplots.mobs")) mobSpawnPicker(sp, anchor); }));
++        g.setSlot(29, btn(Items.OAK_DOOR, "Visitor permissions (" + d.flags.size() + " on)",
++                "What visitors may use here: minecarts, doors, chests and more.",
++                (i, t, a, gg) -> { if (allowed(sp, "fabricplots.flag")) flagsPicker(sp, anchor); }));
+         g.setSlot(31, btn(Items.ARROW, "Back", "", (i, t, a, gg) -> myPlots(sp, 0)));
+         g.open();
+     }
+ 
++    // ---- visitor flags (PlotFlags) ---------------------------------------
++
++    public static void flagsPicker(ServerPlayer sp, PlotPos anchor) {
++        PlotData d = PlotManager.get(anchor);
++        if (d == null || (!d.owner.equals(sp.getUUID()) && !PlotProtection.isAdmin(sp))) { sp.closeContainer(); return; }
++        SimpleGui g = new SimpleGui(MenuType.GENERIC_9x3, sp, false);
++        g.setTitle(Component.literal("Visitor permissions"));
++        int slot = 10;
++        for (var flag : com.fabricplots.core.PlotFlags.Flag.values()) {
++            boolean on = d.flags.contains(flag.id);
++            g.setSlot(slot++, btn(on ? flag.icon : Items.BARRIER, flag.id + ": " + (on ? "ON" : "OFF"),
++                    "Visitors may " + flag.description + (on ? ". Click to turn it off." : " (off). Click to allow."),
++                    (i, t, a, gg) -> {
++                        PlotData current = editable(sp, anchor, "fabricplots.flag");
++                        if (current == null) return;
++                        if (update(sp, current, plot -> { if (!plot.flags.remove(flag.id)) plot.flags.add(flag.id); })) flagsPicker(sp, anchor);
++                    }));
++        }
++        g.setSlot(22, btn(Items.ARROW, "Back", "Building always stays owner and trusted only.", (i, t, a, gg) -> settings(sp, anchor)));
++        g.open();
++    }
++
+     private static Item biomeIcon(PlotData d) {
+         if (d.biomeId.isBlank()) return Items.GRASS_BLOCK;
+         return itemByRegistryId(PlotBiomes.iconFor(d.biomeId));
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
-index 70fb191..7233324 100644
+index 70fb191..cb69dd9 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
 +++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
 @@ -4,6 +4,7 @@ import com.fabricplots.FabricPlots;
@@ -304,10 +542,15 @@ index 70fb191..7233324 100644
  import com.fabricplots.world.PlotWorldPainter;
  
  import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-@@ -65,6 +66,14 @@ public final class PlotProtection {
+@@ -65,6 +66,22 @@ public final class PlotProtection {
                  }
                  return InteractionResult.FAIL;
              }
++            // Minecart limits (minecart-cooldown-seconds per player, minecart-cap per plot), wherever one may be placed.
++            if (held.getItem() instanceof net.minecraft.world.item.MinecartItem && player instanceof ServerPlayer sp
++                    && (allowed(player, pos) || com.fabricplots.core.PlotFlags.allowsBlock(
++                            PlotManager.owningPlot(pos.getX(), pos.getZ()), world, pos, world.getBlockState(pos), held))
++                    && minecartLimited(sp, (ServerLevel) world, pos)) return InteractionResult.FAIL;
 +            // free-items (used on any block, e.g. placing a drone) and free-blocks (right-clicked, e.g. a
 +            // workbench) are fine anywhere — but not sneak-placing a block or fluid via a free block.
 +            boolean places = held.getItem() instanceof net.minecraft.world.item.BlockItem
@@ -316,10 +559,13 @@ index 70fb191..7233324 100644
 +                    && !places) return InteractionResult.PASS;
 +            if (PlotsConfig.freeBlocks.contains(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(world.getBlockState(pos).getBlock()).toString())
 +                    && !(places && player.isSecondaryUseActive())) return InteractionResult.PASS;
++            // The plot's visitor flags (devices, containers, minecarts on rails), with the same sneak rule.
++            if (!(places && player.isSecondaryUseActive()) && com.fabricplots.core.PlotFlags.allowsBlock(
++                    PlotManager.owningPlot(pos.getX(), pos.getZ()), world, pos, world.getBlockState(pos), held)) return InteractionResult.PASS;
              if (!allowed(player, pos)) return InteractionResult.FAIL;
              // Placing a block (or fluid bucket) targets the clicked face's NEIGHBOUR unless the clicked
              // block is replaceable — that landing spot must be buildable too, or you could stand on the
-@@ -98,6 +107,7 @@ public final class PlotProtection {
+@@ -98,6 +115,7 @@ public final class PlotProtection {
              if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
              if (!isPlots(world)) return InteractionResult.PASS;
              if (entity instanceof ServerPlayer victim) return pvpAllowed(victim) ? InteractionResult.PASS : InteractionResult.FAIL;
@@ -327,16 +573,19 @@ index 70fb191..7233324 100644
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -105,7 +115,7 @@ public final class PlotProtection {
+@@ -105,7 +123,10 @@ public final class PlotProtection {
          // villagers, boats and minecarts must obey the same ownership boundary as blocks.
          UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
              if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
 -            if (!isPlots(world) || entity instanceof ServerPlayer) return InteractionResult.PASS;
 +            if (!isPlots(world) || entity instanceof ServerPlayer || freeEntity(entity)) return InteractionResult.PASS;
++            // The plot's visitor flags (minecarts, animals and villagers, armor stands and item frames).
++            if (com.fabricplots.core.PlotFlags.allowsEntity(
++                    PlotManager.owningPlot(entity.blockPosition().getX(), entity.blockPosition().getZ()), entity)) return InteractionResult.PASS;
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -170,6 +180,14 @@ public final class PlotProtection {
+@@ -170,6 +191,42 @@ public final class PlotProtection {
          // On a dedicated server this is false, so real ops are gated by the permission check below.
          if (server.isSingleplayer()) return true;
          if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
@@ -350,6 +599,34 @@ index 70fb191..7233324 100644
 +    /** An entity anyone may click or hit anywhere in the plot world ("free-entities"). */
 +    private static boolean freeEntity(net.minecraft.world.entity.Entity entity) {
 +        return PlotsConfig.freeEntities.contains(net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString());
++    }
++
++    private static final java.util.Map<UUID, Long> LAST_MINECART = new java.util.concurrent.ConcurrentHashMap<>();
++
++    /** True (with a message) if this minecart placement is over the cooldown or the plot's cap. */
++    private static boolean minecartLimited(ServerPlayer sp, ServerLevel level, BlockPos pos) {
++        long now = System.currentTimeMillis();
++        int cooldown = PlotsConfig.minecartCooldownSeconds;
++        Long last = LAST_MINECART.get(sp.getUUID());
++        if (cooldown > 0 && last != null && now - last < cooldown * 1000L && !isBuildAdmin(sp)) {
++            sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
++                    "[Plots] Wait " + cooldown + " seconds between minecarts."));
++            return true;
++        }
++        PlotData plot = PlotManager.owningPlot(pos.getX(), pos.getZ());
++        int cap = PlotsConfig.minecartCap;
++        if (cap > 0 && plot != null) {
++            int count = level.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(
++                    net.minecraft.world.entity.vehicle.minecart.AbstractMinecart.class),
++                    cart -> PlotManager.owningPlot(cart.getBlockX(), cart.getBlockZ()) == plot).size();
++            if (count >= cap) {
++                sp.sendSystemMessage(net.minecraft.network.chat.Component.literal(
++                        "[Plots] This plot already has " + cap + " minecarts, the most allowed."));
++                return true;
++            }
++        }
++        LAST_MINECART.put(sp.getUUID(), now);
++        return false;
      }
  }
 diff --git a/src/main/java/com/fabricplots/protect/PortalManager.java b/src/main/java/com/fabricplots/protect/PortalManager.java
