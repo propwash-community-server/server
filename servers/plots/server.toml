@@ -83,6 +83,10 @@ spawn-z = "-9"
 # so staff (in /plot admin) can build on the spawn area's roads: 145 blocks each way.
 street-sweeper-spawn-radius = "145"
 allow-player-combine = "false"
+# FabricPlots sets the plot world's advance_time and advance_weather game rules from these on every
+# start (and /plot reload), so a /gamerule change didn't last: time and weather stay put.
+advance-time = "false"
+advance-weather = "false"
 # No portal system: the plot world is the whole server, so no calcite exit portals on the roads,
 # no Portal Key (compass) on claim, no /plot key. Existing portals are removed on start.
 portals = "false"
