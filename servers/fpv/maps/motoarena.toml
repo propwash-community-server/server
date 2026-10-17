@@ -1,0 +1,7 @@
+title = "Moto Arena"
+author = "LardTom"
+border = { x = 0, z = 0, size = 256 }
+# Bikes and a buggy race the arena for drones to chase (files/world/datapacks/arena-datapack.zip;
+# operators: /function arena:help). Never /function arena:build here: it also moves fpv's world spawn
+# (the tutorial), changes game rules and turns on a respawn teleport. Its models are in the shared
+# resource pack with Drift Arena's (fpv's [properties]).

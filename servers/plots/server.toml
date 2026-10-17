@@ -90,11 +90,11 @@ welcome-message = "false"
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
-# Driftpark's resource pack (furniture models), as on fpv; see servers/fpv/maps/driftpark.toml.
+# The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/driftpark-569ec8f1.zip'
-resource-pack-sha1 = "569ec8f1ef00fdc925d3ba12b482c9c3c331c786"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-6557a509.zip'
+resource-pack-sha1 = "6557a50938db41df0a9ce22c7df79e849ca4a16b"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
