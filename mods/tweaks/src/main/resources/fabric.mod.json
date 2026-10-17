@@ -3,7 +3,7 @@
   "id": "tweaks",
   "version": "${version}",
   "name": "Tweaks",
-  "description": "Propwash server tweaks: dropped items are deleted (except for players tagged propwash.exempt); vanishing and un-vanishing (Vanish mod) show at once; /mydrone brings your own drone to you.",
+  "description": "Propwash server tweaks: dropped items are deleted (except for players tagged propwash.exempt); vanishing and un-vanishing (Vanish mod) show at once; /mydrone brings your own drone to you; the debug stick works in the plot world (/debugstick).",
   "license": "MIT",
   "environment": "server",
   "entrypoints": {

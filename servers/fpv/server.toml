@@ -22,9 +22,9 @@ mods = [
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
-    # /mydrone brings your own drone to you.
+    # /mydrone brings your own drone to you; the debug stick works in the plot world (/debugstick).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.1.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.2.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
