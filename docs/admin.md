@@ -88,6 +88,10 @@ un-vanishing show at once: the Vanish mod left that to vanilla, which only re-ch
 when someone moves into another 16-block section. That part hooks into Vanish by name; after
 updating Vanish, check that un-vanishing still shows you right away.
 
+`/mydrone` (everyone, fpv and plots, also `mods/tweaks`) brings the player's own drone to them: the
+nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
+at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
+
 ## Plots
 
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
