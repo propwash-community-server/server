@@ -243,6 +243,14 @@ by anyone who can't see them.
 
 Staff also have Carbon's `/spy`: private messages between anyone, and other servers' local chat.
 
+## Votes
+
+Admins (`propwash.vote`) run a yes/no vote on every server with `/vote start <question>`: everyone
+gets the question with clickable Yes and No (`/vote yes`, `/vote no`; changing your answer is fine),
+and after 60 seconds, or `/vote end`, the result. `/vote` shows the running vote. One at a time; the
+question is plain text (no formatting or click actions), at most 200 characters. Part of
+`mods/crossserver`; votes and results are in the proxy log.
+
 ## Vanish
 
 `/v` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and

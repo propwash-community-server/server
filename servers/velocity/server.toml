@@ -34,7 +34,7 @@ plugins = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.0.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.1.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.2.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
@@ -52,4 +52,5 @@ help = """
 <accent>/g</accent>, <accent>/l</accent>: chat with everyone, or only this server (<accent>/g <message></accent> sends one message)
 <accent>/msg <player> <message></accent>, <accent>/r <message></accent>: private messages
 <accent>/ignore <player></accent>: hide a player's messages
+<accent>/vote yes</accent>, <accent>/vote no</accent>: answer a vote (or click it)
 """
