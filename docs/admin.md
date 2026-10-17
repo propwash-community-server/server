@@ -131,6 +131,10 @@ It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla 
 mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which
 staff and admin have on plots.
 
+`/plot visit <player>` works for offline players too (upstream only takes online ones): it goes by
+the owner name stored with each plot and suggests those names. `/plot list` lists everyone with a
+plot, each name clickable to visit (upstream it opened your own plots, which `/plot edit` still does).
+
 The jar is in the world store under `mods/`. The settings are in `[config]` of
 `servers/plots/server.toml`, written before the first start (FabricPlots adds its defaults). The
 grid is generated with the plot size, so **changing `plot-size` needs a fresh plots world**; keep the spawn in the datapack and `spawn-x/y/z` at the same spot.
