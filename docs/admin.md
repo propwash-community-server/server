@@ -75,9 +75,18 @@ No projectiles on any server either: the `noprojectiles` datapack (same place) r
 tridents, snowballs, eggs, wind charges, ender pearls, thrown potions, bottles o' enchanting and
 firework rockets (so no elytra boosting) within a tick of being shot or thrown; the item is used up.
 
-Admins can be exempt from both: `/tag @s add propwash.exempt` (once on each server; `/tag @s remove
-propwash.exempt` undoes it) keeps their projectiles, their boat items and every boat within 16
-blocks of them.
+Admins can be exempt from both with `/exempt` (`propwash.exempt`; again to stop): it keeps their
+projectiles, their boat items and every boat within 16 blocks of them, and lets them drop items. It
+works on every server: `mods/crossserver` remembers it and sets the `propwash.exempt` tag on each
+server the player arrives on (over rcon), so a `/tag` set by hand doesn't last.
+
+A dropped item (Q, out of the inventory, from the creative menu) is deleted instead of landing on
+the ground, except for `propwash.exempt` players: on fpv and plots by our Fabric mod
+[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`), on the hub by the `nodrop` datapack.
+`mods/tweaks` also makes vanishing and
+un-vanishing show at once: the Vanish mod left that to vanilla, which only re-checks who sees whom
+when someone moves into another 16-block section. That part hooks into Vanish by name; after
+updating Vanish, check that un-vanishing still shows you right away.
 
 ## Plots
 

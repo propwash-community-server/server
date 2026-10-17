@@ -34,7 +34,7 @@ plugins = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.0.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.0.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.1.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
