@@ -10,4 +10,4 @@
 <admin><bold>Admin</bold></admin>
 <accent>/v</accent>: vanish on every server (again to show yourself)
 <accent>/exempt</accent>: use boats and projectiles, drop items, on every server (again to stop)
-<accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it
+<accent>/close</accent> (or <accent>/lock</accent>): kick everyone but staff and keep them out; <accent>/open</accent> ends it (also the 80 s after a restart)

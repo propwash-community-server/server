@@ -213,8 +213,11 @@ it too. Its commands need `maintenance.admin` (admins, through `*`).
 | Open it again after a while | `/maintenance endtimer <time>` |
 | Close it after a while, for a while | `/maintenance scheduletimer <in> <for>` |
 
-After a proxy restart, players join as soon as the proxy is up; while the hub is still starting, they
-land on fpv (the velocity `try` list), and with neither up, they're told to try again later.
+After a proxy restart, Maintenance is on for 80 seconds, so the servers have time to load; the server
+list counts down and staff and admin get in. If it was on before the restart, it stays on. Shortcuts
+(`maintenance.admin`): `/close` and `/lock` are `/maintenance on`, `/open` is `/maintenance off` (it
+also ends the 80 seconds early). It's our Velocity plugin [`mods/startlock`](../mods/startlock/),
+rebuilt like `mods/vanish`.
 
 ## Teleporting and invsee
 
