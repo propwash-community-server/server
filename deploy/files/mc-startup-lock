@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""Close the network for the first 80 seconds after the proxy starts: mc-startup-lock <Maintenance config.yml>
+
+Run by the proxy's start.sh, so the servers have time to load. Maintenance carries an endtimer over a
+restart (continue-endtimer-after-restart), so this turns maintenance on with an endtimer ending in 80
+seconds: the server list counts down and staff and admin get in. If maintenance was on without a
+timer (someone closed the network), it stays on. Before the first start there is no config yet.
+"""
+import os
+import sys
+import time
+
+LOCK_SECONDS = 80
+
+path = sys.argv[1]
+if not os.path.exists(path):
+    sys.exit()
+lines = open(path, newline="").read().splitlines(keepends=True)
+
+# Top-level keys and the continue-endtimer-after-restart ones, by line.
+keys, section = {}, None
+for i, line in enumerate(lines):
+    if not line.strip() or line.lstrip().startswith("#"):
+        continue
+    key = line.strip().split(":")[0]
+    if not line.startswith(" "):
+        section = key
+        keys[key] = i
+    elif section == "continue-endtimer-after-restart":
+        keys[f"timer.{key}"] = i
+
+
+def get(key):
+    return lines[keys[key]].split(":", 1)[1].strip()
+
+
+def put(key, value):
+    line = lines[keys[key]]
+    lines[keys[key]] = f"{line.split(':', 1)[0]}: {value}{line[len(line.rstrip()):]}"
+
+
+timer = int(get("timer.end")) if get("timer.enabled") == "true" else 0
+if get("maintenance-enabled") == "true" and timer == 0:
+    sys.exit()
+put("maintenance-enabled", "true")
+put("timer.enabled", "true")
+put("timer.end", max(timer, int(time.time() * 1000) + LOCK_SECONDS * 1000))
+open(path + ".tmp", "w", newline="").write("".join(lines))
+os.replace(path + ".tmp", path)

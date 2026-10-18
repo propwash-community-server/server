@@ -243,8 +243,11 @@ it too. Its commands need `maintenance.admin` (admins, through `*`).
 | Open it again after a while | `/maintenance endtimer <time>` |
 | Close it after a while, for a while | `/maintenance scheduletimer <in> <for>` |
 
-After a proxy restart, players join as soon as the proxy is up; while the hub is still starting, they
-land on fpv (the velocity `try` list), and with neither up, they're told to try again later.
+After a proxy restart, maintenance is on for 80 seconds, so the servers have time to load: the server
+list counts down and staff and admin get in. `/maintenance off` ends it early, `/maintenance aborttimer`
+keeps the network closed. If maintenance was on before the restart, it stays on. It's an endtimer set by
+[`mc-startup-lock`](../deploy/files/mc-startup-lock) in the proxy's `start.sh`, which Maintenance
+continues on start (`continue-endtimer-after-restart`).
 
 ## Teleporting and invsee
 
