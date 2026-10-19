@@ -34,6 +34,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Tweaks implements ModInitializer {
     private static final long COOLDOWN_MS = 5000;
+    /** Ticks between firework rockets for one player (FireworkCooldownMixin). */
+    public static final int FIREWORK_COOLDOWN_TICKS = 40;
     private static final Map<UUID, Long> lastUse = new ConcurrentHashMap<>();
 
     @Override

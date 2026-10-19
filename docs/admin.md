@@ -72,8 +72,12 @@ plots) removes every boat, chest boat and raft once a second and clears boat ite
 Old boats go as soon as their chunk is loaded.
 
 No projectiles on any server either: the `noprojectiles` datapack (same place) removes arrows,
-tridents, snowballs, eggs, wind charges, ender pearls, thrown potions, bottles o' enchanting and
-firework rockets (so no elytra boosting) within a tick of being shot or thrown; the item is used up.
+tridents, snowballs, eggs, wind charges, ender pearls, thrown potions and bottles o' enchanting
+within a tick of being shot or thrown; the item is used up. Firework rockets are allowed once every
+2 seconds per player (launched by hand or for elytra boosting); others within those 2 seconds, and
+rockets from crossbows or dispensers, are removed the same way. On fpv and plots `mods/tweaks` also
+puts rockets on a 2-second item cooldown (the grey sweep), so the player's game doesn't try (no short
+boost from a rocket the datapack removes), and says above the hotbar how long is left.
 
 Admins can be exempt from both with `/exempt` (`propwash.exempt`; again to stop): it keeps their
 projectiles, their boat items and every boat within 16 blocks of them, and lets them drop items. It
