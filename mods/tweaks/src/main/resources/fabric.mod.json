@@ -3,7 +3,7 @@
   "id": "tweaks",
   "version": "${version}",
   "name": "Tweaks",
-  "description": "Propwash server tweaks: dropped items are deleted (except for players tagged propwash.exempt); vanishing and un-vanishing (Vanish mod) show at once; /mydrone brings your own drone to you; your drones are removed when you leave; the debug stick works in the plot world (/debugstick).",
+  "description": "Propwash server tweaks: dropped items are deleted (except for players tagged propwash.exempt); vanishing and un-vanishing (Vanish mod) show at once; /mydrone brings your own drone to you; your drones are removed when you leave; the debug stick works in the plot world (/debugstick); fireworks have a 2-second cooldown.",
   "license": "MIT",
   "environment": "server",
   "entrypoints": {
