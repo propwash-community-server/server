@@ -75,6 +75,35 @@ the URL and SHA-1 in the three `server.toml` files, deploy, then run `/function 
 `/function arena:reset` once on the map (it respawns the vehicles). A map itself only changes with
 `uv run upload` and `uv run apply fpv <name>`.
 
+## Halloween
+
+For Halloween 2026 (package `propwash-halloween-server-2026-10-18`) hub, fpv and plots offer
+`fpv/resourcepacks/propwash-maps-halloween-855e1980.zip` instead of the regular maps pack: the same
+Drift Arena and Moto Arena assets plus Halloween drones (the 5" freestyle frame becomes a witch's
+broom, a jack-o'-lantern whoop, a ghost cinewhoop and more), orange and purple parts, and spooky
+sounds. It only replaces assets, never the mod or the flight physics.
+
+`halloween-lobby-datapack.zip` (in `files/world/datapacks/` of all three) adds a biome,
+`propwash_halloween:lobby`, with Halloween music, a purple sky, orange fog and autumn colours. It
+does nothing until painted over an area, after the restart that loads it (new biomes need a restart,
+`/reload` isn't enough), standing there so the chunks are loaded:
+
+```
+/gamerule max_block_modifications 1000000
+/execute in <dimension> run fillbiome <x1> <y1> <z1> <x2> <y2> <z2> propwash_halloween:lobby
+/gamerule max_block_modifications 32768
+```
+
+After Halloween, in this order:
+
+1. Paint the old biome back over every area painted, with the same `fillbiome` (for example
+   `minecraft:plains`). A chunk left on the Halloween biome breaks once the datapack is gone.
+2. Remove `halloween-lobby-datapack.zip` from the three servers' `files/world/datapacks/`.
+3. In the three `server.toml` files, swap `resource-pack` and `resource-pack-sha1` back to the
+   regular pack in the comment above them (`propwash-maps-6557a509.zip`, still in the world store).
+4. Deploy, then delete `world/datapacks/halloween-lobby-datapack.zip` on each server (deploys copy
+   `files/` but never delete) and restart them.
+
 ## In game
 
 Spawns and spots are [Essential Commands](https://modrinth.com/mod/essential-commands) warps stored
