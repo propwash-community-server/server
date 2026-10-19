@@ -149,12 +149,13 @@ def permission_commands():
 FABRIC_JVM_FLAGS = "-Dio.github._4drian3d.signedvelocity.timeout=1000"
 
 
-def start_script(path, jar, ram, args="", jvm_flags=""):
+def start_script(path, jar, ram, args="", jvm_flags="", before=""):
     jvm = f" {jvm_flags}" if jvm_flags else ""
     script = (
         "#!/bin/sh\n"
         "# Managed by pyinfra - edit servers/<name>/server.toml instead.\n"
-        f"exec java -Xms{ram} -Xmx{ram}{jvm} -jar {jar} {args}\n"
+        + (f"{before}\n" if before else "")
+        + f"exec java -Xms{ram} -Xmx{ram}{jvm} -jar {jar} {args}\n"
     )
     return files.put(name=f"start script {path}", src=StringIO(script), dest=path, mode="755", **OWNER)
 
@@ -424,7 +425,7 @@ if not LOCAL:
 
 for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
-for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension"]:
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension", "mc-startup-lock"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
@@ -452,7 +453,9 @@ files.directory(name="velocity folder", path=v, **OWNER)
 
 changes = [
     files.download(name="velocity jar", src=velocity["url"], dest=f"{v}/{velocity['jar']}", **OWNER),
-    start_script(f"{v}/start.sh", velocity["jar"], RAM or velocity["ram"]),
+    # Maintenance for the first 80 seconds, so the servers have time to load; see docs/admin.md#maintenance.
+    start_script(f"{v}/start.sh", velocity["jar"], RAM or velocity["ram"],
+                 before="/usr/local/bin/mc-startup-lock plugins/maintenance/config.yml"),
     service_env("velocity", "end"),
     files.template(
         name="velocity.toml",

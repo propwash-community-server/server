@@ -60,6 +60,13 @@ def wait_for_servers(timeout=300):
         eventually(lambda: Server(name).ready(), timeout=timeout, interval=2, message=f"{name} to start")
 
 
+def wait_for_startup_lock():
+    """Maintenance is on for 80 seconds after the proxy starts (mc-startup-lock)."""
+    config = "/home/mc/servers/velocity/plugins/maintenance/config.yml"
+    eventually(lambda: "maintenance-enabled: false" in run("docker", "exec", CONTAINER, "cat", config),
+               timeout=120, interval=2, message="the startup lock to end")
+
+
 # --- Servers ------------------------------------------------------------------
 
 
