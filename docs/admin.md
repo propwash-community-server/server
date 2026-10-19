@@ -92,6 +92,11 @@ updating Vanish, check that un-vanishing still shows you right away.
 nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
 at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
 
+Drones go with their owner (also `mods/tweaks`): when a player leaves fpv or plots (logs off or
+switches server), their drones (`pw_owner_<name>`) are removed from every loaded map there, and a
+drone in a chunk that loads later is removed if its owner isn't on that server. Drones without an
+owner tag are left alone.
+
 In the plot world everyone may use a debug stick (vanilla allows it to ops only), and `/debugstick`
 (plots) gives one, one at a time. FabricPlots' protection applies to both its clicks, so it only
 works on plots the player may build on; it changes block states, never the block itself.
