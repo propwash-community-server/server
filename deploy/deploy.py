@@ -485,6 +485,8 @@ if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
     ]))
 bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n"), dest=f"{BOT_DIR}/bot/.env", mode="600",
                              user="bot", group="bot"))
+# The bot's README copies example.database.yml (empty) to database.yml; an existing one is kept as it is.
+files.file(name="bot: database.yml", path=f"{BOT_DIR}/bot/database.yml", user="bot", group="bot")
 
 # The API listens on 127.0.0.1:3006 for the bridge mods. The local stack has no Discord token, so only the API runs there.
 for unit in ["api"] if LOCAL else ["api", "bot"]:
