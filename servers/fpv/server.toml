@@ -26,6 +26,8 @@ mods = [
     # fireworks have a 2-second cooldown.
     # Our mods/tweaks, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.4.0-26.3.jar",
+    # Server status, race records and /link for the Discord bot; its key is BRIDGE_KEY_FPV (see docs/admin.md#discord-bot).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.

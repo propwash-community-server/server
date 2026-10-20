@@ -52,6 +52,10 @@ secret = read_secret("forwarding.secret")
 rcon_password = read_secret("rcon.secret")
 backup_env = read_secret("backup.env", "dotenv")
 mariadb_password = read_secret("mariadb.secret")
+bot_env = read_secret("bot.env", "dotenv")
+bot_keys = dict(line.split("=", 1) for line in bot_env.splitlines() if "=" in line)
+if any(v.startswith("PASTE_") for v in bot_keys.values()):
+    raise SystemExit("Fill in the PASTE_... values: sops edit --input-type dotenv --output-type dotenv secrets/bot.env.sops")
 permissions = tomllib.loads((ROOT / "permissions.toml").read_text(encoding="utf-8"))
 palette = tomllib.loads((ROOT / "palette.toml").read_text(encoding="utf-8"))
 
@@ -72,6 +76,9 @@ def service_env(name, stop_cmd):
         "LUCKPERMS_DATA_USERNAME=minecraft\n"
         f"LUCKPERMS_DATA_PASSWORD={mariadb_password}\n"
     )
+    # The bridge mod's key for this server (BRIDGE_KEY_FPV for fpv); the key is how the bot's API knows the server.
+    if f"BRIDGE_KEY_{name.upper()}" in bot_keys:
+        env += f"PROPWASH_BRIDGE_API_KEY={bot_keys[f'BRIDGE_KEY_{name.upper()}']}\n"
     return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
 
 
@@ -165,6 +172,15 @@ class PaperVelocityOk(FactBase):
 
     def process(self, output):
         return bool(output) and output[0].strip() == "ok"
+
+
+class GitHead(FactBase):
+    def command(self, path):
+        # Run as root on a checkout owned by another user, which git otherwise refuses.
+        return f"git -c safe.directory='*' -C {path} rev-parse HEAD 2>/dev/null || true"
+
+    def process(self, output):
+        return output[0].strip() if output else None
 
 
 class JsonFile(FactBase):
@@ -404,7 +420,8 @@ def service(name, changes):
 
 apt.packages(
     name="Install Java and tools",
-    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server"],
+    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server",
+              "nodejs", "npm", "git", "sqlite3"],
     update=True,
     cache_time=3600,
 )
@@ -422,7 +439,7 @@ if not LOCAL:
     if keys:
         server.user_authorized_keys(name="root SSH keys", user="root", public_keys=keys)
 
-for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer"]:
+for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer", "propwash-bot@.service"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
 for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
@@ -444,6 +461,44 @@ server.shell(name="databases + user", commands=["mysql < /root/mariadb.sql"], _i
 
 files.put(name="backup credentials", src=StringIO(backup_env + "\n"), dest="/etc/mc-backup.env", mode="600", **ROOT_OWNER)
 systemd.service(name="backup timer", service="mc-backup.timer", running=True, enabled=True, daemon_reload=True)
+
+# --- Discord bot -----------------------------------------------------------
+
+# The bot/ folder of github.com/Itsj5j6j7/pw-server at this commit; change it to update the bot.
+# Its own settings (channels, roles, bridge servers) are in that repo's src/config.js.
+BOT_REPO = "https://github.com/Itsj5j6j7/pw-server.git"
+BOT_COMMIT = "e13e927bc730da7b9f42b692beedfba65049cb1e"
+BOT_DIR = "/home/bot/pw-server"
+PNPM = "9.15.9"
+
+server.user(name="bot user", user="bot", home="/home/bot", shell="/usr/sbin/nologin")
+server.shell(name="pnpm", commands=[f'[ "$(pnpm -v 2>/dev/null)" = {PNPM} ] || npm install -g pnpm@{PNPM}'])
+
+bot_changes = []
+if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
+    # A checkout in place keeps the untracked .env, bridge.db and database.yml.
+    bot_changes.append(server.shell(name="bot: checkout", commands=[
+        f"runuser -u bot -- sh -c '[ -d {BOT_DIR}/.git ] || {{ git init -q {BOT_DIR} && git -C {BOT_DIR} remote add origin {BOT_REPO}; }}'",
+        f"runuser -u bot -- git -C {BOT_DIR} fetch -q --depth 1 origin {BOT_COMMIT}",
+        f"runuser -u bot -- git -C {BOT_DIR} checkout -q --force {BOT_COMMIT}",
+        f"cd {BOT_DIR}/bot && runuser -u bot -- pnpm install --frozen-lockfile --prod",
+    ]))
+bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n"), dest=f"{BOT_DIR}/bot/.env", mode="600",
+                             user="bot", group="bot"))
+# The bot's README copies example.database.yml (empty) to database.yml; an existing one is kept as it is.
+files.file(name="bot: database.yml", path=f"{BOT_DIR}/bot/database.yml", user="bot", group="bot")
+
+# The API listens on 127.0.0.1:3006 for the bridge mods. The local stack has no Discord token, so only the API runs there.
+for unit in ["api"] if LOCAL else ["api", "bot"]:
+    systemd.service(
+        name=f"bot: restart {unit} if changed",
+        service=f"propwash-bot@{unit}",
+        running=None,
+        restarted=True,
+        daemon_reload=True,
+        _if=any_changed(*bot_changes),
+    )
+    systemd.service(name=f"bot: {unit} running", service=f"propwash-bot@{unit}", running=True, enabled=True, daemon_reload=True)
 
 # --- Velocity (first: Paper backends read its forwarding.secret) ------------
 
