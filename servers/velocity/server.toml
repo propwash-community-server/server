@@ -54,3 +54,8 @@ help = """
 <accent>/ignore <player></accent>: hide a player's messages
 <accent>/vote yes</accent>, <accent>/vote no</accent>: answer a vote (or click it)
 """
+
+# /maintenance starttimer <minutes> turns maintenance on later, announcing it at the plugin's default
+# times (timer-broadcast-for-seconds); before a deploy, it reads as a restart, which is what players see.
+[config."plugins/maintenance/language-en.yml"]
+starttimerBroadcast = '"<gray>Server restarting in <gold>%TIME%<gray>."'
