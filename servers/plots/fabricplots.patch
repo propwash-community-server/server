@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..d973644 100644
+index daaf686..c32a8a9 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..d973644 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.7
++mod_version=1.0.2-plotsize.8
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -24,16 +24,31 @@ index c7e8ebe..8fc5341 100644
              applyWorldRules(server);
          });
 diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
-index a5ee575..a292db3 100644
+index a5ee575..d14e2b9 100644
 --- a/src/main/java/com/fabricplots/command/PlotCommands.java
 +++ b/src/main/java/com/fabricplots/command/PlotCommands.java
-@@ -84,8 +84,16 @@ public final class PlotCommands {
+@@ -57,7 +57,12 @@ public final class PlotCommands {
+                 .then(Commands.literal("world").executes(PlotCommands::world))
+                 .then(Commands.literal("auto").executes(PlotCommands::auto))
+                 .then(Commands.literal("claim").executes(PlotCommands::claim))
+-                .then(Commands.literal("home").executes(PlotCommands::home))
++                // /plot home 2, or a plot's name: which of your plots (numbered in claim order, see /plot info).
++                .then(Commands.literal("home").executes(PlotCommands::home)
++                        .then(Commands.argument("plot", StringArgumentType.greedyString())
++                                .suggests((c, b) -> suggestPlots(c.getSource().getPlayer() == null ? null
++                                        : c.getSource().getPlayer().getUUID(), b))
++                                .executes(PlotCommands::home)))
+                 .then(Commands.literal("info").executes(PlotCommands::info))
+                 .then(Commands.literal("clear").executes(PlotCommands::clear))
+                 .then(Commands.literal("delete").executes(PlotCommands::delete))
+@@ -84,9 +89,22 @@ public final class PlotCommands {
                          .then(Commands.argument("player", GameProfileArgument.gameProfile())
                                  .executes(ctx -> setDeny(ctx, false))))
                  .then(Commands.literal("uncombine").executes(PlotCommands::uncombine))
 +                // By owner name, so it works when they're offline (the name is stored with the plot).
                  .then(Commands.literal("visit")
 -                        .then(Commands.argument("player", EntityArgument.player())
+-                                .executes(PlotCommands::visit)))
 +                        .then(Commands.argument("player", StringArgumentType.word())
 +                                .suggests((c, b) -> {
 +                                    String typed = b.getRemaining().toLowerCase();
@@ -42,10 +57,16 @@ index a5ee575..a292db3 100644
 +                                    }
 +                                    return b.buildFuture();
 +                                })
-                                 .executes(PlotCommands::visit)))
++                                .executes(PlotCommands::visit)
++                                // /plot visit <player> 2: their second plot.
++                                .then(Commands.argument("plot", StringArgumentType.greedyString())
++                                        .suggests((c, b) -> suggestPlots(ownerByName(c.getSource(),
++                                                StringArgumentType.getString(c, "player")), b))
++                                        .executes(PlotCommands::visit))))
                  .then(Commands.literal("name")
                          .then(Commands.argument("name", StringArgumentType.greedyString())
-@@ -102,7 +110,22 @@ public final class PlotCommands {
+                                 .executes(PlotCommands::namePlot)))
+@@ -102,7 +120,22 @@ public final class PlotCommands {
                                  .executes(PlotCommands::removeAll)))
                  .then(Commands.literal("menu").executes(PlotCommands::menu))
                  .then(Commands.literal("edit").executes(PlotCommands::listPlots)) // manage your plots — the build editor is /draft edit
@@ -69,7 +90,7 @@ index a5ee575..a292db3 100644
                  .then(Commands.literal("sethome").executes(PlotCommands::setHome))
                  .then(Commands.literal("admin").executes(PlotCommands::adminMode))
                  .then(Commands.literal("setspawn").executes(PlotCommands::setSpawn))
-@@ -139,11 +162,11 @@ public final class PlotCommands {
+@@ -139,11 +172,11 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -83,7 +104,7 @@ index a5ee575..a292db3 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -166,10 +189,10 @@ public final class PlotCommands {
+@@ -166,10 +199,10 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -96,7 +117,31 @@ index a5ee575..a292db3 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -257,6 +280,7 @@ public final class PlotCommands {
+@@ -177,9 +210,10 @@ public final class PlotCommands {
+     private static int home(CommandContext<CommandSourceStack> ctx) {
+         try {
+             ServerPlayer p = ctx.getSource().getPlayerOrException();
+-            PlotPos pp = PlotManager.firstOwned(p.getUUID());
+-            if (pp == null) { msg(ctx, "You don't own a plot yet. Use /plot auto."); return 0; }
+-            teleport(p, plotsLevel(ctx), pp);
++            if (PlotManager.ownedPlots(p.getUUID()).isEmpty()) { msg(ctx, "You don't own a plot yet. Use /plot auto."); return 0; }
++            PlotData d = pickPlot(ctx, p.getUUID(), "You", optionalString(ctx, "plot"));
++            if (d == null) return 0;
++            PlotManager.teleportToPlot(p, plotsLevel(ctx), d);
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+@@ -197,7 +231,8 @@ public final class PlotCommands {
+             PlotData d = PlotManager.get(pp);
+             if (d == null) { msg(ctx, "Plot " + pp.px() + "," + pp.pz() + " is unclaimed."); return 1; }
+             msg(ctx, "Plot " + pp.px() + "," + pp.pz() + (d.name.isBlank() ? "" : " \"" + d.name + "\"")
+-                    + " — owner " + nameOf(ctx, d.owner)
++                    + " — owner " + nameOf(ctx, d.owner) + " (their plot " + plotNumber(d) + " of "
++                    + PlotManager.ownedPlots(d.owner).size() + ")"
+                     + " · " + d.cells.size() + " cell" + (d.cells.size() == 1 ? "" : "s") + (d.isMerged() ? " (merged)" : "")
+                     + " · trusted " + d.trusted.size() + " · denied " + d.denied.size()
+                     + " · likes " + d.likes.size() + " · PvP " + (d.pvp ? "on" : "off"));
+@@ -257,6 +292,7 @@ public final class PlotCommands {
              if (!staff(ctx, p, "fabricplots.reload")) return 0;
              PlotsConfig.load();
              FabricPlots.applyWorldRules(ctx.getSource().getServer());
@@ -104,18 +149,50 @@ index a5ee575..a292db3 100644
              msg(ctx, "Config reloaded. allow-player-combine=" + PlotsConfig.allowPlayerCombine
                      + ", max-merge-cells=" + PlotsConfig.maxMergeCells
                      + ", claim-limit=" + PlotsConfig.claimLimit
-@@ -294,7 +318,9 @@ public final class PlotCommands {
+@@ -276,9 +312,18 @@ public final class PlotCommands {
+             if (d == null) return 0;
+             if (!d.owner.equals(p.getUUID()) && !isOp(ctx, p)) { msg(ctx, "Stand on your own plot first."); return 0; }
+             BlockPos oldHome = d.home;
++            float oldYaw = d.homeYaw, oldPitch = d.homePitch;
+             d.home = p.blockPosition().immutable();
+-            if (!PlotManager.save()) { d.home = oldHome; msg(ctx, "The new home could not be saved. Please try again."); return 0; }
+-            msg(ctx, "Plot home set — /plot home will bring you here.");
++            d.homeYaw = p.getYRot();
++            d.homePitch = p.getXRot();
++            if (!PlotManager.save()) {
++                d.home = oldHome; d.homeYaw = oldYaw; d.homePitch = oldPitch;
++                msg(ctx, "The new home could not be saved. Please try again."); return 0;
++            }
++            int n = plotNumber(d);
++            String whose = d.owner.equals(p.getUUID()) ? "your" : nameOf(ctx, d.owner) + "'s";
++            msg(ctx, "Arrival point of " + whose + " plot " + n + label(d) + " set, facing this way: /plot home "
++                    + n + " and /plot visit " + (d.ownerName.isBlank() ? "<owner>" : d.ownerName) + " " + n + " land here.");
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+@@ -293,8 +338,10 @@ public final class PlotCommands {
+         section(src, "Getting around");
          line(src, "/plot world", "go to the plot world");
          line(src, "/plot menu", "open the menu");
-         line(src, "/plot home", "go to your plot");
+-        line(src, "/plot home", "go to your plot");
 -        line(src, "/plot visit <player>", "visit a player's plot");
-+        line(src, "/plot visit <player>", "visit a player's plot (also when they're offline)");
++        line(src, "/plot home [number|name]", "go to your plot (1 = your first, 2 = your second...)");
++        line(src, "/plot visit <player> [number|name]", "visit a player's plot (also when they're offline)");
 +        line(src, "/plot list", "everyone with a plot (click a name to visit)");
 +        line(src, "/plot flag help", "what visitors may use on your plot");
          line(src, "/plot like", "like the plot you're standing on");
          line(src, "/plot leave", "return to the home world");
  
-@@ -516,6 +542,7 @@ public final class PlotCommands {
+@@ -307,7 +354,7 @@ public final class PlotCommands {
+ 
+         section(src, "Your plot");
+         line(src, "/plot name <name>", "name this plot");
+-        line(src, "/plot sethome", "set where /plot home lands");
++        line(src, "/plot sethome", "on your plot: where /plot home and /plot visit land, facing your way");
+         line(src, "/plot trust <player>", "let someone build here");
+         line(src, "/plot untrust <player>", "remove a trusted player");
+         line(src, "/plot deny <player>", "ban a player from this plot");
+@@ -516,6 +563,7 @@ public final class PlotCommands {
      private static int key(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -123,31 +200,24 @@ index a5ee575..a292db3 100644
              if (!allowed(ctx, p, "fabricplots.portal")) return 0;
              // In the plot world, standing on a plot you may use: give that one plot's key.
              if (p.level().dimension() == FabricPlots.PLOTS_DIM) {
-@@ -829,14 +856,92 @@ public final class PlotCommands {
+@@ -829,14 +877,87 @@ public final class PlotCommands {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
              if (!allowed(ctx, p, "fabricplots.visit")) return 0;
 -            ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
 -            PlotPos pp = PlotManager.firstOwned(target.getUUID());
+-            if (pp == null) { msg(ctx, "That player has no plot yet."); return 0; }
+-            teleport(p, plotsLevel(ctx), pp);
 +            String name = StringArgumentType.getString(ctx, "player");
-+            UUID owner = null;
-+            for (PlotData d : PlotManager.allPlots()) {
-+                if (!PlotManager.isServer(d.owner) && d.ownerName != null && d.ownerName.equalsIgnoreCase(name)) {
-+                    owner = d.owner;
-+                    break;
-+                }
-+            }
-+            if (owner == null) {
-+                ServerPlayer online = ctx.getSource().getServer().getPlayerList().getPlayerByName(name);
-+                if (online != null) owner = online.getUUID();
-+            }
-+            PlotPos pp = owner == null ? null : PlotManager.firstOwned(owner);
-             if (pp == null) { msg(ctx, "That player has no plot yet."); return 0; }
-             teleport(p, plotsLevel(ctx), pp);
-             return 1;
-         } catch (Exception e) { return err(ctx, e); }
-     }
- 
++            UUID owner = ownerByName(ctx.getSource(), name);
++            if (owner == null || PlotManager.ownedPlots(owner).isEmpty()) { msg(ctx, "That player has no plot yet."); return 0; }
++            PlotData d = pickPlot(ctx, owner, name, optionalString(ctx, "plot"));
++            if (d == null) return 0;
++            PlotManager.teleportToPlot(p, plotsLevel(ctx), d);
++            return 1;
++        } catch (Exception e) { return err(ctx, e); }
++    }
++
 +    private static int flagHelp(CommandContext<CommandSourceStack> ctx) {
 +        msg(ctx, "Flags let visitors (not trusted) use things on your plot; all off by default. Building stays trusted-only.");
 +        msg(ctx, "/plot flag set <flag> true|false on your plot, /plot flag to see them, or /plot menu > your plot > Visitor permissions.");
@@ -186,10 +256,10 @@ index a5ee575..a292db3 100644
 +                return 0;
 +            }
 +            msg(ctx, flag.id + " is now " + (value ? "ON: visitors may " + flag.description + "." : "off."));
-+            return 1;
-+        } catch (Exception e) { return err(ctx, e); }
-+    }
-+
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+ 
 +    /** Owner names of all claimed plots (not the server's), sorted. */
 +    private static List<String> ownerNames() {
 +        java.util.TreeSet<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -210,7 +280,11 @@ index a5ee575..a292db3 100644
 +            if (i > 0) line.append(Component.literal(", "));
 +            line.append(Component.literal(n).withStyle(st -> st.withColor(CLR_YELLOW)
 +                    .withClickEvent(new ClickEvent.RunCommand("/plot visit " + n))));
++            UUID owner = ownerByName(ctx.getSource(), n);
++            int count = owner == null ? 1 : PlotManager.ownedPlots(owner).size();
++            if (count > 1) line.append(Component.literal(" (" + count + ")"));
 +        }
++        if (names.size() > 0) line.append(Component.literal(". /plot visit <player> 2 for someone's second plot."));
 +        ctx.getSource().sendSuccess(() -> line, false);
 +        return names.size();
 +    }
@@ -218,6 +292,83 @@ index a5ee575..a292db3 100644
      // ---- helpers ---------------------------------------------------------
  
      /** Resolve the claimed plot the player is physically standing inside, never a road-adjacent cell. */
+@@ -875,16 +996,71 @@ public final class PlotCommands {
+     }
+ 
+     private static void teleport(ServerPlayer p, ServerLevel level, PlotPos pp) {
+-        // 26.1.2 teleportTo: (level, x, y, z, relativeFlags, yaw, pitch, setCamera)
+         PlotData d = PlotManager.get(pp);
+-        if (d != null && d.home != null) {
+-            p.teleportTo(level, d.home.getX() + 0.5, d.home.getY(), d.home.getZ() + 0.5, Set.of(), p.getYRot(), 0.0f, false);
+-            return;
+-        }
++        if (d != null) { PlotManager.teleportToPlot(p, level, d); return; }
+         int[] xz = PlotManager.homeXZ(pp);
+         p.teleportTo(level, xz[0] + 0.5, PlotConfig.FLOOR_Y, xz[1] + 0.5, Set.of(), p.getYRot(), 0.0f, false);
+     }
+ 
++    // ---- an owner's plots by number (1 = first claimed) or name ---------------------------
++
++    /** The owner's plot "1", "2", ... or the one with that name; null, with a message listing them, if there's none. */
++    private static PlotData pickPlot(CommandContext<CommandSourceStack> ctx, UUID owner, String who, String arg) {
++        List<PlotData> owned = PlotManager.ownedPlots(owner);
++        if (arg == null || arg.isBlank()) return owned.get(0);
++        String a = arg.trim();
++        try {
++            int n = Integer.parseInt(a);
++            if (n >= 1 && n <= owned.size()) return owned.get(n - 1);
++        } catch (NumberFormatException ignored) {
++            for (PlotData d : owned) if (!d.name.isBlank() && d.name.equalsIgnoreCase(a)) return d;
++        }
++        StringBuilder sb = new StringBuilder((who.equals("You") ? "You have " : who + " has ") + owned.size()
++                + " plot" + (owned.size() == 1 ? "" : "s") + ":");
++        for (int i = 0; i < owned.size(); i++) sb.append(i == 0 ? " " : ", ").append(i + 1).append(label(owned.get(i)));
++        msg(ctx, sb.toString());
++        return null;
++    }
++
++    /** This plot's number among its owner's plots. */
++    private static int plotNumber(PlotData d) {
++        List<PlotData> owned = PlotManager.ownedPlots(d.owner);
++        for (int i = 0; i < owned.size(); i++) if (owned.get(i) == d) return i + 1;
++        return 1;
++    }
++
++    private static String label(PlotData d) {
++        return d.name.isBlank() ? "" : " (\"" + d.name + "\")";
++    }
++
++    private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestPlots(
++            UUID owner, com.mojang.brigadier.suggestion.SuggestionsBuilder b) {
++        if (owner != null) {
++            List<PlotData> owned = PlotManager.ownedPlots(owner);
++            String typed = b.getRemaining().toLowerCase();
++            for (int i = 0; i < owned.size(); i++) {
++                String n = Integer.toString(i + 1);
++                if (n.startsWith(typed)) b.suggest(n);
++                String name = owned.get(i).name;
++                if (!name.isBlank() && name.toLowerCase().startsWith(typed)) b.suggest(name);
++            }
++        }
++        return b.buildFuture();
++    }
++
++    /** A plot owner by name, also when offline (the name is stored with their plots), else an online player. */
++    private static UUID ownerByName(CommandSourceStack src, String name) {
++        for (PlotData d : PlotManager.allPlots()) {
++            if (!PlotManager.isServer(d.owner) && d.ownerName != null && d.ownerName.equalsIgnoreCase(name)) return d.owner;
++        }
++        ServerPlayer online = src.getServer().getPlayerList().getPlayerByName(name);
++        return online == null ? null : online.getUUID();
++    }
++
++    private static String optionalString(CommandContext<CommandSourceStack> ctx, String arg) {
++        try { return StringArgumentType.getString(ctx, arg); } catch (IllegalArgumentException e) { return null; }
++    }
++
+     private static boolean isOp(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
+         return PlotProtection.isAdmin(p); // server op OR single-player host
+     }
 diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
 index ec8c020..22e649b 100644
 --- a/src/main/java/com/fabricplots/core/PlotConfig.java
@@ -282,10 +433,20 @@ index ec8c020..22e649b 100644
 +    }
  }
 diff --git a/src/main/java/com/fabricplots/core/PlotData.java b/src/main/java/com/fabricplots/core/PlotData.java
-index 2435e70..31305c0 100644
+index 2435e70..0c91ed6 100644
 --- a/src/main/java/com/fabricplots/core/PlotData.java
 +++ b/src/main/java/com/fabricplots/core/PlotData.java
-@@ -30,6 +30,7 @@ public final class PlotData {
+@@ -14,6 +14,9 @@ public final class PlotData {
+     public String ownerName = "";   // cached so the welcome message works for offline owners
+     public String name = "";        // optional plot name set by the owner
+     public BlockPos home = null;    // optional /plot home target inside the plot (else the cell centre)
++    public float homeYaw = Float.NaN; // facing direction saved with home by /plot sethome; NaN = keep the arriving player's
++    public float homePitch = 0f;
++    public long claimedAt = 0L;     // when it was claimed (ms); orders an owner's plots (1, 2, ...). 0 = before this was recorded
+     public String floorBlockId = "";// surface block id (e.g. "minecraft:sandstone"); blank = default grass
+     public boolean pvp = false;     // is player-vs-player combat allowed on this plot?
+     public String greeting = "";    // optional custom welcome (action bar) shown to visitors; blank = default
+@@ -30,6 +33,7 @@ public final class PlotData {
      public final Set<UUID> trusted = new LinkedHashSet<>();
      public final Set<UUID> denied = new LinkedHashSet<>();   // banned from entering this plot
      public final Set<UUID> likes = new LinkedHashSet<>();    // players who liked this plot
@@ -380,10 +541,28 @@ index 0000000..d798be2
 +            level.getBlockEntity(pos) instanceof net.minecraft.world.Container;
 +}
 diff --git a/src/main/java/com/fabricplots/core/PlotManager.java b/src/main/java/com/fabricplots/core/PlotManager.java
-index f1ee48a..e8a1e0a 100644
+index f1ee48a..1bd27a3 100644
 --- a/src/main/java/com/fabricplots/core/PlotManager.java
 +++ b/src/main/java/com/fabricplots/core/PlotManager.java
-@@ -142,6 +142,8 @@ public final class PlotManager {
+@@ -85,6 +85,7 @@ public final class PlotManager {
+     public static boolean claim(PlotPos p, UUID owner, String ownerName, long paidAmount) {
+         PlotData d = new PlotData(owner, ownerName);
+         d.paidAmount = paidAmount;
++        d.claimedAt = System.currentTimeMillis();
+         d.cells.add(p);
+         if (PLOTS.putIfAbsent(p, d) != null) return false;
+         if (save()) return true;
+@@ -134,6 +135,9 @@ public final class PlotManager {
+     private static void copySettings(PlotData from, PlotData to) {
+         to.name = from.name;
+         to.home = from.home;
++        to.homeYaw = from.homeYaw;
++        to.homePitch = from.homePitch;
++        to.claimedAt = from.claimedAt;
+         to.floorBlockId = from.floorBlockId;
+         to.pvp = from.pvp;
+         to.greeting = from.greeting;
+@@ -142,6 +146,8 @@ public final class PlotManager {
          to.spawnHostile = from.spawnHostile;
          to.spawnPassive = from.spawnPassive;
          to.mobCap = from.mobCap;
@@ -392,7 +571,17 @@ index f1ee48a..e8a1e0a 100644
          to.sidewalkPattern = from.sidewalkPattern;
          to.wallPattern = from.wallPattern;
          to.trusted.addAll(from.trusted);
-@@ -179,6 +181,8 @@ public final class PlotManager {
+@@ -171,6 +177,9 @@ public final class PlotManager {
+         target.ownerName = source.ownerName;
+         target.name = source.name;
+         target.home = source.home;
++        target.homeYaw = source.homeYaw;
++        target.homePitch = source.homePitch;
++        target.claimedAt = source.claimedAt;
+         target.floorBlockId = source.floorBlockId;
+         target.pvp = source.pvp;
+         target.greeting = source.greeting;
+@@ -179,6 +188,8 @@ public final class PlotManager {
          target.spawnHostile = source.spawnHostile;
          target.spawnPassive = source.spawnPassive;
          target.mobCap = source.mobCap;
@@ -401,22 +590,84 @@ index f1ee48a..e8a1e0a 100644
          target.sidewalkPattern = source.sidewalkPattern;
          target.wallPattern = source.wallPattern;
          target.paidAmount = source.paidAmount;
-@@ -340,6 +344,8 @@ public final class PlotManager {
+@@ -269,10 +280,41 @@ public final class PlotManager {
+ 
+     /** First plot owned by a player (used by /plot home). */
+     public static PlotPos firstOwned(UUID owner) {
+-        for (Map.Entry<PlotPos, PlotData> e : PLOTS.entrySet()) {
+-            if (owner.equals(e.getValue().owner)) return e.getKey();
++        List<PlotData> owned = ownedPlots(owner);
++        return owned.isEmpty() ? null : anchor(owned.get(0));
++    }
++
++    /**
++     * An owner's plots in a fixed order, so "plot 2" stays the same plot: oldest claim first (plots
++     * claimed before claim times were recorded come first, by position), then by position.
++     */
++    public static List<PlotData> ownedPlots(UUID owner) {
++        List<PlotData> owned = new ArrayList<>();
++        for (PlotData d : allPlots()) if (owner.equals(d.owner)) owned.add(d);
++        owned.sort(java.util.Comparator.<PlotData>comparingLong(d -> d.claimedAt)
++                .thenComparingInt(d -> anchor(d).px()).thenComparingInt(d -> anchor(d).pz()));
++        return owned;
++    }
++
++    /** A plot's lowest cell (by x, then z): the one it's known by. */
++    public static PlotPos anchor(PlotData d) {
++        PlotPos best = null;
++        for (PlotPos c : d.cells) {
++            if (best == null || c.px() < best.px() || (c.px() == best.px() && c.pz() < best.pz())) best = c;
+         }
+-        return null;
++        return best;
++    }
++
++    /** Where /plot home and /plot visit land: the plot's set home (and facing), else the middle of its edge. */
++    public static void teleportToPlot(net.minecraft.server.level.ServerPlayer p, net.minecraft.server.level.ServerLevel level, PlotData d) {
++        if (d.home != null) {
++            float yaw = Float.isNaN(d.homeYaw) ? p.getYRot() : d.homeYaw;
++            float pitch = Float.isNaN(d.homeYaw) ? 0f : d.homePitch;
++            p.teleportTo(level, d.home.getX() + 0.5, d.home.getY(), d.home.getZ() + 0.5, java.util.Set.of(), yaw, pitch, false);
++            return;
++        }
++        int[] xz = homeXZ(anchor(d));
++        p.teleportTo(level, xz[0] + 0.5, PlotConfig.FLOOR_Y, xz[1] + 0.5, java.util.Set.of(), p.getYRot(), 0f, false);
+     }
+ 
+     /** Next unclaimed plot, spiralling outward from the origin (like /plot auto). */
+@@ -326,6 +368,7 @@ public final class PlotManager {
+                 if (parts.length > 6 && !parts[6].isBlank()) {
+                     String[] h = parts[6].split(":");
+                     d.home = new net.minecraft.core.BlockPos(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
++                    if (h.length >= 5) { d.homeYaw = Float.parseFloat(h[3]); d.homePitch = Float.parseFloat(h[4]); }
+                 }
+                 if (parts.length > 7) d.floorBlockId = parts[7];
+                 if (parts.length > 8 && !parts[8].isBlank()) d.pvp = Boolean.parseBoolean(parts[8].trim());
+@@ -340,6 +383,9 @@ public final class PlotManager {
                  if (parts.length > 16 && !parts[16].isBlank()) d.spawnHostile = Boolean.parseBoolean(parts[16].trim());
                  if (parts.length > 17 && !parts[17].isBlank()) d.spawnPassive = Boolean.parseBoolean(parts[17].trim());
                  if (parts.length > 18 && !parts[18].isBlank()) { try { d.mobCap = Integer.parseInt(parts[18].trim()); } catch (NumberFormatException ignored) {} }
 +                if (parts.length > 19 && !parts[19].isBlank())
 +                    for (String f : parts[19].split(",")) if (PlotFlags.byId(f.trim()) != null) d.flags.add(f.trim());
++                if (parts.length > 20 && !parts[20].isBlank()) { try { d.claimedAt = Long.parseLong(parts[20].trim()); } catch (NumberFormatException ignored) {} }
                  for (PlotPos c : d.cells) PLOTS.put(c, d);
              } catch (Exception e) {
                  System.err.println("[FabricPlots] Skipped bad plot line: " + line + " (" + e + ")");
-@@ -372,7 +378,8 @@ public final class PlotManager {
+@@ -367,12 +413,15 @@ public final class PlotManager {
+             for (UUID dn : d.denied) dj.add(dn.toString());
+             StringJoiner lj = new StringJoiner(",");
+             for (UUID lk : d.likes) lj.add(lk.toString());
+-            String home = d.home == null ? "" : d.home.getX() + ":" + d.home.getY() + ":" + d.home.getZ();
++            // x:y:z, plus :yaw:pitch when /plot sethome saved a facing (older builds read the first three).
++            String home = d.home == null ? "" : d.home.getX() + ":" + d.home.getY() + ":" + d.home.getZ()
++                    + (Float.isNaN(d.homeYaw) ? "" : ":" + d.homeYaw + ":" + d.homePitch);
+             String floor = d.floorBlockId == null ? "" : d.floorBlockId;
              lines.add(d.owner + ";" + d.ownerName + ";" + tj + ";" + cj + ";" + d.name + ";" + dj + ";" + home
                      + ";" + floor + ";" + d.pvp + ";" + lj + ";" + d.paidAmount
                      + ";" + d.greeting + ";" + d.ambience + ";" + d.sidewalkPattern + ";" + d.wallPattern
 -                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap);
 +                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap
-+                    + ";" + String.join(",", d.flags));
++                    + ";" + String.join(",", d.flags) + ";" + d.claimedAt);
          }
          try {
              AtomicFiles.writeLines(saveFile, lines);
@@ -495,7 +746,7 @@ index 5653241..ede2a4b 100644
          String v = p.getProperty(k);
          return v == null ? def : Boolean.parseBoolean(v.trim());
 diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
-index 04ddd3f..0d0b666 100644
+index 04ddd3f..d55de88 100644
 --- a/src/main/java/com/fabricplots/gui/PlotMenus.java
 +++ b/src/main/java/com/fabricplots/gui/PlotMenus.java
 @@ -98,7 +98,7 @@ public final class PlotMenus {
@@ -507,7 +758,26 @@ index 04ddd3f..0d0b666 100644
              if (!allowed(sp, "fabricplots.portal")) return;
              g.close();
              int n = 0;
-@@ -224,10 +224,35 @@ public final class PlotMenus {
+@@ -124,8 +124,7 @@ public final class PlotMenus {
+     // ---- list of the player's plots --------------------------------------
+ 
+     public static void myPlots(ServerPlayer sp, int page) {
+-        List<PlotData> owned = new ArrayList<>();
+-        for (PlotData d : PlotManager.allPlots()) if (sp.getUUID().equals(d.owner)) owned.add(d);
++        List<PlotData> owned = PlotManager.ownedPlots(sp.getUUID());
+ 
+         SimpleGui g = new SimpleGui(MenuType.GENERIC_9x6, sp, false);
+         g.setTitle(Component.literal("My Plots (" + owned.size() + ")"));
+@@ -133,7 +132,7 @@ public final class PlotMenus {
+         for (int i = 0; i < PER_PAGE && start + i < owned.size(); i++) {
+             PlotData d = owned.get(start + i);
+             PlotPos anchor = d.cells.iterator().next();
+-            String label = d.name.isBlank() ? "Plot " + anchor.px() + ", " + anchor.pz() : d.name;
++            String label = (start + i + 1) + ": " + (d.name.isBlank() ? "Plot " + anchor.px() + ", " + anchor.pz() : d.name);
+             List<Component> lore = List.of(
+                     Component.literal("Cells: " + d.cells.size() + (d.isMerged() ? " (merged)" : "")),
+                     Component.literal("Trusted: " + d.trusted.size() + " · Denied: " + d.denied.size()),
+@@ -224,10 +223,35 @@ public final class PlotMenus {
                  "Hostile: " + (d.spawnHostile ? "ON" : "OFF") + " · Passive: " + (d.spawnPassive ? "ON" : "OFF")
                          + " — what your plot's biome may spawn.",
                  (i, t, a, gg) -> { if (allowed(sp, "fabricplots.mobs")) mobSpawnPicker(sp, anchor); }));
@@ -543,6 +813,18 @@ index 04ddd3f..0d0b666 100644
      private static Item biomeIcon(PlotData d) {
          if (d.biomeId.isBlank()) return Items.GRASS_BLOCK;
          return itemByRegistryId(PlotBiomes.iconFor(d.biomeId));
+@@ -738,10 +762,7 @@ public final class PlotMenus {
+     private static void teleportVisit(ServerPlayer sp, PlotPos anchor) {
+         ServerLevel level = plots(sp);
+         PlotData d = PlotManager.get(anchor);
+-        if (d != null && d.home != null) {
+-            sp.teleportTo(level, d.home.getX() + 0.5, d.home.getY(), d.home.getZ() + 0.5, Set.of(), sp.getYRot(), 0f, false);
+-            return;
+-        }
++        if (d != null) { PlotManager.teleportToPlot(sp, level, d); return; }
+         int[] xz = PlotManager.homeXZ(anchor);
+         sp.teleportTo(level, xz[0] + 0.5, PlotConfig.FLOOR_Y, xz[1] + 0.5, Set.of(), sp.getYRot(), 0f, false);
+     }
 diff --git a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java b/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
 index e6db3be..057721b 100644
 --- a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
