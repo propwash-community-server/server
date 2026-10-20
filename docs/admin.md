@@ -114,7 +114,7 @@ The `plots` server is a creative plot world from [FabricPlots](https://modrinth.
 plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on fpv).
 
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
-`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 1,
+`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 2,
 builder 2, staff 64).
 
 | Task | Command |

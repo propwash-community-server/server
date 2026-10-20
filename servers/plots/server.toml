@@ -39,7 +39,7 @@ mods = [
 
 # /help, in MiniMessage with palette.toml tags.
 help = """
-<brand><bold>Plots</bold></brand>: a creative world where every player gets a 120x120 plot to build on.
+<brand><bold>Plots</bold></brand>: a creative world where every player gets up to two 120x120 plots to build on.
 <accent>/plot auto</accent>: get a free plot
 <accent>/plot home</accent>, <accent>/plot home 2</accent>: go to your first or second plot
 <accent>/plot sethome</accent>: on your plot, set where you and visitors arrive (and which way they face)
