@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..c32a8a9 100644
+index daaf686..f7cbcb8 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..c32a8a9 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.8
++mod_version=1.0.2-plotsize.9
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -24,7 +24,7 @@ index c7e8ebe..8fc5341 100644
              applyWorldRules(server);
          });
 diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
-index a5ee575..d14e2b9 100644
+index a5ee575..d2247a8 100644
 --- a/src/main/java/com/fabricplots/command/PlotCommands.java
 +++ b/src/main/java/com/fabricplots/command/PlotCommands.java
 @@ -57,7 +57,12 @@ public final class PlotCommands {
@@ -369,6 +369,17 @@ index a5ee575..d14e2b9 100644
      private static boolean isOp(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
          return PlotProtection.isAdmin(p); // server op OR single-player host
      }
+@@ -950,9 +1126,7 @@ public final class PlotCommands {
+     }
+ 
+     private static String nameOf(CommandContext<CommandSourceStack> ctx, UUID id) {
+-        if (PlotManager.isServer(id)) return "Server";
+-        ServerPlayer sp = ctx.getSource().getServer().getPlayerList().getPlayer(id);
+-        return sp != null ? sp.getName().getString() : id.toString().substring(0, 8);
++        return PlotManager.playerName(ctx.getSource().getServer(), id);
+     }
+ 
+     private static void msg(CommandContext<CommandSourceStack> ctx, String text) {
 diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
 index ec8c020..22e649b 100644
 --- a/src/main/java/com/fabricplots/core/PlotConfig.java
@@ -541,7 +552,7 @@ index 0000000..d798be2
 +            level.getBlockEntity(pos) instanceof net.minecraft.world.Container;
 +}
 diff --git a/src/main/java/com/fabricplots/core/PlotManager.java b/src/main/java/com/fabricplots/core/PlotManager.java
-index f1ee48a..1bd27a3 100644
+index f1ee48a..0c6dc9c 100644
 --- a/src/main/java/com/fabricplots/core/PlotManager.java
 +++ b/src/main/java/com/fabricplots/core/PlotManager.java
 @@ -85,6 +85,7 @@ public final class PlotManager {
@@ -590,7 +601,7 @@ index f1ee48a..1bd27a3 100644
          target.sidewalkPattern = source.sidewalkPattern;
          target.wallPattern = source.wallPattern;
          target.paidAmount = source.paidAmount;
-@@ -269,10 +280,41 @@ public final class PlotManager {
+@@ -269,10 +280,57 @@ public final class PlotManager {
  
      /** First plot owned by a player (used by /plot home). */
      public static PlotPos firstOwned(UUID owner) {
@@ -612,13 +623,29 @@ index f1ee48a..1bd27a3 100644
 +        return owned;
 +    }
 +
++    /**
++     * A player's name, also when they're offline: online, else the server's name cache (everyone who has
++     * joined), else the name stored with their plots, else the start of the UUID.
++     */
++    public static String playerName(MinecraftServer server, UUID id) {
++        if (isServer(id)) return "Server";
++        net.minecraft.server.level.ServerPlayer online = server.getPlayerList().getPlayer(id);
++        if (online != null) return online.getName().getString();
++        var cached = server.services().nameToIdCache().get(id);
++        if (cached.isPresent()) return cached.get().name();
++        for (PlotData d : allPlots()) {
++            if (id.equals(d.owner) && d.ownerName != null && !d.ownerName.isBlank()) return d.ownerName;
+         }
+-        return null;
++        return id.toString().substring(0, 8);
++    }
++
 +    /** A plot's lowest cell (by x, then z): the one it's known by. */
 +    public static PlotPos anchor(PlotData d) {
 +        PlotPos best = null;
 +        for (PlotPos c : d.cells) {
 +            if (best == null || c.px() < best.px() || (c.px() == best.px() && c.pz() < best.pz())) best = c;
-         }
--        return null;
++        }
 +        return best;
 +    }
 +
@@ -635,7 +662,7 @@ index f1ee48a..1bd27a3 100644
      }
  
      /** Next unclaimed plot, spiralling outward from the origin (like /plot auto). */
-@@ -326,6 +368,7 @@ public final class PlotManager {
+@@ -326,6 +384,7 @@ public final class PlotManager {
                  if (parts.length > 6 && !parts[6].isBlank()) {
                      String[] h = parts[6].split(":");
                      d.home = new net.minecraft.core.BlockPos(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -643,7 +670,7 @@ index f1ee48a..1bd27a3 100644
                  }
                  if (parts.length > 7) d.floorBlockId = parts[7];
                  if (parts.length > 8 && !parts[8].isBlank()) d.pvp = Boolean.parseBoolean(parts[8].trim());
-@@ -340,6 +383,9 @@ public final class PlotManager {
+@@ -340,6 +399,9 @@ public final class PlotManager {
                  if (parts.length > 16 && !parts[16].isBlank()) d.spawnHostile = Boolean.parseBoolean(parts[16].trim());
                  if (parts.length > 17 && !parts[17].isBlank()) d.spawnPassive = Boolean.parseBoolean(parts[17].trim());
                  if (parts.length > 18 && !parts[18].isBlank()) { try { d.mobCap = Integer.parseInt(parts[18].trim()); } catch (NumberFormatException ignored) {} }
@@ -653,7 +680,7 @@ index f1ee48a..1bd27a3 100644
                  for (PlotPos c : d.cells) PLOTS.put(c, d);
              } catch (Exception e) {
                  System.err.println("[FabricPlots] Skipped bad plot line: " + line + " (" + e + ")");
-@@ -367,12 +413,15 @@ public final class PlotManager {
+@@ -367,12 +429,15 @@ public final class PlotManager {
              for (UUID dn : d.denied) dj.add(dn.toString());
              StringJoiner lj = new StringJoiner(",");
              for (UUID lk : d.likes) lj.add(lk.toString());
@@ -746,7 +773,7 @@ index 5653241..ede2a4b 100644
          String v = p.getProperty(k);
          return v == null ? def : Boolean.parseBoolean(v.trim());
 diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
-index 04ddd3f..d55de88 100644
+index 04ddd3f..46a92b7 100644
 --- a/src/main/java/com/fabricplots/gui/PlotMenus.java
 +++ b/src/main/java/com/fabricplots/gui/PlotMenus.java
 @@ -98,7 +98,7 @@ public final class PlotMenus {
@@ -825,6 +852,16 @@ index 04ddd3f..d55de88 100644
          int[] xz = PlotManager.homeXZ(anchor);
          sp.teleportTo(level, xz[0] + 0.5, PlotConfig.FLOOR_Y, xz[1] + 0.5, Set.of(), sp.getYRot(), 0f, false);
      }
+@@ -799,8 +820,7 @@ public final class PlotMenus {
+ 
+     private static String nameOf(ServerPlayer ctx, UUID id) {
+         if (PlotManager.isServer(id)) return "Server";
+-        ServerPlayer p = ctx.level().getServer().getPlayerList().getPlayer(id);
+-        return p != null ? p.getName().getString() : id.toString().substring(0, 8);
++        return PlotManager.playerName(ctx.level().getServer(), id);
+     }
+ 
+     private static GuiElement btn(Item icon, String name, String lore, GuiElement.ClickCallback cb) {
 diff --git a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java b/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
 index e6db3be..057721b 100644
 --- a/src/main/java/com/fabricplots/mixin/EntityDamageProtectionMixin.java
