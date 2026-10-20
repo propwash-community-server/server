@@ -43,11 +43,24 @@ permissions = [
     "draftsmith.measure server=plots",
 ]
 
-[groups.builder]
+# Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
+[groups.junior-builder]
 permissions = [
     # Role shown in the tab list; the highest weight wins and sorts first.
+    "weight.90",
+    '"prefix.90.<builder>[Builder]</builder> "',
+    # /fly on the hub (EssentialsX).
+    "essentials.fly server=hub",
+    # Plots: ten plots (the highest fabricplots.limit.<n> wins).
+    "fabricplots.limit.10 server=plots",
+]
+
+[groups.senior-builder]
+permissions = [
     "weight.100",
     '"prefix.100.<builder>[Builder]</builder> "',
+    "group.junior-builder",
+    # Map editing on fpv.
     "worldedit.* server=fpv",
     "flan.command.bypass.claim server=fpv",
     # Map spawns (<map>) and spots (<map>_<spot>) are warps.
@@ -59,15 +72,13 @@ permissions = [
     "minecraft.command.execute server=fpv",
     "minecraft.command.teleport server=fpv",
     "minecraft.command.tp server=fpv",
-    # Plots: two plots (the highest fabricplots.limit.<n> wins).
-    "fabricplots.limit.2 server=plots",
 ]
 
 [groups.staff]
 permissions = [
     "weight.200",
     '"prefix.200.<staff>[Staff]</staff> "',
-    "group.builder",
+    "group.senior-builder",
     "minecraft.command.gamemode",
     "minecraft.command.teleport",
     "minecraft.command.tp",
