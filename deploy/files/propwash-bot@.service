@@ -11,7 +11,8 @@ User=bot
 Group=bot
 WorkingDirectory=/home/bot/pw-server/bot
 # The bot is src/index.js, the API src/bridge/index.js; both read .env from the working directory.
-ExecStart=/bin/sh -c 'if [ %i = api ]; then exec /usr/bin/node src/bridge/index.js; else exec /usr/bin/node src/index.js; fi'
+# Node.js 22 from nodejs.org in /opt/node (deploy.py), not Ubuntu's.
+ExecStart=/bin/sh -c 'if [ %i = api ]; then exec /opt/node/bin/node src/bridge/index.js; else exec /opt/node/bin/node src/index.js; fi'
 Restart=always
 RestartSec=5
 MemoryMax=300M
