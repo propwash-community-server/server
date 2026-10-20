@@ -421,7 +421,7 @@ def service(name, changes):
 apt.packages(
     name="Install Java and tools",
     packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server",
-              "nodejs", "npm", "git", "sqlite3"],
+              "git", "sqlite3"],
     update=True,
     cache_time=3600,
 )
@@ -471,8 +471,26 @@ BOT_COMMIT = "e13e927bc730da7b9f42b692beedfba65049cb1e"
 BOT_DIR = "/home/bot/pw-server"
 PNPM = "9.15.9"
 
+# Node.js from nodejs.org, not Ubuntu's (18 on 24.04): the bot's bridge.db uses node:sqlite, Node 22.5+.
+# To update, change the version and both checksums (the tarballs' lines in
+# https://nodejs.org/dist/v<NODE>/SHASUMS256.txt). x64 for prod, arm64 for an ARM VPS.
+NODE = "22.23.3"
+NODE_SHA256 = {
+    "x64": "df450af89261115ef9f9e3830c3eeb2cc9213b63c720b1af623cb5dcbe2e02de",
+    "arm64": "a44aeb94849a299b22df10b9e622ec2f605c2183501bc40590705131de7c740f",
+}
+NODE_BIN = "/opt/node/bin"
+server.shell(name="Node.js", commands=[
+    'case "$(uname -m)" in x86_64) a=x64;; aarch64) a=arm64;; *) echo "no Node.js build for $(uname -m)"; exit 1;; esac; '
+    f'case $a in x64) sum={NODE_SHA256["x64"]};; arm64) sum={NODE_SHA256["arm64"]};; esac; '
+    f'd=/opt/node-v{NODE}-linux-$a; '
+    f'[ -x $d/bin/node ] || {{ curl -fsSL -o /tmp/node.tar.xz https://nodejs.org/dist/v{NODE}/node-v{NODE}-linux-$a.tar.xz '
+    '&& echo "$sum  /tmp/node.tar.xz" | sha256sum -c - && tar -xJf /tmp/node.tar.xz -C /opt && rm /tmp/node.tar.xz; } '
+    '&& ln -sfn $d /opt/node',
+])
+
 server.user(name="bot user", user="bot", home="/home/bot", shell="/usr/sbin/nologin")
-server.shell(name="pnpm", commands=[f'[ "$(pnpm -v 2>/dev/null)" = {PNPM} ] || npm install -g pnpm@{PNPM}'])
+server.shell(name="pnpm", commands=[f'export PATH={NODE_BIN}:$PATH; [ "$(pnpm -v 2>/dev/null)" = {PNPM} ] || npm install -g pnpm@{PNPM}'])
 
 bot_changes = []
 if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
@@ -481,7 +499,7 @@ if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
         f"runuser -u bot -- sh -c '[ -d {BOT_DIR}/.git ] || {{ git init -q {BOT_DIR} && git -C {BOT_DIR} remote add origin {BOT_REPO}; }}'",
         f"runuser -u bot -- git -C {BOT_DIR} fetch -q --depth 1 origin {BOT_COMMIT}",
         f"runuser -u bot -- git -C {BOT_DIR} checkout -q --force {BOT_COMMIT}",
-        f"cd {BOT_DIR}/bot && runuser -u bot -- pnpm install --frozen-lockfile --prod",
+        f"cd {BOT_DIR}/bot && runuser -u bot -- env PATH={NODE_BIN}:/usr/bin:/bin pnpm install --frozen-lockfile --prod",
     ]))
 bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n"), dest=f"{BOT_DIR}/bot/.env", mode="600",
                              user="bot", group="bot"))
