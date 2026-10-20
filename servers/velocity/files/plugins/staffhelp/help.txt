@@ -8,7 +8,8 @@
 <accent>/plot admin</accent>: edit any plot (plots; again to stop), <accent>/plot setowner</accent>
 <accent>/flan bypass</accent>: build on fpv maps; <accent>/warp set <name></accent>, <accent>/time set</accent> on a map
 <admin><bold>Admin</bold></admin>
-<accent>/v</accent>: vanish on every server (again to show yourself)
+<accent>/v</accent> or <accent>/vanish</accent>: vanish on every server (again to show yourself); everyone sees you leave and join
+<accent>/v auto on</accent>, <accent>/v auto off</accent> (or <accent>/vanish auto</accent>): always arrive vanished, or always visible; <accent>/v auto</accent> shows yours
 <accent>/exempt</accent>: use boats and projectiles, drop items, on every server (again to stop)
 <accent>/vote start <question></accent>: a yes/no vote on every server for 60 s; <accent>/vote end</accent> ends it early
 <accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it

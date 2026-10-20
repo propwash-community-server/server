@@ -289,16 +289,27 @@ question is plain text (no formatting or click actions), at most 200 characters.
 
 ## Vanish
 
-`/v` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
+`/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
 server switches: not in any tab list, the server list or `/list`, not drawn at all (no invisibility
 particles), not in name suggestions, and commands, `/tpa` and `/msg` don't find you. Public chat is
 off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanished players
 (`propwash.vanish.see`, `tab.seevanished`, `vanish.feature.view`, `essentials.vanish.see`,
-`carbon.whisper.vanished`).
+`carbon.whisper.vanished`), with a gray `[V]` after their name in the tab list, and are told in chat
+when someone vanishes or shows themselves again.
+
+Going into `/v` posts your usual leave message ("<name> left") and coming out your usual join message,
+so nobody can tell (NetworkJoinMessages' own `/njoinspoof leave` and `join`, run for you). While
+vanished on hub, a boss bar says so (fpv and plots show the Vanish mod's own).
+`/vanish <anything>` (like `/vanish check`) goes to the server's own vanish command.
+
+`/v auto on` (or `/vanish auto on`): you always arrive on the network vanished, without a join
+message; `/v auto off`: always visible, with it; `/v auto` shows yours. Without one you arrive the way
+you left. It's applied as you leave the network (whether a join is silent is settled before you're
+back), and kept in the proxy's `plugins/vanish/auto.properties`.
 
 | Part | Does |
 |---|---|
-| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`; keeps who is vanished; TAB tab list, server list, blocks chat; tells Carbon; no join messages |
+| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`, `/vanish`; keeps who is vanished; TAB tab list (and `[V]` for staff), server list, blocks chat; tells Carbon and staff; fake leave/join messages; hub boss bar |
 | [Vanish](https://modrinth.com/mod/vanish) (fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
 | EssentialsX `/vanish` (hub) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
 | our Carbon build | leaves vanished players out of `/msg` and its suggestions |
