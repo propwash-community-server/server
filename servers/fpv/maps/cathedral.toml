@@ -1,0 +1,5 @@
+# A superflat 1.20.1 world: upgraded as it is explored, so the first visit is slow. Only the
+# cathedral around the save's spawn (-1286 -755) is inside the border.
+title = "Gothic Cathedral"
+author = "silversurfer671"
+border = { x = -840, z = -760, size = 1008 }
