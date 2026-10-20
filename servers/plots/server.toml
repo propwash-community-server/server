@@ -26,9 +26,9 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
     # /mydrone brings your own drone to you; your drones go when you leave; the debug stick works in the plot world (/debugstick);
-    # fireworks have a 2-second cooldown.
+    # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.4.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.5.0-26.3.jar",
     # Server status for the Discord bot; its key is BRIDGE_KEY_PLOTS (see docs/admin.md#discord-bot).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
@@ -39,7 +39,7 @@ mods = [
 
 # /help, in MiniMessage with palette.toml tags.
 help = """
-<brand><bold>Plots</bold></brand>: a creative world where every player gets a 120x120 plot to build on.
+<brand><bold>Plots</bold></brand>: a creative world where every player gets up to two 120x120 plots to build on.
 <accent>/plot auto</accent>: get a free plot
 <accent>/plot home</accent>, <accent>/plot home 2</accent>: go to your first or second plot
 <accent>/plot sethome</accent>: on your plot, set where you and visitors arrive (and which way they face)

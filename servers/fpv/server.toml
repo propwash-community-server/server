@@ -23,9 +23,9 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
     # /mydrone brings your own drone to you; your drones go when you leave; the debug stick works in the plot world (/debugstick);
-    # fireworks have a 2-second cooldown.
+    # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.4.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.5.0-26.3.jar",
     # Server status, race records and /link for the Discord bot; its key is BRIDGE_KEY_FPV (see docs/admin.md#discord-bot).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
