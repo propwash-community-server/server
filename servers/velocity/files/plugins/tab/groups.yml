@@ -1,8 +1,8 @@
 # Each player's entry in the tab list: [server] or, on an fpv map, [fpv: map] (see tab.yml.j2), then
-# the LuckPerms role.
+# the LuckPerms role; [V] after vanished players, which only staff see.
 _DEFAULT_:
   tabprefix: "<muted>[%server%%condition:map%]</muted> %luckperms-prefix%"
   customtabname: "%player%"
-  tabsuffix: ""
+  tabsuffix: "%condition:vanished%"
   tagprefix: ""
   tagsuffix: ""
