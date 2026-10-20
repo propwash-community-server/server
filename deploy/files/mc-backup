@@ -24,7 +24,16 @@ for unit in $(systemctl list-units --state=active --plain --no-legend 'mc@*' | a
 done
 
 mysqldump --single-transaction --databases luckperms libertybans > /var/backups/mariadb.sql
-restic backup /home/mc/servers /var/backups/mariadb.sql \
+# The bot's records and /link accounts (copied consistently while it runs) and its own small database.
+extra=""
+if [ -f /home/bot/pw-server/bot/bridge.db ]; then
+    sqlite3 /home/bot/pw-server/bot/bridge.db ".backup /var/backups/bridge.db"
+    extra="/var/backups/bridge.db"
+fi
+if [ -f /home/bot/pw-server/bot/database.yml ]; then
+    extra="$extra /home/bot/pw-server/bot/database.yml"
+fi
+restic backup /home/mc/servers /var/backups/mariadb.sql $extra \
     --exclude '*.jar' --exclude libraries --exclude logs --exclude versions --exclude .fabric
 resume
 

@@ -25,6 +25,7 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 | `mariadb.secret.sops` | password of the `minecraft` database user |
 | `backup.env.sops` | [restic](https://restic.net) repository + password, S3 keys |
 | `s3.env.sops` | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (world store, for [`upload`](../tools/upload.py)) |
+| `bot.env.sops` | the [Discord bot](#discord-bot)'s `.env`: `CLIENT_TOKEN`, `TYPESAFE_API_KEY`, one `BRIDGE_KEY_<SERVER>` per server with the bridge mod |
 
 The first three are random strings. To regenerate one, run the following; the next deploy rolls it out:
 
@@ -72,8 +73,12 @@ plots) removes every boat, chest boat and raft once a second and clears boat ite
 Old boats go as soon as their chunk is loaded.
 
 No projectiles on any server either: the `noprojectiles` datapack (same place) removes arrows,
-tridents, snowballs, eggs, wind charges, ender pearls, thrown potions, bottles o' enchanting and
-firework rockets (so no elytra boosting) within a tick of being shot or thrown; the item is used up.
+tridents, snowballs, eggs, wind charges, ender pearls, thrown potions and bottles o' enchanting
+within a tick of being shot or thrown; the item is used up. Firework rockets are allowed once every
+2 seconds per player (launched by hand or for elytra boosting); others within those 2 seconds, and
+rockets from crossbows or dispensers, are removed the same way. On fpv and plots `mods/tweaks` also
+puts rockets on a 2-second item cooldown (the grey sweep), so the player's game doesn't try (no short
+boost from a rocket the datapack removes), and says above the hotbar how long is left.
 
 Admins can be exempt from both with `/exempt` (`propwash.exempt`; again to stop): it keeps their
 projectiles, their boat items and every boat within 16 blocks of them, and lets them drop items. It
@@ -92,6 +97,11 @@ updating Vanish, check that un-vanishing still shows you right away.
 nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
 at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
 
+Drones go with their owner (also `mods/tweaks`): when a player leaves fpv or plots (logs off or
+switches server), their drones (`pw_owner_<name>`) are removed from every loaded map there, and a
+drone in a chunk that loads later is removed if its owner isn't on that server. Drones without an
+owner tag are left alone.
+
 In the plot world everyone may use a debug stick (vanilla allows it to ops only), and `/debugstick`
 (plots) gives one, one at a time. FabricPlots' protection applies to both its clicks, so it only
 works on plots the player may build on; it changes block states, never the block itself.
@@ -104,7 +114,7 @@ The `plots` server is a creative plot world from [FabricPlots](https://modrinth.
 plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on fpv).
 
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
-`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 1,
+`fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 2,
 builder 2, staff 64).
 
 | Task | Command |
@@ -282,16 +292,27 @@ question is plain text (no formatting or click actions), at most 200 characters.
 
 ## Vanish
 
-`/v` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
+`/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
 server switches: not in any tab list, the server list or `/list`, not drawn at all (no invisibility
 particles), not in name suggestions, and commands, `/tpa` and `/msg` don't find you. Public chat is
 off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanished players
 (`propwash.vanish.see`, `tab.seevanished`, `vanish.feature.view`, `essentials.vanish.see`,
-`carbon.whisper.vanished`).
+`carbon.whisper.vanished`), with a gray `[V]` after their name in the tab list, and are told in chat
+when someone vanishes or shows themselves again.
+
+Going into `/v` posts your usual leave message ("<name> left") and coming out your usual join message,
+so nobody can tell (NetworkJoinMessages' own `/njoinspoof leave` and `join`, run for you). While
+vanished on hub, a boss bar says so (fpv and plots show the Vanish mod's own).
+`/vanish <anything>` (like `/vanish check`) goes to the server's own vanish command.
+
+`/v auto on` (or `/vanish auto on`): you always arrive on the network vanished, without a join
+message; `/v auto off`: always visible, with it; `/v auto` shows yours. Without one you arrive the way
+you left. It's applied as you leave the network (whether a join is silent is settled before you're
+back), and kept in the proxy's `plugins/vanish/auto.properties`.
 
 | Part | Does |
 |---|---|
-| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`; keeps who is vanished; TAB tab list, server list, blocks chat; tells Carbon; no join messages |
+| [`mods/vanish`](../mods/vanish/) (proxy) | `/v`, `/vanish`; keeps who is vanished; TAB tab list (and `[V]` for staff), server list, blocks chat; tells Carbon and staff; fake leave/join messages; hub boss bar |
 | [Vanish](https://modrinth.com/mod/vanish) (fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
 | EssentialsX `/vanish` (hub) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
 | our Carbon build | leaves vanished players out of `/msg` and its suggestions |
@@ -314,10 +335,31 @@ To change `mods/vanish` (JDK 25): edit it, raise the version in `gradle.properti
 `./gradlew build` there, upload `build/libs/vanish-<version>.jar` to the world store as
 `mods/vanish-<version>.jar`, and change the URL in the velocity `server.toml`.
 
+## Discord bot
+
+The [Propwash bot](https://github.com/Itsj5j6j7/pw-server/tree/main/bot) runs on the VPS as two
+units of [`propwash-bot@.service`](../deploy/files/propwash-bot@.service), as the `bot` user from
+`/home/bot/pw-server/bot`: `propwash-bot@bot` (the Discord bot) and `propwash-bot@api` (the HTTP
+API on `127.0.0.1:3006` the bridge mod reports to). They share `bridge.db` there (records, `/link`
+accounts), which the nightly backup includes. The local stack runs only the API.
+
+The deploy checks out `BOT_COMMIT` in [`deploy.py`](../deploy/deploy.py): to update the bot, change
+it and deploy. The bot's channels, roles and bridge servers are in that repo's `src/config.js`.
+
+The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the world store under
+`mods/`) is on fpv and plots. Each server gets its key from `BRIDGE_KEY_<SERVER>` in
+`bot.env.sops` as `PROPWASH_BRIDGE_API_KEY`; a server added to the bot's config needs a key there too.
+
+| Task (as root) | Command |
+|---|---|
+| Status | `systemctl status propwash-bot@bot propwash-bot@api` |
+| Logs | `journalctl -u propwash-bot@bot`, `journalctl -u propwash-bot@api` |
+| API up | `curl -s 127.0.0.1:3006/v1/health` |
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and
-logs) and a [MariaDB](https://mariadb.org) dump to the bucket, with saving paused during the
+logs), the bot's `bridge.db` and a [MariaDB](https://mariadb.org) dump to the bucket, with saving paused during the
 snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 
 | Task (as root) | Command |

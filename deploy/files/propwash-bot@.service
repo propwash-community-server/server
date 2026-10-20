@@ -1,0 +1,21 @@
+# The Discord bot (propwash-bot@bot) and the bridge API the mods report to (propwash-bot@api),
+# from github.com/Itsj5j6j7/pw-server bot/. Both share bot/bridge.db; either restarts without the other.
+#   journalctl -u propwash-bot@api
+[Unit]
+Description=Propwash %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=bot
+Group=bot
+WorkingDirectory=/home/bot/pw-server/bot
+# The bot is src/index.js, the API src/bridge/index.js; both read .env from the working directory.
+# Node.js 22 from nodejs.org in /opt/node (deploy.py), not Ubuntu's.
+ExecStart=/bin/sh -c 'if [ %i = api ]; then exec /opt/node/bin/node src/bridge/index.js; else exec /opt/node/bin/node src/index.js; fi'
+Restart=always
+RestartSec=5
+MemoryMax=300M
+
+[Install]
+WantedBy=multi-user.target

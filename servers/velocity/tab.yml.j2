@@ -83,6 +83,12 @@ conditions:
       - "%server%=fpv"
     true: "%world%"
     false: ""
+  # Only staff see vanished players in the tab list at all, so only they see this (mods/vanish).
+  vanished:
+    conditions:
+      - "%vanished%=true"
+    true: " <gray>[V]</gray>"
+    false: ""
 
 assign-groups-by-permissions: false
 primary-group-finding-list:

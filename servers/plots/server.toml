@@ -1,6 +1,6 @@
 type = "fabric"
 port = 25570
-ram = "1536M"
+ram = "3G"
 jar = "fabric-server.jar"
 url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
 mods = [
@@ -19,15 +19,18 @@ mods = [
     # Creative plot world (PlotSquared-style): claim, trust; protects plots and roads. It does the
     # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with "plot-size" and
     # "portals" settings and a /plot admin fix, from fabricplots.patch, in the world store. See docs/admin.md#plots.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.7-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.8-26.3.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
-    # /mydrone brings your own drone to you; the debug stick works in the plot world (/debugstick).
+    # /mydrone brings your own drone to you; your drones go when you leave; the debug stick works in the plot world (/debugstick);
+    # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.2.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.5.0-26.3.jar",
+    # Server status for the Discord bot; its key is BRIDGE_KEY_PLOTS (see docs/admin.md#discord-bot).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
@@ -36,13 +39,15 @@ mods = [
 
 # /help, in MiniMessage with palette.toml tags.
 help = """
-<brand><bold>Plots</bold></brand>: a creative world where every player gets a 120x120 plot to build on.
+<brand><bold>Plots</bold></brand>: a creative world where every player gets up to two 120x120 plots to build on.
 <accent>/plot auto</accent>: get a free plot
+<accent>/plot home</accent>, <accent>/plot home 2</accent>: go to your first or second plot
+<accent>/plot sethome</accent>: on your plot, set where you and visitors arrive (and which way they face)
 <accent>/plot claim</accent>: claim the empty plot you stand on
 <accent>/plot menu</accent>: your plots and their settings
 <accent>/plot trust <player></accent>: let someone build on your plot
 <accent>/plot flag help</accent>: let visitors ride minecarts, use doors, chests and more
-<accent>/plot list</accent>, <accent>/plot visit <player></accent>: everyone's plots, also when they're offline
+<accent>/plot list</accent>, <accent>/plot visit <player> [2]</accent>: everyone's plots, also when they're offline
 <accent>/draft</accent>: build tools (fill, copy and paste, shapes, brushes, undo)
 <accent>/draft wand</accent>: select two corners for the build tools
 <accent>/mydrone</accent>: bring your drone to you
@@ -77,16 +82,17 @@ show_advancement_messages = false
 
 # 120x120 plots, so /plot auto gives a big plot and players don't need to merge. plot-size is read
 # at startup and the grid is generated with it: changing it needs a fresh plots world.
-# Spawn is the middle of the road crossing at the corner of the four spawn plots around (0,0),
-# standing on the spawn build (y 69). Keep the plots_spawn datapack at the same spot.
+# Spawn is on the Halloween spawn build (2026-10-20; before, the road crossing at -9 69 -9).
+# Keep the plots_spawn datapack at the same spot.
 [config."config/fabricplots.properties"]
 plot-size = "120"
-spawn-x = "-9"
-spawn-y = "69"
-spawn-z = "-9"
+spawn-x = "40"
+spawn-y = "75"
+spawn-z = "39"
 # The street sweeper rebuilds roads (removing anything built on them) except this far from spawn,
-# so staff (in /plot admin) can build on the spawn area's roads: 145 blocks each way.
-street-sweeper-spawn-radius = "145"
+# so staff (in /plot admin) can build on the spawn area's roads: 194 blocks each way from spawn,
+# which still covers the area 145 around the old spawn (-9 -9).
+street-sweeper-spawn-radius = "194"
 allow-player-combine = "false"
 # FabricPlots sets the plot world's advance_time and advance_weather game rules from these on every
 # start (and /plot reload), so a /gamerule change didn't last: time and weather stay put.
@@ -115,8 +121,12 @@ send-join-disconnect-message = "false"
 # The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-6557a509.zip'
-resource-pack-sha1 = "6557a50938db41df0a9ce22c7df79e849ca4a16b"
+# Halloween 2026: the maps pack plus Halloween (witch's broom frames, spooky sounds), the same maps
+# assets; docs/maps.md#halloween. After Halloween, back to the regular maps pack (still in the world store):
+# resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-6557a509.zip'
+# resource-pack-sha1 = "6557a50938db41df0a9ce22c7df79e849ca4a16b"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-halloween-855e1980.zip'
+resource-pack-sha1 = "855e198010019577ff7a6dabd8fd93f3af86ee0f"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
