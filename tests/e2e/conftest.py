@@ -106,10 +106,10 @@ def reset(player):
 
 @pytest.fixture
 def builder(player):
-    """The player in the builder group on fpv, for one test."""
-    luckperms(f"user {player.name} parent add builder", FPV)
+    """The player in the senior-builder group on fpv, for one test."""
+    luckperms(f"user {player.name} parent add senior-builder", FPV)
     yield player
-    luckperms(f"user {player.name} parent remove builder", FPV)
+    luckperms(f"user {player.name} parent remove senior-builder", FPV)
 
 
 @pytest.fixture(scope="session")
@@ -118,7 +118,7 @@ def map_spawn(player):
     player.go(FPV)
     FPV.rcon(f"execute in maps:{MAP} run fill 0 99 0 4 99 4 minecraft:stone")
     FPV.rcon(f"execute in maps:{MAP} run fill 0 100 0 4 101 4 minecraft:air")
-    luckperms(f"user {player.name} parent add builder", FPV)
+    luckperms(f"user {player.name} parent add senior-builder", FPV)
     try:
         FPV.rcon(f"execute in maps:{MAP} run tp {player.name} {' '.join(map(str, SPAWN))}")
         player.expect_dimension(f"maps:{MAP}")
@@ -127,4 +127,4 @@ def map_spawn(player):
         player.command(f"/warp set {MAP}")
         player.expect_chat(f"Warp '{MAP}' set")
     finally:
-        luckperms(f"user {player.name} parent remove builder", FPV)
+        luckperms(f"user {player.name} parent remove senior-builder", FPV)

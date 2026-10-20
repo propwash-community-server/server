@@ -37,7 +37,7 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 ## Permissions
 
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
-(`default`, `builder`, `staff`, `admin`). Each entry is passed to
+(`default`, `junior-builder`, `senior-builder`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
@@ -59,8 +59,15 @@ vanilla commands as `minecraft.command.<name>`. [Essential Commands](https://mod
 uses LuckPerms on fpv (`essentialcommands.<command>`, for warps); elsewhere it is configured in its own config.
 Commands without a LuckPerms entry keep their default: open to everyone or op only.
 
-The `builder` group is what map editing needs on fpv: WorldEdit, `/flan bypass`, setting and
-deleting warps, `/time` on a map, and `/tp` and `/execute` to reach a map that has no warp yet.
+Builders have two ranks, both shown as `[Builder]`. `junior-builder`: `/fly` on the hub and ten plots
+on plots. `senior-builder` has all of that (it includes `junior-builder`) and what map editing needs
+on fpv: WorldEdit, `/flan bypass`, setting and deleting warps, `/time` on a map, and `/tp` and
+`/execute` to reach a map that has no warp yet. Staff include `senior-builder`.
+
+```
+lpv user <name> parent add junior-builder
+lpv user <name> parent add senior-builder
+```
 
 ## Protection
 
@@ -115,7 +122,7 @@ plots doesn't run Flan. Placing a drone removes that player's older drone (`prop
 
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
 `fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 2,
-builder 2, staff 64).
+builders 10, staff 64).
 
 | Task | Command |
 |---|---|
