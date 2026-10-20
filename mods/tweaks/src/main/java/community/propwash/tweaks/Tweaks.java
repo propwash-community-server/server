@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.commands.CommandSourceStack;
@@ -40,6 +41,7 @@ public final class Tweaks implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 {
                     dispatcher.register(Commands.literal("mydrone").executes(context -> myDrone(context.getSource())));
@@ -73,6 +75,23 @@ public final class Tweaks implements ModInitializer {
     }
 
     private static final String OWNER_TAG = "pw_owner_";
+
+    /**
+     * WorldEdit's progress messages ("still working...") run on a java.util.Timer made with new Timer(),
+     * not a daemon thread, and never cancelled: once someone has used a slow WorldEdit command, Java can't
+     * exit after the server has stopped, and systemd kills it after its stop timeout (2 minutes). Cancelled
+     * here once everything is saved. By name, so nothing breaks without WorldEdit or if it changes.
+     */
+    private static void stopWorldEditTimer() {
+        try {
+            var field = Class.forName("com.sk89q.worldedit.command.util.FutureProgressListener", true,
+                    Tweaks.class.getClassLoader()).getDeclaredField("timer");
+            field.setAccessible(true);
+            ((java.util.Timer) field.get(null)).cancel();
+        } catch (ReflectiveOperationException | ClassCastException | NullPointerException | LinkageError ignored) {
+            // No WorldEdit, or it no longer has this timer.
+        }
+    }
 
     private static boolean isDrone(Entity entity) {
         return "propwash:drone".equals(EntityType.getKey(entity.getType()).toString());
