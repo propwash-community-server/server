@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "plotedit",
+  "version": "${version}",
+  "name": "PlotEdit",
+  "description": "WorldEdit for players on plots: only where FabricPlots lets them build, with block limits per command and per time window (config/plotedit.properties).",
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["community.propwash.plotedit.PlotEdit"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3",
+    "fabric-api": "*",
+    "worldedit": "*",
+    "fabricplots": "*"
+  }
+}

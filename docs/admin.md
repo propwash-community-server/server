@@ -190,6 +190,41 @@ To rebuild for a new FabricPlots or Minecraft version (JDK 25):
    `mods/fabricplots-<version>-plotsize-<mc>.jar` (no `+`), and point the url in
    `servers/plots/server.toml` at it.
 
+### WorldEdit for players (plotedit)
+
+Everyone has WorldEdit on plots (`//wand`, `//set`, `//replace`, `//copy`, `//paste`, `//undo`, shapes
+and more; the list is in `permissions.toml`, `server=plots`). [`mods/plotedit`](../mods/plotedit/)
+lets an edit change only blocks where FabricPlots lets the player build (their own and trusted plots,
+never roads, the bedrock floor or other plots; the rest is skipped) and limits it, in
+`[config."config/plotedit.properties"]` in `servers/plots/server.toml` (read again when the file
+changes, so a deploy changes them without a restart):
+
+| Setting | Default | Does |
+|---|---|---|
+| `max-blocks-per-command` | 45000 | an edit stops after this many changed blocks (`//undo` takes back what went through) |
+| `max-blocks-per-window`, `window-seconds` | 45000, 30 | at most this many changed blocks per player over the last `window-seconds`; reaching it pauses that player's edits for `window-seconds` |
+| `max-selection-volume` | 1000000 | region commands (`//set`, `//copy`...) refuse bigger selections |
+| `lag-log-ms` | 250 | ticks slower than this during players' WorldEdit are logged |
+| `lag-alert-ms` | 1000 | ... and above this, staff are told in chat |
+| `limit-alert-count` | 5 | staff are told when a player hits a limit this many times in 10 minutes |
+
+Past a limit the rest of an edit is skipped, not aborted, so players always see what changed.
+`//undo` has no per-command limit, works during a pause and may take the window up to twice
+`max-blocks-per-window`, so undoing right after a big edit works; it still counts, so a run of undos is
+limited.
+`//redo` is limited like any edit.
+
+WorldEdit's own `max-radius` (40 on plots, for everyone) limits `//sphere`, `//cyl`, `//fill` and
+the like. Staff have `propwash.plotedit.bypass`: no limits, and they get the notices.
+
+`logs/plotedit.log` on plots has a line per player edit (`EDIT`: player, command, blocks changed and
+skipped, time, slowest tick, the limit that stopped it), per slow tick (`LAG`: whose edits ran in it) and
+per notice (`ALERT`). To see whether a limit should be lower, or who's pushing it:
+
+```
+grep -E "LAG|ALERT" /home/mc/servers/plots/logs/plotedit.log | tail -20
+```
+
 ## Bans
 
 [LibertyBans](https://github.com/A248/LibertyBans) runs on the proxy and applies to every server.
