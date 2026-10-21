@@ -1,0 +1,34 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
+    id 'java'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+base.archivesName = 'plotedit'
+
+repositories {
+    maven { url = 'https://maven.enginehub.org/repo/' }
+}
+
+dependencies {
+    // Minecraft 26.x ships with Mojang's names, so no mappings.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // The edit-session event and extents; the server has WorldEdit itself. FabricPlots is used by name.
+    compileOnly("com.sk89q.worldedit:worldedit-core:${project.worldedit_version}") { transitive = false }
+    // Its text classes (WorldEditException takes a text Component as well as a String).
+    compileOnly("com.sk89q.worldedit.worldedit-libs:core:${project.worldedit_version}") { transitive = false }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
