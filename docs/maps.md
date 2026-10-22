@@ -69,6 +69,14 @@ they came with its upload. Staff set the spawn once, standing on the spot:
 
 `/spawn set` (Essential Commands) is checked against op, not LuckPerms: briefly `/op` yourself for it.
 
+Falling into the void under the lobby (below y -70) takes players back to the spawn
+(`files/world/datapacks/lobby_void`): a marker entity tagged `propwash.lobby_spawn`, placed once at
+the spawn spot and saved with the map:
+
+```
+/summon minecraft:marker ~ ~ ~ {Tags:["propwash.lobby_spawn"]}
+```
+
 ## Tutorial
 
 The `tutorial` map was where new players started before the lobby. Until it's built it is superflat
