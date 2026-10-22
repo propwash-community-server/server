@@ -95,6 +95,12 @@ not into a player or drone; before the server stops, all of them come back, and 
 | `seconds` | seconds until a broken block comes back, on every map |
 | `seconds.<map>` | that map's own time, or `off` for no breaking there |
 
+On plots it's per plot: only where the owner turned on the `drone-glass` flag (`/plot flag set
+drone-glass true`, or /plot menu, Visitor permissions), and then anyone's drone breaks glass there,
+the owner's too. It comes back after the plot's `/plot glassregen <seconds>` (10 to 1800, default 180),
+and only into the same plot with the same owner (not into a plot cleared or given away meanwhile).
+Roads and plots without the flag stay intact.
+
 The server log has a line for every drone break Propwash refused, with the reason
 (`Drone break refused for ...: PROTECTED`, `TOO_WEAK`, `COURSE`...).
 

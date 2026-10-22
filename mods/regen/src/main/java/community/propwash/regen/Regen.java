@@ -41,7 +41,9 @@ import org.slf4j.LoggerFactory;
  * Drones break glass on the maps (Propwash's propwash:drones_break_blocks game rule, which this lets
  * through Flan for drones only, see RegenBreakMixin), and every broken block comes back after a while:
  * seconds in config/regen.properties, seconds.<map> per map (maps:<map>), "off" for no breaking there.
- * Only blocks without block entities break (a decorated pot's sherds couldn't come back). Blocks return
+ * On plots (fabricplots:plots) it's per plot instead: only on plots with the drone-glass flag, back
+ * after that plot's /plot glassregen seconds, and only into the same plot (FabricPlots' droneGlassSeconds
+ * and plotKey, by name). Only blocks without block entities break (a decorated pot's sherds couldn't come back). Blocks return
  * one by one with their sound, only into an empty spot, never into a player or drone; when the server
  * stops, all of them return first, and the list is saved in the world in case of a crash.
  */
@@ -58,7 +60,37 @@ public final class Regen implements ModInitializer {
     private static volatile long configModified = -1;
 
     /** A broken block waiting to come back. */
-    record Pending(ResourceKey<Level> level, BlockPos pos, BlockState state, long dueMs) {
+    /** key: on plots, the plot it broke on (owner and position), "" elsewhere; it only goes back into that one. */
+    record Pending(ResourceKey<Level> level, BlockPos pos, BlockState state, long dueMs, String key) {
+    }
+
+    private static final String PLOTS = "fabricplots:plots";
+    private static java.lang.invoke.MethodHandle plotSeconds;
+    private static java.lang.invoke.MethodHandle plotKey;
+
+    static {
+        try {
+            Class<?> manager = Class.forName("com.fabricplots.core.PlotManager");
+            var lookup = java.lang.invoke.MethodHandles.publicLookup();
+            plotSeconds = lookup.findStatic(manager, "droneGlassSeconds",
+                    java.lang.invoke.MethodType.methodType(int.class, int.class, int.class));
+            plotKey = lookup.findStatic(manager, "plotKey",
+                    java.lang.invoke.MethodType.methodType(String.class, int.class, int.class));
+        } catch (ReflectiveOperationException | LinkageError e) {
+            // No FabricPlots (fpv): plots never come up.
+        }
+    }
+
+    /** The plot at pos (owner and position), "" if none or not on plots. */
+    static String keyAt(ServerLevel level, BlockPos pos) {
+        if (plotKey == null || !PLOTS.equals(level.dimension().identifier().toString())) {
+            return "";
+        }
+        try {
+            return (String) plotKey.invokeExact(pos.getX(), pos.getZ());
+        } catch (Throwable e) {
+            return "";
+        }
     }
 
     private static final List<Pending> pending = new ArrayList<>();
@@ -83,11 +115,11 @@ public final class Regen implements ModInitializer {
         });
         DroneBreaks.BROKEN.register((drone, player, pos, state, impact) -> {
             ServerLevel level = (ServerLevel) drone.level();
-            long seconds = secondsFor(level);
+            long seconds = secondsFor(level, pos);
             if (seconds > 0) {
                 long due = System.currentTimeMillis() + seconds * 1000 + ThreadLocalRandom.current().nextLong(JITTER_MS);
                 synchronized (pending) {
-                    pending.add(new Pending(level.dimension(), pos.immutable(), state, due));
+                    pending.add(new Pending(level.dimension(), pos.immutable(), state, due, keyAt(level, pos)));
                 }
             }
         });
@@ -103,12 +135,22 @@ public final class Regen implements ModInitializer {
     /** Whether drones may break this block: on a map where breaking is on, and not a block holding data. */
     public static boolean allowed(ServerLevel level, BlockPos pos) {
         readConfig();
-        return secondsFor(level) > 0 && !level.getBlockState(pos).hasBlockEntity();
+        return secondsFor(level, pos) > 0 && !level.getBlockState(pos).hasBlockEntity();
     }
 
     /** Seconds until blocks come back on this level, 0 or less for no breaking there (not a map, or off). */
-    static long secondsFor(ServerLevel level) {
+    static long secondsFor(ServerLevel level, BlockPos pos) {
         Identifier id = level.dimension().identifier();
+        if (PLOTS.equals(id.toString())) {
+            if (plotSeconds == null) {
+                return 0;
+            }
+            try {
+                return (int) plotSeconds.invokeExact(pos.getX(), pos.getZ());
+            } catch (Throwable e) {
+                return 0;
+            }
+        }
         if (!MAPS.equals(id.getNamespace())) {
             return 0;
         }
@@ -136,7 +178,7 @@ public final class Regen implements ModInitializer {
                 }
                 if (!level.getEntities((net.minecraft.world.entity.Entity) null, new AABB(p.pos())).isEmpty()) {
                     it.remove();
-                    later.add(new Pending(p.level(), p.pos(), p.state(), now + BLOCKED_RETRY_MS));
+                    later.add(new Pending(p.level(), p.pos(), p.state(), now + BLOCKED_RETRY_MS, p.key()));
                     continue;
                 }
                 it.remove();
@@ -154,6 +196,9 @@ public final class Regen implements ModInitializer {
 
     /** Puts the block back if its spot is still empty (air, or the water a waterlogged pane leaves). */
     private static boolean restore(ServerLevel level, Pending p, boolean effects) {
+        if (!p.key().equals(keyAt(level, p.pos()))) {
+            return false; // that plot was cleared or has another owner now: nothing goes back into it
+        }
         BlockState now = level.getBlockState(p.pos());
         if (!now.isAir() && !(now.getBlock() instanceof LiquidBlock)) {
             return false; // something else is there now: leave it
@@ -192,6 +237,7 @@ public final class Regen implements ModInitializer {
             for (Pending p : pending) {
                 CompoundTag t = new CompoundTag();
                 t.putString("level", p.level().identifier().toString());
+                t.putString("key", p.key());
                 t.putInt("x", p.pos().getX());
                 t.putInt("y", p.pos().getY());
                 t.putInt("z", p.pos().getZ());
@@ -227,7 +273,7 @@ public final class Regen implements ModInitializer {
                     ResourceKey<Level> level = ResourceKey.create(Registries.DIMENSION, Identifier.parse(t.getStringOr("level", "")));
                     BlockPos pos = new BlockPos(t.getIntOr("x", 0), t.getIntOr("y", 0), t.getIntOr("z", 0));
                     BlockState state = NbtUtils.readBlockState(blocks, t.getCompoundOrEmpty("state"));
-                    pending.add(new Pending(level, pos, state, due + i * 50L));
+                    pending.add(new Pending(level, pos, state, due + i * 50L, t.getStringOr("key", "")));
                 }
             }
             if (!list.isEmpty()) {

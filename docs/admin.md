@@ -166,6 +166,7 @@ All are off by default and building stays owner and trusted only:
 | `container-use` | open chests, barrels and other containers |
 | `animal-interact` | feed, ride and trade with animals and villagers |
 | `misc-interact` | use armor stands and item frames |
+| `drone-glass` | smash glass with drones, anyone's, the owner's too; it comes back after `/plot glassregen <seconds>` (default 180), see [maps.md](maps.md#breaking-glass) |
 
 They're saved with each plot (`fabricplots-plots.txt`); our patch adds them (PlotSquared has flags like
 these: `vehicle-use`, `device-interact` and so on).
