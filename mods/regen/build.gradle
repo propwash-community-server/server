@@ -1,0 +1,41 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
+    id 'java'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+base.archivesName = 'regen'
+
+// Propwash isn't in a Maven repository: the jar the servers run, downloaded once.
+def propwashJar = layout.buildDirectory.file("deps/" + project.propwash_url.tokenize('/').last())
+tasks.register('propwashJar') {
+    outputs.file(propwashJar)
+    doLast {
+        def f = propwashJar.get().asFile
+        if (!f.exists()) {
+            f.parentFile.mkdirs()
+            new URI(project.propwash_url).toURL().withInputStream { input -> f.withOutputStream { it << input } }
+        }
+    }
+}
+tasks.named('compileJava') { dependsOn 'propwashJar' }
+
+dependencies {
+    // Minecraft 26.x ships with Mojang's names, so no mappings.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly files(propwashJar)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "regen",
+  "version": "${version}",
+  "name": "Regen",
+  "description": "Drones break glass on the fpv maps (Propwash's drones_break_blocks, let through Flan for drones only), and broken blocks come back after a while (config/regen.properties, per map).",
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["community.propwash.regen.Regen"]
+  },
+  "mixins": ["regen.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3",
+    "fabric-api": "*"
+  }
+}

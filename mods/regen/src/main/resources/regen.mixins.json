@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "community.propwash.regen.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "server": ["RegenBreakMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

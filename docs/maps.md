@@ -58,7 +58,7 @@ or tag an existing one: `/tag @e[type=armor_stand,limit=1,sort=nearest] add prop
 
 Players new to fpv start at its world spawn, on the `lobby` map (by Rave_X10); returning players come
 back where they left, and `/spawn` takes anyone there. In the lobby, mannequins tagged
-`propwash.map.<map>` are signposts to the maps (see Map signposts below); they're part of the map, so
+`propwash.map.<map>` are signposts to the maps (see Map signposts above); they're part of the map, so
 they came with its upload. Staff set the spawn once, standing on the spot:
 
 ```
@@ -76,6 +76,27 @@ the spawn spot and saved with the map:
 ```
 /summon minecraft:marker ~ ~ ~ {Tags:["propwash.lobby_spawn"]}
 ```
+
+## Breaking glass
+
+On the maps, fast drones smash glass and glass panes (Propwash's `propwash:drones_break_blocks` game
+rule, in fpv's `[gamerules]`; the blocks are its tag `propwash:drone_breakable`, a 5" breaks a pane
+from about 42 km/h), and [`mods/regen`](../mods/regen/) puts them back. Flan protects the maps, so
+regen lets those drone breaks through, for drones only: players can't break glass by hand. Blocks
+that hold data (decorated pots) don't break.
+
+Broken blocks come back after 3 minutes, one by one with their sound, only into an empty spot and
+not into a player or drone; before the server stops, all of them come back, and the list is saved in
+`world/data/regen.dat` in case of a crash. In `[config."config/regen.properties"]` in
+`servers/fpv/server.toml` (read again when it changes, no restart):
+
+| Setting | Does |
+|---|---|
+| `seconds` | seconds until a broken block comes back, on every map |
+| `seconds.<map>` | that map's own time, or `off` for no breaking there |
+
+The server log has a line for every drone break Propwash refused, with the reason
+(`Drone break refused for ...: PROTECTED`, `TOO_WEAK`, `COURSE`...).
 
 ## Tutorial
 
