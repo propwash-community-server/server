@@ -1,0 +1,5 @@
+# Where players arrive on fpv: map signposts (mannequins tagged propwash.map.<map>, part of this map)
+# take them to the maps. Its spawn is fpv's world spawn and /spawn (set in game, docs/maps.md#lobby).
+title = "Lobby"
+author = "Rave_X10"
+border = { x = 8, z = 0, size = 208 }

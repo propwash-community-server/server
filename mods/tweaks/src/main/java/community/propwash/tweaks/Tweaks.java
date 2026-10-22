@@ -5,6 +5,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -13,6 +15,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -26,7 +31,8 @@ import net.minecraft.world.phys.Vec3;
  * /mydrone: brings the player's own Propwash drone to them. No arguments, so nothing to inject: it
  * only looks for drones tagged with the player's own name (Propwash's pw_owner_<name>, the name from
  * the server), in the dimension (map) they're in and loaded, the nearest one, never while it's
- * flying, at most every 5 seconds. /debugstick gives a debug stick in the plot world, where everyone
+ * flying, at most every 5 seconds. Right-clicking an entity (an armor stand, a mannequin...) tagged
+ * propwash.map.<name> runs /map <name> for the player, before claim protection refuses the click. /debugstick gives a debug stick in the plot world, where everyone
  * may use one (DebugStickMixin), only one at a time.
  *
  * Drones go with their owner: when a player leaves this server (logs off or switches server), their
@@ -41,6 +47,12 @@ public final class Tweaks implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // Map signposts: handled before Flan (which refuses touching armor stands on fpv), and only for tagged entities.
+        Identifier early = Identifier.fromNamespaceAndPath("tweaks", "map_stands");
+        UseEntityCallback.EVENT.addPhaseOrdering(early, Event.DEFAULT_PHASE);
+        // Flan checks in its own early phase; ours goes first (no effect without Flan).
+        UseEntityCallback.EVENT.addPhaseOrdering(early, Identifier.fromNamespaceAndPath("flan", "events"));
+        UseEntityCallback.EVENT.register(early, (player, world, hand, entity, hit) -> mapStand(player, hand, entity));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 {
@@ -75,6 +87,30 @@ public final class Tweaks implements ModInitializer {
     }
 
     private static final String OWNER_TAG = "pw_owner_";
+    private static final String MAP_TAG = "propwash.map.";
+    private static final Map<UUID, Long> lastStand = new ConcurrentHashMap<>();
+
+    /** Right-click on an entity tagged propwash.map.<name>: /map <name> for that player (main hand, every 2 s at most). */
+    private static InteractionResult mapStand(net.minecraft.world.entity.player.Player player, InteractionHand hand, Entity entity) {
+        String map = null;
+        for (String tag : entity.entityTags()) {
+            if (tag.startsWith(MAP_TAG) && tag.substring(MAP_TAG.length()).matches("[a-z0-9_]+")) {
+                map = tag.substring(MAP_TAG.length());
+            }
+        }
+        if (map == null || !(player instanceof ServerPlayer sp)) {
+            return InteractionResult.PASS;
+        }
+        if (hand == InteractionHand.MAIN_HAND) {
+            long now = System.currentTimeMillis();
+            Long last = lastStand.get(sp.getUUID());
+            if (last == null || now - last >= 2000) {
+                lastStand.put(sp.getUUID(), now);
+                sp.level().getServer().getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "map " + map);
+            }
+        }
+        return InteractionResult.SUCCESS; // the stand itself isn't touched (no taking armor, no Flan message)
+    }
 
     /**
      * WorldEdit's progress messages ("still working...") run on a java.util.Timer made with new Timer(),

@@ -42,15 +42,37 @@ slow.
 
    On the local stack, maps are blank platforms, and a new stack comes with their warps already set.
 
+## Map signposts
+
+Right-clicking an entity tagged `propwash.map.<name>` (an armor stand, a mannequin...) on fpv or plots
+runs `/map <name>` for that player (`mods/tweaks`; before Flan, which otherwise refuses touching armor
+stands, and only for tagged entities). Staff place one, for example:
+
+```
+/summon minecraft:armor_stand ~ ~ ~ {Invulnerable:1b,NoGravity:1b,Tags:["propwash.map.flowmap"],CustomName:"Flowmap",CustomNameVisible:1b}
+```
+
+or tag an existing one: `/tag @e[type=armor_stand,limit=1,sort=nearest] add propwash.map.flowmap`.
+
+## Lobby
+
+Players new to fpv start at its world spawn, on the `lobby` map (by Rave_X10); returning players come
+back where they left, and `/spawn` takes anyone there. In the lobby, mannequins tagged
+`propwash.map.<map>` are signposts to the maps (see Map signposts below); they're part of the map, so
+they came with its upload. Staff set the spawn once, standing on the spot:
+
+```
+/warp set lobby
+/execute in maps:lobby run setworldspawn ~ ~ ~
+/spawn set
+```
+
+`/spawn set` (Essential Commands) is checked against op, not LuckPerms: briefly `/op` yourself for it.
+
 ## Tutorial
 
-Players new to fpv start at its world spawn, which is on the `tutorial` map; returning players come
-back where they left. Until it's built it is superflat (`flat = true` in its toml; other maps are void
-around their terrain). Staff set the spawn once, standing on the spot:
-
-```
-/execute in maps:tutorial run setworldspawn ~ ~ ~
-```
+The `tutorial` map was where new players started before the lobby. Until it's built it is superflat
+(`flat = true` in its toml; other maps are void around their terrain).
 
 ## Drift Arena and Moto Arena
 
