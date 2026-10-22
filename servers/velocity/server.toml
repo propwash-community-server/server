@@ -32,6 +32,9 @@ plugins = [
     # The staff part of /help (files/plugins/staffhelp/help.txt): our mods/staffhelp, built and
     # uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.0.0.jar",
+    # Announcements every 15 minutes in chat on hub, fpv and plots
+    # (files/plugins/announcements/announcements.toml): our mods/announcements, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/announcements-1.0.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.2.0.jar",

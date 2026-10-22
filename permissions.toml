@@ -151,6 +151,8 @@ permissions = [
     "maintenance.bypass",
     # The staff part of /help (mods/staffhelp).
     "propwash.help.staff",
+    # /announce: send one of the announcements now (mods/announcements).
+    "propwash.announce",
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the
     # server's own too (EssentialsX via essentials.*, InvView on fpv and plots).
     "propwash.tp",

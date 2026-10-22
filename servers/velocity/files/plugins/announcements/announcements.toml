@@ -1,0 +1,32 @@
+# Announcements (our mods/announcements, on the proxy). Read again whenever this file changes, so
+# edits apply at the next announcement; /announce (propwash.announce) sends one now.
+
+# Time between announcements, in minutes (0.5 = 30 seconds, at least 10 seconds).
+every_minutes = 15
+
+# How long the boss bar stays up, in seconds, and its color: pink, blue, red, green, yellow,
+# purple or white.
+bossbar_seconds = 15
+bossbar_color = "blue"
+
+# Which servers get them, and how: "chat" or "bossbar". Servers not listed get none.
+[servers]
+hub = "chat"
+fpv = "chat"
+plots = "chat"
+
+# Each announcement: one is picked at random each time, by weight. Weights are relative: 70 and 30
+# means the first 70% of the time on average (7 and 3 would be the same). No weight = 1.
+# Text is MiniMessage with the palette.toml colors (<brand>, <muted>, <accent>, ...). Links:
+# <click:open_url:'https://...'>text</click> (in chat only; a boss bar can't be clicked).
+[[messages]]
+weight = 25
+text = "<muted>Press <accent>F7</accent> to spectate other players.</muted>"
+
+[[messages]]
+weight = 50
+text = "<muted>Donate to the server/mod <click:open_url:'https://ko-fi.com/propwashfpv'><hover:show_text:'ko-fi.com/propwashfpv'><brand><u>here</u></brand></hover></click>!</muted>"
+
+[[messages]]
+weight = 25
+text = "<muted>If you haven't already, join us on Discord <click:open_url:'https://discord.gg/FtX7Vw89d'><hover:show_text:'discord.gg/FtX7Vw89d'><brand><u>here</u></brand></hover></click>!</muted>"
