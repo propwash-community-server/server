@@ -41,6 +41,7 @@ help = """
 <brand><bold>FPV</bold></brand>: fly Propwash drones on maps built by the community.
 <accent>/map</accent>: list the maps
 <accent>/map <name></accent>: go to a map
+<accent>/spawn</accent>: back to the lobby, where the mannequins take you to the maps
 <accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
 <accent>/mydrone</accent>: bring your drone on this map to you
 Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
