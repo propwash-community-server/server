@@ -10,6 +10,9 @@ mods = [
     # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
     # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
+    # Drones break glass on the maps and it comes back ([config."config/regen.properties"] below): our
+    # mods/regen, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/regen-1.0.0-26.3.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
@@ -61,6 +64,9 @@ spawn_phantoms = false
 spawn_wandering_traders = false
 spawn_wardens = false
 spawner_blocks_work = false
+# Fast drones smash glass and glass panes (Propwash's block tag propwash:drone_breakable); mods/regen
+# puts them back and decides on which maps (config/regen.properties).
+"propwash:drones_break_blocks" = true
 
 # Set on every deploy: everyone in creative.
 [properties]
@@ -83,6 +89,11 @@ require-resource-pack = "false"
 use_permissions_api = "true"
 # With datapacks/warp_messages, /map and /warp tp say "Teleported to <warp>." and nothing more.
 print_teleport_coordinates = "false"
+
+# mods/regen: blocks broken by drones come back after this many seconds. Per map: seconds.<map> =
+# "120", or "off" for no breaking on that map. Read again when the file changes (no restart).
+[config."config/regen.properties"]
+seconds = "180"
 
 # Vanish (/v): no fake "left the game" / "joined the game" when vanishing, like every other join message.
 [config."config/vanish.hocon"]
