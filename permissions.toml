@@ -11,6 +11,8 @@ permissions = [
     "essentials.help",
     "flan.claim.create false server=fpv",
     "essentialcommands.warp.tp server=fpv",
+    # /spawn on fpv: the lobby.
+    "essentialcommands.spawn.tp server=fpv",
     # /tpa, /tpahere, /tpaccept, /tpdeny across servers (mods/crossserver, on the proxy; it replaces
     # each server's own).
     "propwash.tpa",
