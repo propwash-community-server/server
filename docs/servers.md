@@ -19,6 +19,14 @@ Staff and admin (`propwash.help.staff`) also get the staff part of `/help`, from
 on deploy, like any file in `servers/velocity/files/`. It's our Velocity plugin
 [`mods/staffhelp`](../mods/staffhelp/), rebuilt like `mods/vanish` (see [Vanish](admin.md#vanish)).
 
+Announcements: every few minutes one message, picked at random by weight, goes to the chat of the
+servers listed in
+[`servers/velocity/files/plugins/announcements/announcements.toml`](../servers/velocity/files/plugins/announcements/announcements.toml)
+(same tags; links with `<click:open_url:'https://...'>`). The proxy reads it again whenever it changes,
+so an edit on the server applies at the next announcement without a restart; staff can send one now
+with `/announce`. It's our Velocity plugin [`mods/announcements`](../mods/announcements/), rebuilt like
+`mods/staffhelp`.
+
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
 a `.properties` file that doesn't exist yet is written with just the `[config]` keys before the first start.
 The deploy never changes worlds. The proxy's `server.toml` has no port, but `expansions`

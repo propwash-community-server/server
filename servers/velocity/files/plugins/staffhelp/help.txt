@@ -7,6 +7,7 @@
 <accent>/spy</accent>: see private messages and other servers' local chat
 <accent>/plot admin</accent>: edit any plot (plots; again to stop), <accent>/plot setowner</accent>
 <accent>/flan bypass</accent>: build on fpv maps; <accent>/warp set <name></accent>, <accent>/time set</accent> on a map
+<accent>/announce</accent>: send one of the announcements now, on every server that gets them
 <admin><bold>Admin</bold></admin>
 <accent>/v</accent> or <accent>/vanish</accent>: vanish on every server (again to show yourself); everyone sees you leave and join
 <accent>/v auto on</accent>, <accent>/v auto off</accent> (or <accent>/vanish auto</accent>): always arrive vanished, or always visible; <accent>/v auto</accent> shows yours
