@@ -155,7 +155,7 @@ mode (editing roads and other plots); ours also accepts the `fabricplots.admin` 
 staff and admin have on plots.
 
 Plot owners set what visitors (not trusted) may use on their plot with flags: `/plot flag set <flag>
-true|false` on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
+on|off` (or `true|false`) on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
 All are off by default and building stays owner and trusted only:
 
 | Flag | Visitors may |
@@ -166,6 +166,8 @@ All are off by default and building stays owner and trusted only:
 | `container-use` | open chests, barrels and other containers |
 | `animal-interact` | feed, ride and trade with animals and villagers |
 | `misc-interact` | use armor stands and item frames |
+| `drone-glass` | smash glass with drones, anyone's, the owner's too; it comes back after `/plot glassregen <seconds>` (default 180), see [maps.md](maps.md#breaking-glass) |
+| `drone-glass-members` | the same, but only the drones of the owner and trusted players; wins over `drone-glass` |
 
 They're saved with each plot (`fabricplots-plots.txt`); our patch adds them (PlotSquared has flags like
 these: `vehicle-use`, `device-interact` and so on).

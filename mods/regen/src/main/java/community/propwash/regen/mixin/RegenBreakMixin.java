@@ -27,13 +27,13 @@ abstract class RegenBreakMixin {
             target = "Lde/lardtom/propwash/platform/IPlatformHelper;allowBlockBreak(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/BlockEntity;)Z"))
     private static boolean regen$allowOnMaps(IPlatformHelper platform, ServerLevel level, ServerPlayer player, BlockPos pos,
                                              BlockState state, BlockEntity blockEntity, Operation<Boolean> original) {
-        return Regen.allowed(level, pos) || original.call(platform, level, player, pos, state, blockEntity);
+        return Regen.allowed(level, player, pos) || original.call(platform, level, player, pos, state, blockEntity);
     }
 
     @WrapOperation(method = "clearance", at = @At(value = "INVOKE",
             target = "Lde/lardtom/propwash/platform/IPlatformHelper;probeBlockBreak(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/BlockEntity;)Z"))
     private static boolean regen$probeOnMaps(IPlatformHelper platform, ServerLevel level, ServerPlayer player, BlockPos pos,
                                              BlockState state, BlockEntity blockEntity, Operation<Boolean> original) {
-        return Regen.allowed(level, pos) || original.call(platform, level, player, pos, state, blockEntity);
+        return Regen.allowed(level, player, pos) || original.call(platform, level, player, pos, state, blockEntity);
     }
 }
