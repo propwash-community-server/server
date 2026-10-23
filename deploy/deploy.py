@@ -258,7 +258,8 @@ def map_pack_files(m):
 
 
 def map_load_function(server_maps):
-    lines = ["scoreboard objectives add maps_clock dummy"]
+    lines = ["scoreboard objectives add maps_clock dummy", "scoreboard objectives add maps_rtp dummy",
+             "scoreboard objectives add maps_rtp_ok dummy"]
     for m in server_maps:
         unset = f"execute unless score {m['name']} maps_clock matches 1 run"
         lines += [
@@ -300,7 +301,86 @@ def map_command(server_maps):
         "id": "map",
         "executes": [run(f"tellraw @s {to_json('<muted>Maps:</muted> ' + names)}")],
         "literals": [{"id": m["name"], "executes": [run(f"tag @s remove map_{m['name']}"), run(f"warp tp {m['name']}")]}
-                     for m in server_maps],
+                     for m in server_maps] + [{"id": "rtp", "executes": map_rtp(server_maps)}],
+    }, indent=2)
+
+
+RTP_TRIES = 10
+
+
+def rtp_pool(server_maps):
+    return [m for m in server_maps if m.get("rtp", True)]
+
+
+def rtp_bounds(m):
+    # Where /rtp may land on the map: its rtp_area (x and z ranges, corners in any order), else
+    # anywhere, inside its world border either way (1 block in from it).
+    b = m["border"]
+    half = b["size"] // 2 - 1
+    edge = {"x": (b["x"] - half, b["x"] + half), "z": (b["z"] - half, b["z"] + half)}
+    area = m.get("rtp_area", {})
+    out = {}
+    for axis in ("x", "z"):
+        lo, hi = sorted(area.get(axis, edge[axis]))
+        lo, hi = max(lo, edge[axis][0]), min(hi, edge[axis][1])
+        if lo >= hi:
+            raise SystemExit(f"servers/fpv/maps/{m['name']}.toml: rtp_area {axis} is outside the border")
+        out[axis] = (lo, hi)
+    return out
+
+
+def rtp_functions(m):
+    """data/maps/function/rtp/<name>.mcfunction (and its macro step): a random spot on the map.
+
+    A random column in rtp_bounds, then spreadplayers on just that column (range 1), which puts the
+    player on its highest block (below rtp_y.max if set) unless that's a liquid or fire or there's
+    none (void), or it's lower than rtp_y.min: then another column, RTP_TRIES times at most. No spot
+    at all: the map's spawn, as /map <name>.
+    """
+    name, b = m["name"], rtp_bounds(m)
+    retry = "execute unless score @s maps_rtp_ok matches 1"
+    lines = ["scoreboard players set @s maps_rtp_ok 0", f"tag @s remove map_{name}"]
+    for _ in range(RTP_TRIES):
+        lines += [
+            f"{retry} store result storage maps:rtp x int 1 run random value {b['x'][0]}..{b['x'][1]}",
+            f"{retry} store result storage maps:rtp z int 1 run random value {b['z'][0]}..{b['z'][1]}",
+            f"{retry} run function maps:rtp/{name}_at with storage maps:rtp",
+        ]
+    lines.append(f"{retry} run warp tp {name}")
+    y = m.get("rtp_y", {})
+    under = f" under {y['max']}" if "max" in y else ""
+    at = [f"$execute store success score @s maps_rtp_ok in maps:{name} run spreadplayers $(x) $(z) 0 1{under} false @s"]
+    if "min" in y:
+        at.append(f"execute if score @s maps_rtp_ok matches 1 at @s unless entity @s[y={y['min']},dy=4096] "
+                  "run scoreboard players set @s maps_rtp_ok 0")
+    return {f"rtp/{name}.mcfunction": "\n".join(lines) + "\n", f"rtp/{name}_at.mcfunction": "\n".join(at) + "\n"}
+
+
+def map_rtp(server_maps):
+    # /rtp, /map rtp (and a mannequin tagged propwash.map.rtp): a random spot (rtp_functions) on a
+    # random map. The pool is every map without rtp = false in its .toml; a random number in the
+    # player's maps_rtp score picks it.
+    def run(command):
+        return {"command": command, "op_level": 2, "silent": True}
+
+    pool = rtp_pool(server_maps)
+    if not pool:
+        return [run(f"tellraw @s {to_json('<muted>No maps to pick from.')}")]
+    out = [run(f"execute store result score @s maps_rtp run random value 0..{max(1, len(pool) - 1)}")]
+    for i, m in enumerate(pool):
+        out.append(run(f"execute if score @s maps_rtp matches {i} run function maps:rtp/{m['name']}"))
+    return out
+
+
+def rtp_command(server_maps):
+    # /rtp: a random spot on a random map (map_rtp). /rtp <map>: a random spot on that map.
+    def run(command):
+        return {"command": command, "op_level": 2, "silent": True}
+
+    return json.dumps({
+        "id": "rtp",
+        "executes": map_rtp(server_maps),
+        "literals": [{"id": m["name"], "executes": [run(f"function maps:rtp/{m['name']}")]} for m in rtp_pool(server_maps)],
     }, indent=2)
 
 
@@ -322,6 +402,12 @@ def map_ops(name, d, server_maps):
                          dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
     ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
                          dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
+    ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
+                         dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
+    for m in rtp_pool(server_maps):
+        for rel, text in rtp_functions(m).items():
+            ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
+                                 dest=f"{pack}/data/maps/function/{rel}", **OWNER))
     for m in server_maps:
         for rel, data in map_pack_files(m).items():
             ops.append(files.put(

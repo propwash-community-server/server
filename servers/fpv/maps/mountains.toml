@@ -1,3 +1,5 @@
 title = "Mountain Range"
 author = "Melonenlouis"
-border = { x = -672, z = -136, size = 1504 }
+border = { x = -411, z = -136, size = 2200 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-1120, 140], z = [-600, 750] }

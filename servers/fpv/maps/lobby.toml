@@ -3,3 +3,5 @@
 title = "Lobby"
 author = "Rave_X10"
 border = { x = 8, z = 0, size = 208 }
+# Not picked by /rtp (/map rtp).
+rtp = false

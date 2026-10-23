@@ -29,7 +29,13 @@ slow.
    ```
 
    Past the border, only void would be generated. It is set on every start, so changing it
-   takes effect on the next deploy.
+   takes effect on the next deploy. `rtp = false` keeps the map out of `/rtp` (`/map rtp`, a
+   random spot on a random map) and `/rtp <map>` (a random spot on it); the lobby has it. `/rtp <map>` lands on
+   the highest block of a random column inside `rtp_area = { x = [from, to], z = [from, to] }`
+   (else anywhere inside the border), not on liquids, fire or void; `rtp_y = { min = ..., max = ... }`
+   keeps it between those heights (`max`: the highest block below it, for maps with roofs). After
+   10 tries without a spot it's the map's spawn. A mannequin tagged `propwash.map.rtp` runs
+   `/map rtp`, like the map signposts (see [Lobby](#lobby)).
 
    Once it's merged and deployed, fpv restarts with the new dimension, its clock, its race courses
    and a `/map <name>` entry.
@@ -104,11 +110,6 @@ Roads and plots without the flag stay intact.
 
 The server log has a line for every drone break Propwash refused, with the reason
 (`Drone break refused for ...: PROTECTED`, `TOO_WEAK`, `COURSE`...).
-
-## Tutorial
-
-The `tutorial` map was where new players started before the lobby. Until it's built it is superflat
-(`flat = true` in its toml; other maps are void around their terrain).
 
 ## Drift Arena and Moto Arena
 

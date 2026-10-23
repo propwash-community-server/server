@@ -1,3 +1,7 @@
 title = "Flowmap"
 author = "SHO"
 border = { x = 24, z = 32, size = 224 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-2, 38], z = [-3, 37] }
+# /rtp only lands at this height or above.
+rtp_y = { min = -38 }
