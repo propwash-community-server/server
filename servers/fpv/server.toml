@@ -47,6 +47,7 @@ help = """
 <accent>/spawn</accent>: back to the lobby, where the mannequins take you to the maps
 <accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
 <accent>/mydrone</accent>: bring your drone on this map to you
+<accent>/clear</accent>: empty your inventory
 Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
 """
 
