@@ -69,7 +69,8 @@ lpv user <name> parent add junior-builder
 lpv user <name> parent add senior-builder
 ```
 
-`supporter` is for Ko-fi donors: only the `[Supporter]` tag for now, below the builder ranks (a
+`supporter` is for Ko-fi donors: the `[Supporter]` tag, `/fly` and `/speed` (flying) on the hub, and
+`/fly` and `/fly speed <n>` on fpv; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 ## Protection
