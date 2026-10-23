@@ -35,6 +35,12 @@ permissions = [
     "carbon.chatlinks",
     # Plots: two 120x120 plots.
     "fabricplots.limit.2 server=plots",
+    # /clear on plots, only their own inventory (Vanilla Permissions checks who a command hits, so
+    # naming another player is refused too).
+    "minecraft.command.clear server=plots",
+    "minecraft.selector server=plots",
+    "minecraft.selector.player.clear.* false server=plots",
+    "minecraft.selector.entity.clear.* false server=plots",
     # Plots build tools (DraftSmith, inside FabricPlots): only edit plots the player can build on,
     # at most 65,536 blocks per edit. Not draftsmith.admin, which edits outside plots.
     "draftsmith.use server=plots",
