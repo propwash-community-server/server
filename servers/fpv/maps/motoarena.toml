@@ -3,5 +3,9 @@ author = "LardTom"
 border = { x = 0, z = 0, size = 256 }
 # Bikes and a buggy race the arena for drones to chase (files/world/datapacks/arena-datapack.zip;
 # operators: /function arena:help). Never /function arena:build here: it also moves fpv's world spawn
-# (the tutorial), changes game rules and turns on a respawn teleport. Its models are in the shared
+# (the lobby), changes game rules and turns on a respawn teleport. Its models are in the shared
 # resource pack with Drift Arena's (fpv's [properties]).
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-85, 85], z = [-55, 57] }
+# /rtp lands below this height.
+rtp_y = { max = 90 }

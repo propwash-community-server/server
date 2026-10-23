@@ -3,3 +3,5 @@
 title = "Gothic Cathedral"
 author = "silversurfer671"
 border = { x = -840, z = -760, size = 1008 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-1300, -348], z = [-1038, -470] }

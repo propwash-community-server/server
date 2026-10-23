@@ -1,3 +1,7 @@
 title = "Laminar I"
 author = "SHO"
 border = { x = 16, z = 24, size = 976 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [0, 40], z = [0, 41] }
+# /rtp only lands at this height or above.
+rtp_y = { min = -38 }

@@ -1,3 +1,6 @@
 title = "Mosslorn"
 author = "milkshake_mp3"
-border = { x = -72, z = 160, size = 2368 }
+# Covers x -900..750 and z -880..1000 (a square: borders can't be rectangles).
+border = { x = -75, z = 60, size = 1880 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-670, 510], z = [-635, 960] }

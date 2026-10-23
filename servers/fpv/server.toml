@@ -44,6 +44,8 @@ help = """
 <brand><bold>FPV</bold></brand>: fly Propwash drones on maps built by the community.
 <accent>/map</accent>: list the maps
 <accent>/map <name></accent>: go to a map
+<accent>/rtp</accent> or <accent>/map rtp</accent>: a random spot on a random map
+<accent>/rtp <map></accent>: a random spot on that map
 <accent>/spawn</accent>: back to the lobby, where the mannequins take you to the maps
 <accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
 <accent>/mydrone</accent>: bring your drone on this map to you
@@ -90,6 +92,8 @@ require-resource-pack = "false"
 use_permissions_api = "true"
 # With datapacks/warp_messages, /map and /warp tp say "Teleported to <warp>." and nothing more.
 print_teleport_coordinates = "false"
+# Its own /rtp (a random spot in the overworld) would clash with ours: /rtp is a random spot on a random map (deploy.py).
+enable_rtp = "false"
 
 # mods/regen: blocks broken by drones come back after this many seconds. Per map: seconds.<map> =
 # "120", or "off" for no breaking on that map. Read again when the file changes (no restart).

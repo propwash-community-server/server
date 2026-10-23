@@ -1,3 +1,5 @@
 title = "Unkarting Neon"
 author = "Denied"
 border = { x = 80, z = 48, size = 1280 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [32, 122], z = [10, 88] }

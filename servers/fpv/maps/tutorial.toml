@@ -1,5 +1,0 @@
-title = "Tutorial"
-author = "Propwash Community"
-# Superflat until the tutorial is built.
-flat = true
-border = { x = 0, z = 0, size = 1024 }
