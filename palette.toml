@@ -5,6 +5,7 @@ brand = "#09add3"  # MOTD, map titles, /help headings
 muted = "gray"  # server tags, separators, subtitles
 dim = "dark_gray"  # [Local]
 accent = "yellow"  # commands in /help, staff chat messages
+supporter = "#ff5e5b"  # Ko-fi's coral
 builder = "green"
 staff = "gold"
 admin = "red"

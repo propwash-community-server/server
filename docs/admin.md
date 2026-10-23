@@ -37,7 +37,7 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 ## Permissions
 
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
-(`default`, `junior-builder`, `senior-builder`, `staff`, `admin`). Each entry is passed to
+(`default`, `supporter`, `junior-builder`, `senior-builder`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
@@ -68,6 +68,9 @@ on fpv: WorldEdit, `/flan bypass`, setting and deleting warps, `/time` on a map,
 lpv user <name> parent add junior-builder
 lpv user <name> parent add senior-builder
 ```
+
+`supporter` is for Ko-fi donors: only the `[Supporter]` tag for now, below the builder ranks (a
+builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 ## Protection
 

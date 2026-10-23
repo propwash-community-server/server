@@ -592,7 +592,7 @@ systemd.service(name="backup timer", service="mc-backup.timer", running=True, en
 # The bot/ folder of github.com/Itsj5j6j7/pw-server at this commit; change it to update the bot.
 # Its own settings (channels, roles, bridge servers) are in that repo's src/config.js.
 BOT_REPO = "https://github.com/Itsj5j6j7/pw-server.git"
-BOT_COMMIT = "993eb0b0894797af4448e960a8c2c1d92a8f8f59"
+BOT_COMMIT = "58ba2be2ac1c738cbe0508dbd6b7b354ae385267"
 BOT_DIR = "/home/bot/pw-server"
 PNPM = "9.15.9"
 
@@ -626,8 +626,11 @@ if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
         f"runuser -u bot -- git -C {BOT_DIR} checkout -q --force {BOT_COMMIT}",
         f"cd {BOT_DIR}/bot && runuser -u bot -- env PATH={NODE_BIN}:/usr/bin:/bin pnpm install --frozen-lockfile --prod",
     ]))
-bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n"), dest=f"{BOT_DIR}/bot/.env", mode="600",
-                             user="bot", group="bot"))
+# The hub's RCON too: the bot gives Ko-fi supporters (Discord role) the LuckPerms supporter group with
+# lp commands there.
+bot_rcon = f"RCON_PORT={backends['hub']['port'] + 10000}\nRCON_PASSWORD={rcon_password}\n"
+bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n" + bot_rcon), dest=f"{BOT_DIR}/bot/.env",
+                             mode="600", user="bot", group="bot"))
 # The bot's README copies example.database.yml (empty) to database.yml; an existing one is kept as it is.
 files.file(name="bot: database.yml", path=f"{BOT_DIR}/bot/database.yml", user="bot", group="bot")
 
