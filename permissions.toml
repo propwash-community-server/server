@@ -109,12 +109,19 @@ permissions = [
     "worldedit.thaw server=plots",
 ]
 
-# Ko-fi donors (given by the Discord bot, with the "Ko-fi supporter" Discord role). Only the tag for now;
-# below the builder ranks, so a builder who donates keeps [Builder].
+# Ko-fi donors (given by the Discord bot, with the "Ko-fi supporter" Discord role). Below the builder
+# ranks, so a builder who donates keeps [Builder].
 [groups.supporter]
 permissions = [
     "weight.50",
     '"prefix.50.<supporter>[Supporter]</supporter> "',
+    # /fly and /speed (flying only) on the hub (EssentialsX).
+    "essentials.fly server=hub",
+    "essentials.speed server=hub",
+    "essentials.speed.fly server=hub",
+    "essentials.speed.walk false server=hub",
+    # /fly and /fly speed <n> on fpv (Essential Commands: one permission for both).
+    "essentialcommands.fly.self server=fpv",
 ]
 
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
