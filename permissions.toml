@@ -109,6 +109,14 @@ permissions = [
     "worldedit.thaw server=plots",
 ]
 
+# Ko-fi donors (given by the Discord bot, with the "Ko-fi supporter" Discord role). Only the tag for now;
+# below the builder ranks, so a builder who donates keeps [Builder].
+[groups.supporter]
+permissions = [
+    "weight.50",
+    '"prefix.50.<supporter>[Supporter]</supporter> "',
+]
+
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
 [groups.junior-builder]
 permissions = [
