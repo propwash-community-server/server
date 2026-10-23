@@ -34,7 +34,8 @@ slow.
    the highest block of a random column inside `rtp_area = { x = [from, to], z = [from, to] }`
    (else anywhere inside the border), not on liquids, fire or void; `rtp_y = { min = ..., max = ... }`
    keeps it between those heights (`max`: the highest block below it, for maps with roofs). After
-   10 tries without a spot it's the map's spawn. A mannequin tagged `propwash.map.rtp` runs
+   10 tries without a spot it's the map's spawn. Each player waits `rtp_cooldown` seconds
+   (fpv's `server.toml`, 15) between two `/rtp`, staff too. A mannequin tagged `propwash.map.rtp` runs
    `/map rtp`, like the map signposts (see [Lobby](#lobby)).
 
    Once it's merged and deployed, fpv restarts with the new dimension, its clock, its race courses

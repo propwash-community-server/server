@@ -12,6 +12,7 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 | `[flan]` | `deny`: [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension, maps included; other keys go to Flan's config |
 | `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |
 | `welcome` | text shown in chat every time a player arrives on the server |
+| `rtp_cooldown` | fpv: seconds between two `/rtp` for each player, nobody skips it (default 15; see [maps.md](maps.md)) |
 
 Staff and admin (`propwash.help.staff`) also get the staff part of `/help`, from
 [`servers/velocity/files/plugins/staffhelp/help.txt`](../servers/velocity/files/plugins/staffhelp/help.txt)

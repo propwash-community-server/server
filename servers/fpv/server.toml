@@ -39,6 +39,10 @@ mods = [
     "https://cdn.modrinth.com/data/kG3hVbBX/versions/Jl1SwQoK/TAB-Bridge%20v6.2.3%20-%20Fabric.jar",
 ]
 
+# Seconds between two /rtp (any of /rtp, /rtp <map>, /map rtp, the rtp mannequin) for each player;
+# nobody skips it. 0: none.
+rtp_cooldown = 15
+
 # /help, in MiniMessage with palette.toml tags.
 help = """
 <brand><bold>FPV</bold></brand>: fly Propwash drones on maps built by the community.
