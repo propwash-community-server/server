@@ -258,8 +258,9 @@ def map_pack_files(m):
 
 
 def map_load_function(server_maps):
-    lines = ["scoreboard objectives add maps_clock dummy", "scoreboard objectives add maps_rtp dummy",
-             "scoreboard objectives add maps_rtp_ok dummy"]
+    lines = ["scoreboard objectives add maps_clock dummy"]
+    lines += [f"scoreboard objectives add {o} dummy"
+              for o in ("maps_rtp", "maps_rtp_ok", "maps_rtp_go", "maps_rtp_t", "maps_rtp_last", "maps_rtp_wait")]
     for m in server_maps:
         unset = f"execute unless score {m['name']} maps_clock matches 1 run"
         lines += [
@@ -356,35 +357,71 @@ def rtp_functions(m):
     return {f"rtp/{name}.mcfunction": "\n".join(lines) + "\n", f"rtp/{name}_at.mcfunction": "\n".join(at) + "\n"}
 
 
+def rtp_cooldown_function(seconds):
+    """data/maps/function/rtp/cooldown.mcfunction: maps_rtp_go 1 if the player may /rtp now, else 0
+    and how long to wait. Every /rtp counts, for everyone (no permission skips it). Ticks of the
+    world's game time, so it holds over restarts."""
+    ticks = seconds * 20
+    if ticks <= 0:
+        return "scoreboard players set @s maps_rtp_go 1\n"
+    wait = "maps_rtp_wait"
+    lines = [
+        "scoreboard players set @s maps_rtp_go 1",
+        "execute store result score #now maps_rtp_t run time query gametime",
+        # Ticks since the last /rtp; never used: far longer than the cooldown.
+        f"scoreboard players operation @s {wait} = #now maps_rtp_t",
+        f"execute if score @s maps_rtp_last = @s maps_rtp_last run scoreboard players operation @s {wait} -= @s maps_rtp_last",
+        f"execute unless score @s maps_rtp_last = @s maps_rtp_last run scoreboard players set @s {wait} {ticks}",
+        f"execute if score @s {wait} matches 0..{ticks - 1} run scoreboard players set @s maps_rtp_go 0",
+        # Seconds left, rounded up: (ticks - waited + 19) / 20.
+        f"scoreboard players set #left maps_rtp_t {ticks + 19}",
+        f"scoreboard players operation #left maps_rtp_t -= @s {wait}",
+        "scoreboard players set #20 maps_rtp_t 20",
+        "scoreboard players operation #left maps_rtp_t /= #20 maps_rtp_t",
+        f"scoreboard players operation @s {wait} = #left maps_rtp_t",
+        "execute if score @s maps_rtp_go matches 0 run tellraw @s "
+        + json.dumps([{"text": "Wait ", "color": "gray"}, {"score": {"name": "@s", "objective": wait}, "color": "gray"},
+                      {"text": " s before the next /rtp.", "color": "gray"}]),
+        "execute if score @s maps_rtp_go matches 1 run scoreboard players operation @s maps_rtp_last = #now maps_rtp_t",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def map_rtp(server_maps):
     # /rtp, /map rtp (and a mannequin tagged propwash.map.rtp): a random spot (rtp_functions) on a
-    # random map. The pool is every map without rtp = false in its .toml; a random number in the
-    # player's maps_rtp score picks it.
+    # random map, after the cooldown check (rtp_cooldown_function). The pool is every map without
+    # rtp = false in its .toml; a random number in the player's maps_rtp score picks it.
     def run(command):
         return {"command": command, "op_level": 2, "silent": True}
 
     pool = rtp_pool(server_maps)
     if not pool:
         return [run(f"tellraw @s {to_json('<muted>No maps to pick from.')}")]
-    out = [run(f"execute store result score @s maps_rtp run random value 0..{max(1, len(pool) - 1)}")]
+    go = "execute if score @s maps_rtp_go matches 1"
+    out = [run("function maps:rtp/cooldown"),
+           run(f"{go} store result score @s maps_rtp run random value 0..{max(1, len(pool) - 1)}")]
     for i, m in enumerate(pool):
-        out.append(run(f"execute if score @s maps_rtp matches {i} run function maps:rtp/{m['name']}"))
+        out.append(run(f"{go} if score @s maps_rtp matches {i} run function maps:rtp/{m['name']}"))
     return out
 
 
 def rtp_command(server_maps):
-    # /rtp: a random spot on a random map (map_rtp). /rtp <map>: a random spot on that map.
+    # /rtp: a random spot on a random map (map_rtp). /rtp <map>: a random spot on that map. Both
+    # after the cooldown check.
     def run(command):
         return {"command": command, "op_level": 2, "silent": True}
 
     return json.dumps({
         "id": "rtp",
         "executes": map_rtp(server_maps),
-        "literals": [{"id": m["name"], "executes": [run(f"function maps:rtp/{m['name']}")]} for m in rtp_pool(server_maps)],
+        "literals": [{"id": m["name"], "executes": [
+            run("function maps:rtp/cooldown"),
+            run(f"execute if score @s maps_rtp_go matches 1 run function maps:rtp/{m['name']}"),
+        ]} for m in rtp_pool(server_maps)],
     }, indent=2)
 
 
-def map_ops(name, d, server_maps):
+def map_ops(name, d, server_maps, rtp_cooldown):
     store = host.data.get("world_store")
     if not store:
         raise SystemExit(f"{host.name} has no world_store but servers/{name}/maps/ lists maps")
@@ -404,6 +441,8 @@ def map_ops(name, d, server_maps):
                          dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
     ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
                          dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
+    ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
+                         dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
     for m in rtp_pool(server_maps):
         for rel, text in rtp_functions(m).items():
             ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
@@ -691,7 +730,7 @@ for name, cfg in backends.items():
         changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
     changes += extra_files(name, d)
     if maps.get(name):
-        changes += map_ops(name, d, maps[name])
+        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15))
 
     # /help: the server's help, then the network-wide one from the velocity server.toml.
     if cfg.get("help"):
