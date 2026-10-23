@@ -10,9 +10,9 @@ mods = [
     # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
     # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
-    # Drones break glass on plots with the drone-glass flag, and it comes back after the plot's
+    # Drones break glass on plots with the drone-glass or drone-glass-members flag, and it comes back after the plot's
     # /plot glassregen time (our mods/regen; on fpv for the maps too).
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/regen-1.1.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/regen-1.2.0-26.3.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     # WorldEdit for players, only on plots they may build on and with block limits ([config] below);
@@ -25,7 +25,7 @@ mods = [
     # Creative plot world (PlotSquared-style): claim, trust; protects plots and roads. It does the
     # protection here, so no Flan. Our build of FabricPlots 1.0.2 (26.3 branch) with "plot-size" and
     # "portals" settings and a /plot admin fix, from fabricplots.patch, in the world store. See docs/admin.md#plots.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.10-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/fabricplots-1.0.2-plotsize.11-26.3.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
@@ -58,7 +58,7 @@ help = """
 <accent>/draft wand</accent>: select two corners for the build tools
 <accent>//wand</accent>, <accent>//set</accent>, <accent>//replace</accent>, <accent>//copy</accent>, <accent>//paste</accent>, <accent>//undo</accent>: WorldEdit on your plots, up to 45,000 blocks per command and per 30 seconds
 <accent>/mydrone</accent>: bring your drone to you
-<accent>/plot flag set drone-glass true</accent>, <accent>/plot glassregen <seconds></accent>: let drones smash the glass on your plot, back after 3 min or your time
+<accent>/plot flag set drone-glass on</accent> (everyone's drones) or <accent>drone-glass-members on</accent> (yours and trusted players'), <accent>/plot glassregen <seconds></accent>: let drones smash the glass on your plot, back after 3 min or your time
 <accent>/debugstick</accent>: change block states (facing, half, waterlogged...) on your plot
 Only you and players you trust can build on your plot.
 """
@@ -82,7 +82,7 @@ spawn_wardens = false
 spawner_blocks_work = false
 raids = false
 mob_griefing = false
-# Fast drones smash glass, only on plots with the drone-glass flag (mods/regen and FabricPlots decide).
+# Fast drones smash glass, only on plots with the drone-glass or drone-glass-members flag (mods/regen and FabricPlots decide).
 "propwash:drones_break_blocks" = true
 fire_spread_radius_around_player = 0
 tnt_explodes = false

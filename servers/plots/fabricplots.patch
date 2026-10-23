@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..7ccfdc7 100644
+index daaf686..a54f4b6 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..7ccfdc7 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.10
++mod_version=1.0.2-plotsize.11
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -24,7 +24,7 @@ index c7e8ebe..8fc5341 100644
              applyWorldRules(server);
          });
 diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
-index a5ee575..8c239ca 100644
+index a5ee575..e0afb37 100644
 --- a/src/main/java/com/fabricplots/command/PlotCommands.java
 +++ b/src/main/java/com/fabricplots/command/PlotCommands.java
 @@ -57,7 +57,12 @@ public final class PlotCommands {
@@ -66,14 +66,14 @@ index a5ee575..8c239ca 100644
                  .then(Commands.literal("name")
                          .then(Commands.argument("name", StringArgumentType.greedyString())
                                  .executes(PlotCommands::namePlot)))
-@@ -102,7 +120,27 @@ public final class PlotCommands {
+@@ -102,7 +120,33 @@ public final class PlotCommands {
                                  .executes(PlotCommands::removeAll)))
                  .then(Commands.literal("menu").executes(PlotCommands::menu))
                  .then(Commands.literal("edit").executes(PlotCommands::listPlots)) // manage your plots — the build editor is /draft edit
 -                .then(Commands.literal("list").executes(PlotCommands::listPlots))
 +                // Everyone with a plot, click a name to visit (your own plots: /plot edit).
 +                .then(Commands.literal("list").executes(PlotCommands::listOwners))
-+                // With the drone-glass flag: seconds until glass broken by drones comes back.
++                // With a drone-glass flag: seconds until glass broken by drones comes back.
 +                .then(Commands.literal("glassregen")
 +                        .executes(PlotCommands::glassRegenShow)
 +                        .then(Commands.argument("seconds", com.mojang.brigadier.arguments.IntegerArgumentType.integer(10, 1800))
@@ -90,12 +90,18 @@ index a5ee575..8c239ca 100644
 +                                                if (f.id.startsWith(b.getRemaining().toLowerCase())) b.suggest(f.id);
 +                                            return b.buildFuture();
 +                                        })
-+                                        .then(Commands.argument("value", com.mojang.brigadier.arguments.BoolArgumentType.bool())
++                                        // true/false or on/off.
++                                        .then(Commands.argument("value", StringArgumentType.word())
++                                                .suggests((c, b) -> {
++                                                    for (String v : new String[] {"on", "off", "true", "false"})
++                                                        if (v.startsWith(b.getRemaining().toLowerCase())) b.suggest(v);
++                                                    return b.buildFuture();
++                                                })
 +                                                .executes(PlotCommands::flagSet)))))
                  .then(Commands.literal("sethome").executes(PlotCommands::setHome))
                  .then(Commands.literal("admin").executes(PlotCommands::adminMode))
                  .then(Commands.literal("setspawn").executes(PlotCommands::setSpawn))
-@@ -139,11 +177,11 @@ public final class PlotCommands {
+@@ -139,11 +183,11 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -109,7 +115,7 @@ index a5ee575..8c239ca 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -166,10 +204,10 @@ public final class PlotCommands {
+@@ -166,10 +210,10 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -122,7 +128,7 @@ index a5ee575..8c239ca 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -177,9 +215,10 @@ public final class PlotCommands {
+@@ -177,9 +221,10 @@ public final class PlotCommands {
      private static int home(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -136,7 +142,7 @@ index a5ee575..8c239ca 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -197,7 +236,8 @@ public final class PlotCommands {
+@@ -197,7 +242,8 @@ public final class PlotCommands {
              PlotData d = PlotManager.get(pp);
              if (d == null) { msg(ctx, "Plot " + pp.px() + "," + pp.pz() + " is unclaimed."); return 1; }
              msg(ctx, "Plot " + pp.px() + "," + pp.pz() + (d.name.isBlank() ? "" : " \"" + d.name + "\"")
@@ -146,7 +152,7 @@ index a5ee575..8c239ca 100644
                      + " · " + d.cells.size() + " cell" + (d.cells.size() == 1 ? "" : "s") + (d.isMerged() ? " (merged)" : "")
                      + " · trusted " + d.trusted.size() + " · denied " + d.denied.size()
                      + " · likes " + d.likes.size() + " · PvP " + (d.pvp ? "on" : "off"));
-@@ -257,6 +297,7 @@ public final class PlotCommands {
+@@ -257,6 +303,7 @@ public final class PlotCommands {
              if (!staff(ctx, p, "fabricplots.reload")) return 0;
              PlotsConfig.load();
              FabricPlots.applyWorldRules(ctx.getSource().getServer());
@@ -154,7 +160,7 @@ index a5ee575..8c239ca 100644
              msg(ctx, "Config reloaded. allow-player-combine=" + PlotsConfig.allowPlayerCombine
                      + ", max-merge-cells=" + PlotsConfig.maxMergeCells
                      + ", claim-limit=" + PlotsConfig.claimLimit
-@@ -276,9 +317,18 @@ public final class PlotCommands {
+@@ -276,9 +323,18 @@ public final class PlotCommands {
              if (d == null) return 0;
              if (!d.owner.equals(p.getUUID()) && !isOp(ctx, p)) { msg(ctx, "Stand on your own plot first."); return 0; }
              BlockPos oldHome = d.home;
@@ -175,7 +181,7 @@ index a5ee575..8c239ca 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -293,8 +343,10 @@ public final class PlotCommands {
+@@ -293,8 +349,10 @@ public final class PlotCommands {
          section(src, "Getting around");
          line(src, "/plot world", "go to the plot world");
          line(src, "/plot menu", "open the menu");
@@ -188,17 +194,17 @@ index a5ee575..8c239ca 100644
          line(src, "/plot like", "like the plot you're standing on");
          line(src, "/plot leave", "return to the home world");
  
-@@ -307,7 +359,8 @@ public final class PlotCommands {
+@@ -307,7 +365,8 @@ public final class PlotCommands {
  
          section(src, "Your plot");
          line(src, "/plot name <name>", "name this plot");
 -        line(src, "/plot sethome", "set where /plot home lands");
 +        line(src, "/plot sethome", "on your plot: where /plot home and /plot visit land, facing your way");
-+        line(src, "/plot glassregen <seconds>", "with the drone-glass flag: when broken glass comes back (default 180)");
++        line(src, "/plot glassregen <seconds>", "with drone-glass or drone-glass-members: when broken glass comes back (default 180)");
          line(src, "/plot trust <player>", "let someone build here");
          line(src, "/plot untrust <player>", "remove a trusted player");
          line(src, "/plot deny <player>", "ban a player from this plot");
-@@ -516,6 +569,7 @@ public final class PlotCommands {
+@@ -516,6 +575,7 @@ public final class PlotCommands {
      private static int key(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -206,7 +212,7 @@ index a5ee575..8c239ca 100644
              if (!allowed(ctx, p, "fabricplots.portal")) return 0;
              // In the plot world, standing on a plot you may use: give that one plot's key.
              if (p.level().dimension() == FabricPlots.PLOTS_DIM) {
-@@ -829,14 +883,114 @@ public final class PlotCommands {
+@@ -829,14 +889,117 @@ public final class PlotCommands {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
              if (!allowed(ctx, p, "fabricplots.visit")) return 0;
@@ -229,9 +235,10 @@ index a5ee575..8c239ca 100644
 +            ServerPlayer p = ctx.getSource().getPlayerOrException();
 +            PlotData d = claimedPlotHere(ctx, p, "Stand on a claimed plot to see its glass time.");
 +            if (d == null) return 0;
-+            boolean on = d.flags.contains(com.fabricplots.core.PlotFlags.Flag.DRONE_GLASS.id);
++            boolean on = PlotManager.droneGlassOn(d);
 +            msg(ctx, "Glass broken by drones here comes back after " + d.glassRegenSeconds + " s"
-+                    + (on ? "." : " (drone-glass is off: /plot flag set drone-glass true).") + " /plot glassregen <seconds> to change it.");
++                    + (on ? "." : " (drone glass is off: /plot flag set drone-glass on for everyone's drones,"
++                    + " or drone-glass-members for yours and trusted players').") + " /plot glassregen <seconds> to change it.");
 +            return 1;
 +        } catch (Exception e) { return err(ctx, e); }
 +    }
@@ -246,14 +253,14 @@ index a5ee575..8c239ca 100644
 +            int seconds = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "seconds");
 +            if (!PlotManager.update(d, plot -> plot.glassRegenSeconds = seconds)) { msg(ctx, "That could not be saved. Please try again."); return 0; }
 +            msg(ctx, "Glass broken by drones on this plot comes back after " + seconds + " s"
-+                    + (d.flags.contains(com.fabricplots.core.PlotFlags.Flag.DRONE_GLASS.id) ? "." : " once drone-glass is on (/plot flag set drone-glass true)."));
++                    + (PlotManager.droneGlassOn(d) ? "." : " once drone-glass or drone-glass-members is on (/plot flag set ... on)."));
 +            return 1;
 +        } catch (Exception e) { return err(ctx, e); }
 +    }
 +
 +    private static int flagHelp(CommandContext<CommandSourceStack> ctx) {
 +        msg(ctx, "Flags let visitors (not trusted) use things on your plot; all off by default. Building stays trusted-only.");
-+        msg(ctx, "/plot flag set <flag> true|false on your plot, /plot flag to see them, or /plot menu > your plot > Visitor permissions.");
++        msg(ctx, "/plot flag set <flag> on|off on your plot, /plot flag to see them, or /plot menu > your plot > Visitor permissions.");
 +        for (var f : com.fabricplots.core.PlotFlags.Flag.values()) msg(ctx, f.id + ": " + f.description);
 +        return 1;
 +    }
@@ -280,10 +287,12 @@ index a5ee575..8c239ca 100644
 +            if (!allowed(ctx, p, "fabricplots.flag")) return 0;
 +            var flag = com.fabricplots.core.PlotFlags.byId(StringArgumentType.getString(ctx, "flag").toLowerCase());
 +            if (flag == null) { msg(ctx, "No such flag; /plot flag help lists them."); return 0; }
++            String raw = StringArgumentType.getString(ctx, "value").toLowerCase();
++            if (!java.util.Set.of("on", "off", "true", "false").contains(raw)) { msg(ctx, "Use on or off (or true or false)."); return 0; }
++            boolean value = raw.equals("on") || raw.equals("true");
 +            PlotData d = claimedPlotHere(ctx, p, "Stand on your plot to set its flags.");
 +            if (d == null) return 0;
 +            if (!d.owner.equals(p.getUUID()) && !PlotProtection.isAdmin(p)) { msg(ctx, "Only the plot owner can set its flags."); return 0; }
-+            boolean value = com.mojang.brigadier.arguments.BoolArgumentType.getBool(ctx, "value");
 +            if (!PlotManager.update(d, plot -> { if (value) plot.flags.add(flag.id); else plot.flags.remove(flag.id); })) {
 +                msg(ctx, "That change could not be saved; nothing was changed.");
 +                return 0;
@@ -325,7 +334,7 @@ index a5ee575..8c239ca 100644
      // ---- helpers ---------------------------------------------------------
  
      /** Resolve the claimed plot the player is physically standing inside, never a road-adjacent cell. */
-@@ -875,16 +1029,71 @@ public final class PlotCommands {
+@@ -875,16 +1038,71 @@ public final class PlotCommands {
      }
  
      private static void teleport(ServerPlayer p, ServerLevel level, PlotPos pp) {
@@ -402,7 +411,7 @@ index a5ee575..8c239ca 100644
      private static boolean isOp(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
          return PlotProtection.isAdmin(p); // server op OR single-player host
      }
-@@ -950,9 +1159,7 @@ public final class PlotCommands {
+@@ -950,9 +1168,7 @@ public final class PlotCommands {
      }
  
      private static String nameOf(CommandContext<CommandSourceStack> ctx, UUID id) {
@@ -414,12 +423,59 @@ index a5ee575..8c239ca 100644
  
      private static void msg(CommandContext<CommandSourceStack> ctx, String text) {
 diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
-index ec8c020..22e649b 100644
+index ec8c020..5960f15 100644
 --- a/src/main/java/com/fabricplots/core/PlotConfig.java
 +++ b/src/main/java/com/fabricplots/core/PlotConfig.java
-@@ -1,12 +1,24 @@
- package com.fabricplots.core;
- 
+@@ -1,47 +1,78 @@
+-package com.fabricplots.core;
+-
+-/**
+- * Tunables for the plot grid. A "cell" is one plot plus the road on its
+- * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
+- */
+-public final class PlotConfig {
+-    /** Build area of a single plot, in blocks. */
+-    public static final int PLOT_SIZE = 32;
+-    /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
+-    public static final int ROAD_WIDTH = 17;
+-    /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
+-    public static final int SIDEWALK_DEPTH = 3;
+-    /** Buildable area per plot: grass core + the sidewalk ring, i.e. stair-to-stair (38). */
+-    public static final int BUILDABLE = PLOT_SIZE + 2 * SIDEWALK_DEPTH;
+-    /** Distance from one plot's origin to the next. */
+-    public static final int STEP = PLOT_SIZE + ROAD_WIDTH;
+-
+-    // Levels — raised above y64 so the void-fog horizon band disappears, with the
+-    // road carved one block below the plots/sidewalks (the "raised plots").
+-    /** Top solid block of plots and sidewalks (grass / chiseled tuff). */
+-    public static final int GROUND_Y = 66;
+-    /** Top solid block of the central road (one below ground). */
+-    public static final int ROAD_Y = 65;
+-    /** Bedrock floor at the very bottom (y-1): players (non-ops) can't break at or below this. */
+-    public static final int BEDROCK_Y = -1;
+-    /** Solid dirt fills from here up to (ROAD_Y) under the surface. */
+-    public static final int DIRT_BOTTOM_Y = 0;
+-    /** Highest buildable block (min_y -16 + height 272 - 1). Used when wiping a column top-to-bottom. */
+-    public static final int WORLD_TOP_Y = 255;
+-    /** Standing height on plots/sidewalks; furniture sits here. */
+-    public static final int FLOOR_Y = 67;
+-
+-    public static final String DIM_NAMESPACE = "fabricplots";
+-    public static final String DIM_PATH = "plots";
+-
+-    /** Unnamed mobs in the plots world are removed after this long (10 minutes). */
+-    public static final int UNNAMED_MOB_GRACE_TICKS = 10 * 60 * 20; // 12000
+-    /** How often (ticks) to scan for stale unnamed mobs. */
+-    public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
+-
+-    /** /plot world drops players here — on the road plaza near plot (0,0). */
+-    public static final int SPAWN_X = 40;
+-    public static final int SPAWN_Z = 40;
+-
+-    private PlotConfig() {}
+-}
++package com.fabricplots.core;
++
 +import java.io.Reader;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
@@ -427,13 +483,11 @@ index ec8c020..22e649b 100644
 +
 +import net.fabricmc.loader.api.FabricLoader;
 +
- /**
-  * Tunables for the plot grid. A "cell" is one plot plus the road on its
-  * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
-  */
- public final class PlotConfig {
--    /** Build area of a single plot, in blocks. */
--    public static final int PLOT_SIZE = 32;
++/**
++ * Tunables for the plot grid. A "cell" is one plot plus the road on its
++ * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
++ */
++public final class PlotConfig {
 +    /** Default for "plot-size" in config/fabricplots.properties. */
 +    public static final int DEFAULT_PLOT_SIZE = 32;
 +    /**
@@ -441,21 +495,43 @@ index ec8c020..22e649b 100644
 +     * read once at startup (not on /plot reload). Changing it needs a fresh plot world.
 +     */
 +    public static final int PLOT_SIZE = readPlotSize();
-     /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
-     public static final int ROAD_WIDTH = 17;
-     /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
-@@ -39,9 +51,28 @@ public final class PlotConfig {
-     /** How often (ticks) to scan for stale unnamed mobs. */
-     public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
- 
--    /** /plot world drops players here — on the road plaza near plot (0,0). */
--    public static final int SPAWN_X = 40;
--    public static final int SPAWN_Z = 40;
++    /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
++    public static final int ROAD_WIDTH = 17;
++    /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
++    public static final int SIDEWALK_DEPTH = 3;
++    /** Buildable area per plot: grass core + the sidewalk ring, i.e. stair-to-stair (38). */
++    public static final int BUILDABLE = PLOT_SIZE + 2 * SIDEWALK_DEPTH;
++    /** Distance from one plot's origin to the next. */
++    public static final int STEP = PLOT_SIZE + ROAD_WIDTH;
++
++    // Levels — raised above y64 so the void-fog horizon band disappears, with the
++    // road carved one block below the plots/sidewalks (the "raised plots").
++    /** Top solid block of plots and sidewalks (grass / chiseled tuff). */
++    public static final int GROUND_Y = 66;
++    /** Top solid block of the central road (one below ground). */
++    public static final int ROAD_Y = 65;
++    /** Bedrock floor at the very bottom (y-1): players (non-ops) can't break at or below this. */
++    public static final int BEDROCK_Y = -1;
++    /** Solid dirt fills from here up to (ROAD_Y) under the surface. */
++    public static final int DIRT_BOTTOM_Y = 0;
++    /** Highest buildable block (min_y -16 + height 272 - 1). Used when wiping a column top-to-bottom. */
++    public static final int WORLD_TOP_Y = 255;
++    /** Standing height on plots/sidewalks; furniture sits here. */
++    public static final int FLOOR_Y = 67;
++
++    public static final String DIM_NAMESPACE = "fabricplots";
++    public static final String DIM_PATH = "plots";
++
++    /** Unnamed mobs in the plots world are removed after this long (10 minutes). */
++    public static final int UNNAMED_MOB_GRACE_TICKS = 10 * 60 * 20; // 12000
++    /** How often (ticks) to scan for stale unnamed mobs. */
++    public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
++
 +    /** /plot world drops players here — on the road plaza near plot (0,0): mid-road, 40 at the default size. */
 +    public static final int SPAWN_X = PLOT_SIZE + ROAD_WIDTH / 2;
 +    public static final int SPAWN_Z = SPAWN_X;
- 
-     private PlotConfig() {}
++
++    private PlotConfig() {}
 +
 +    private static int readPlotSize() {
 +        Path file;
@@ -475,7 +551,7 @@ index ec8c020..22e649b 100644
 +            return DEFAULT_PLOT_SIZE;
 +        }
 +    }
- }
++}
 diff --git a/src/main/java/com/fabricplots/core/PlotData.java b/src/main/java/com/fabricplots/core/PlotData.java
 index 2435e70..0d03e1d 100644
 --- a/src/main/java/com/fabricplots/core/PlotData.java
@@ -501,10 +577,10 @@ index 2435e70..0d03e1d 100644
      public PlotData(UUID owner, String ownerName) {
 diff --git a/src/main/java/com/fabricplots/core/PlotFlags.java b/src/main/java/com/fabricplots/core/PlotFlags.java
 new file mode 100644
-index 0000000..50013f7
+index 0000000..3a0ac34
 --- /dev/null
 +++ b/src/main/java/com/fabricplots/core/PlotFlags.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,85 @@
 +package com.fabricplots.core;
 +
 +import java.util.Map;
@@ -544,8 +620,10 @@ index 0000000..50013f7
 +        ANIMAL_INTERACT("animal-interact", "feed, ride and trade with animals and villagers", Items.WHEAT),
 +        MISC_INTERACT("misc-interact", "use armor stands and item frames", Items.ARMOR_STAND),
 +        // Not only visitors: with it on, anyone's drone (the owner's too) smashes glass here, and it comes back
-+        // after the plot's glassRegenSeconds (mods/regen asks droneGlassSeconds). Off: glass never breaks.
-+        DRONE_GLASS("drone-glass", "smash glass here with drones, anyone's (it comes back after /plot glassregen)", Items.GLASS);
++        // after the plot's glassRegenSeconds (mods/regen asks droneGlassSeconds). drone-glass-members: only the
++        // drones of the owner and trusted players. Both off: glass never breaks.
++        DRONE_GLASS("drone-glass", "everyone's drones smash glass here (it comes back after /plot glassregen)", Items.GLASS),
++        DRONE_GLASS_MEMBERS("drone-glass-members", "only the owner's and trusted players' drones smash glass here (wins over drone-glass)", Items.GLASS_PANE);
 +
 +        public final String id;
 +        public final String description;
@@ -589,7 +667,7 @@ index 0000000..50013f7
 +            level.getBlockEntity(pos) instanceof net.minecraft.world.Container;
 +}
 diff --git a/src/main/java/com/fabricplots/core/PlotManager.java b/src/main/java/com/fabricplots/core/PlotManager.java
-index f1ee48a..0a88466 100644
+index f1ee48a..df64114 100644
 --- a/src/main/java/com/fabricplots/core/PlotManager.java
 +++ b/src/main/java/com/fabricplots/core/PlotManager.java
 @@ -85,6 +85,7 @@ public final class PlotManager {
@@ -640,7 +718,7 @@ index f1ee48a..0a88466 100644
          target.sidewalkPattern = source.sidewalkPattern;
          target.wallPattern = source.wallPattern;
          target.paidAmount = source.paidAmount;
-@@ -269,10 +282,72 @@ public final class PlotManager {
+@@ -269,10 +282,82 @@ public final class PlotManager {
  
      /** First plot owned by a player (used by /plot home). */
      public static PlotPos firstOwned(UUID owner) {
@@ -680,12 +758,22 @@ index f1ee48a..0a88466 100644
 +    }
 +
 +    /**
-+     * For mods/regen: seconds until glass a drone breaks at x z comes back, or 0 if drones may not break
-+     * glass there (no plot, or its drone-glass flag is off).
++     * For mods/regen: seconds until glass the pilot's drone breaks at x z comes back, or 0 if it may not
++     * break glass there. drone-glass-members wins: with it on, only the owner's and trusted players' drones,
++     * whatever drone-glass says; otherwise drone-glass on means everyone's. No plot: 0.
 +     */
-+    public static int droneGlassSeconds(int x, int z) {
++    public static int droneGlassSeconds(int x, int z, UUID pilot) {
 +        PlotData d = owningPlot(x, z);
-+        return d != null && d.flags.contains(PlotFlags.Flag.DRONE_GLASS.id) ? Math.max(10, d.glassRegenSeconds) : 0;
++        if (d == null) return 0;
++        boolean member = pilot != null && (pilot.equals(d.owner) || d.trusted.contains(pilot));
++        boolean on = d.flags.contains(PlotFlags.Flag.DRONE_GLASS_MEMBERS.id) ? member
++                : d.flags.contains(PlotFlags.Flag.DRONE_GLASS.id);
++        return on ? Math.max(10, d.glassRegenSeconds) : 0;
++    }
++
++    /** True if either drone-glass flag is on for the plot. */
++    public static boolean droneGlassOn(PlotData d) {
++        return d.flags.contains(PlotFlags.Flag.DRONE_GLASS.id) || d.flags.contains(PlotFlags.Flag.DRONE_GLASS_MEMBERS.id);
 +    }
 +
 +    /** For mods/regen: which plot (and owner) x z belongs to, "" for none: broken glass only goes back into the same one. */
@@ -716,7 +804,7 @@ index f1ee48a..0a88466 100644
      }
  
      /** Next unclaimed plot, spiralling outward from the origin (like /plot auto). */
-@@ -326,6 +401,7 @@ public final class PlotManager {
+@@ -326,6 +411,7 @@ public final class PlotManager {
                  if (parts.length > 6 && !parts[6].isBlank()) {
                      String[] h = parts[6].split(":");
                      d.home = new net.minecraft.core.BlockPos(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -724,7 +812,7 @@ index f1ee48a..0a88466 100644
                  }
                  if (parts.length > 7) d.floorBlockId = parts[7];
                  if (parts.length > 8 && !parts[8].isBlank()) d.pvp = Boolean.parseBoolean(parts[8].trim());
-@@ -340,6 +416,10 @@ public final class PlotManager {
+@@ -340,6 +426,10 @@ public final class PlotManager {
                  if (parts.length > 16 && !parts[16].isBlank()) d.spawnHostile = Boolean.parseBoolean(parts[16].trim());
                  if (parts.length > 17 && !parts[17].isBlank()) d.spawnPassive = Boolean.parseBoolean(parts[17].trim());
                  if (parts.length > 18 && !parts[18].isBlank()) { try { d.mobCap = Integer.parseInt(parts[18].trim()); } catch (NumberFormatException ignored) {} }
@@ -735,7 +823,7 @@ index f1ee48a..0a88466 100644
                  for (PlotPos c : d.cells) PLOTS.put(c, d);
              } catch (Exception e) {
                  System.err.println("[FabricPlots] Skipped bad plot line: " + line + " (" + e + ")");
-@@ -367,12 +447,15 @@ public final class PlotManager {
+@@ -367,12 +457,15 @@ public final class PlotManager {
              for (UUID dn : d.denied) dj.add(dn.toString());
              StringJoiner lj = new StringJoiner(",");
              for (UUID lk : d.likes) lj.add(lk.toString());
