@@ -18,45 +18,61 @@ import org.slf4j.Logger;
 /**
  * The staff part of /help: after a server's own /help, staff and admin (propwash.help.staff) also get
  * plugins/staffhelp/help.txt (MiniMessage, read on every use; its blank first line separates it).
- * /help staff or /help admin shows only that part.
+ * /help staff or /help admin shows only that part. Before it, players with propwash.help.supporter
+ * get plugins/staffhelp/supporter.txt: no blank line, so it reads as more of the "On every server"
+ * lines that end every /help.
  */
-@Plugin(id = "staffhelp", name = "StaffHelp", version = "1.0.0",
-        description = "The staff part of /help")
+@Plugin(id = "staffhelp", name = "StaffHelp", version = "1.1.0",
+        description = "The supporter and staff parts of /help")
 public final class StaffHelp {
     private static final String PERMISSION = "propwash.help.staff";
+    private static final String SUPPORTER = "propwash.help.supporter";
     // The server's /help comes back through the proxy first; this lands after it.
     private static final long DELAY_MS = 300;
 
     private final ProxyServer proxy;
     private final Logger logger;
     private final Path helpFile;
+    private final Path supporterFile;
 
     @Inject
     public StaffHelp(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
         this.proxy = proxy;
         this.logger = logger;
         this.helpFile = dataDirectory.resolve("help.txt");
+        this.supporterFile = dataDirectory.resolve("supporter.txt");
     }
 
     @Subscribe
     public void onCommand(CommandExecuteEvent event) {
-        if (!(event.getCommandSource() instanceof Player player) || !player.hasPermission(PERMISSION)) {
+        if (!(event.getCommandSource() instanceof Player player)) {
             return;
         }
+        boolean staff = player.hasPermission(PERMISSION);
+        boolean supporter = player.hasPermission(SUPPORTER);
         String command = event.getCommand().trim().toLowerCase();
-        if (command.equals("help staff") || command.equals("help admin")) {
+        if (staff && (command.equals("help staff") || command.equals("help admin"))) {
             event.setResult(CommandResult.denied());
-            show(player);
-        } else if (command.equals("help")) {
-            proxy.getScheduler().buildTask(this, () -> show(player)).delay(DELAY_MS, TimeUnit.MILLISECONDS).schedule();
+            show(player, helpFile);
+        } else if (command.equals("help") && (staff || supporter)) {
+            proxy.getScheduler().buildTask(this, () -> {
+                if (supporter) {
+                    show(player, supporterFile);
+                }
+                if (staff) {
+                    show(player, helpFile);
+                }
+            }).delay(DELAY_MS, TimeUnit.MILLISECONDS).schedule();
         }
     }
 
-    private void show(Player player) {
+    private void show(Player player, Path file) {
         try {
-            player.sendMessage(MiniMessage.miniMessage().deserialize(Files.readString(helpFile).stripTrailing()));
+            if (Files.exists(file)) {
+                player.sendMessage(MiniMessage.miniMessage().deserialize(Files.readString(file).stripTrailing()));
+            }
         } catch (IOException e) {
-            logger.warn("Can't read {}", helpFile, e);
+            logger.warn("Can't read {}", file, e);
         }
     }
 }

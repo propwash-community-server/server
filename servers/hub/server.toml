@@ -26,6 +26,9 @@ welcome = """
 # Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
 [config."plugins/Essentials/config.yml"]
 spawn-on-join = "true"
+# /flyspeed (/speed) goes up to 6 without essentials.speed.bypass, as supporters' propwash.flyspeed.6
+# on fpv and plots (EssentialsX has one limit, not levels).
+max-fly-speed = "0.6"
 delay-motd = "-1"
 notify-no-new-mail = "false"
 # Nested under newbies:, hence the indent. '' = no kit on first join (the default gives stone tools).
