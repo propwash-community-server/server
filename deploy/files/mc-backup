@@ -33,6 +33,10 @@ fi
 if [ -f /home/bot/pw-server/bot/database.yml ]; then
     extra="$extra /home/bot/pw-server/bot/database.yml"
 fi
+# Players' /kit kits (mods/kits), shared by fpv and plots outside their folders.
+if [ -d /home/mc/kits ]; then
+    extra="$extra /home/mc/kits"
+fi
 restic backup /home/mc/servers /var/backups/mariadb.sql $extra \
     --exclude '*.jar' --exclude libraries --exclude logs --exclude versions --exclude .fabric
 resume

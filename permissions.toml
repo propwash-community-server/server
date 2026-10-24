@@ -122,6 +122,8 @@ permissions = [
     "essentials.speed.walk false server=hub",
     # /fly and /fly speed <n> on fpv (Essential Commands: one permission for both).
     "essentialcommands.fly.self server=fpv",
+    # /kit: 3 kits of 18 items instead of 1 of 3 (mods/kits, config/kits.properties).
+    "propwash.kits.supporter",
 ]
 
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
@@ -176,6 +178,8 @@ permissions = [
     "maintenance.bypass",
     # The staff part of /help (mods/staffhelp).
     "propwash.help.staff",
+    # /kit every 2 s instead of 20 (mods/kits: staff.cooldown).
+    "propwash.kits.staff",
     # /announce: send one of the announcements now (mods/announcements).
     "propwash.announce",
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the

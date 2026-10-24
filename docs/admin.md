@@ -327,6 +327,16 @@ by anyone who can't see them.
 
 Staff also have Carbon's `/spy`: private messages between anyone, and other servers' local chat.
 
+## Kits
+
+`/kit create <name>` opens a chest titled with the kit's name: clicking a slot with an item on the
+cursor (or shift-clicking an item in the inventory) puts a copy there, clicking it with an empty
+hand clears it; the player's own items never move. Closing it saves the kit, and `/kit <name>` gives
+copies again, once every 20 s (staff, `propwash.kits.staff`: every 2 s). `/kit edit <name>`, `/kit delete <name>`, `/kit list`.
+Everyone gets 1 kit of up to 3 items; supporters (`propwash.kits.supporter`) 3 of up to 18. Set in
+`[config."config/kits.properties"]` of fpv and plots ([`mods/kits`](../mods/kits/)); kits are saved in
+`/home/mc/kits/<uuid>.dat`, shared by both servers (and backed up with them).
+
 ## Votes
 
 Admins (`propwash.vote`) run a yes/no vote on every server with `/vote start <question>`: everyone
@@ -404,7 +414,7 @@ The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and
-logs), the bot's `bridge.db` and a [MariaDB](https://mariadb.org) dump to the bucket, with saving paused during the
+logs), the players' kits (`/home/mc/kits`), the bot's `bridge.db` and a [MariaDB](https://mariadb.org) dump to the bucket, with saving paused during the
 snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 
 | Task (as root) | Command |
