@@ -1,0 +1,2 @@
+<accent>/fly</accent>: fly (on plots you always can) <supporter>(Supporter)</supporter>
+<accent>/flyspeed <1-6></accent>: how fast you fly, 1 is normal <supporter>(Supporter)</supporter>

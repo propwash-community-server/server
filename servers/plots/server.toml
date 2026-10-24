@@ -32,9 +32,10 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
     # /mydrone brings your own drone to you; your drones go when you leave; the debug stick works in the plot world (/debugstick);
-    # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running).
+    # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
+    # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.6.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.7.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
@@ -181,3 +182,8 @@ items = "3"
 "supporter.kits" = "3"
 "supporter.items" = "18"
 storage = "/home/mc/kits"
+
+# Essential Commands' /enderchest would merge with mods/tweaks' (/enderchest, /ec, /echest for
+# propwash.enderchest). Its other settings aren't managed here (it doesn't use LuckPerms on plots).
+[config."config/EssentialCommands.properties"]
+enable_enderchest = "false"

@@ -33,7 +33,9 @@ import net.minecraft.world.phys.Vec3;
  * the server), in the dimension (map) they're in and loaded, the nearest one, never while it's
  * flying, at most every 5 seconds. Right-clicking an entity (an armor stand, a mannequin...) tagged
  * propwash.map.<name> runs /map <name> for the player, before claim protection refuses the click. /debugstick gives a debug stick in the plot world, where everyone
- * may use one (DebugStickMixin), only one at a time.
+ * may use one (DebugStickMixin), only one at a time. /flyspeed <0-10> sets the player's flying speed
+ * (up to the highest propwash.flyspeed.<1-10> the player has). /enderchest, /ec, /echest open the
+ * player's ender chest (propwash.enderchest).
  *
  * Drones go with their owner: when a player leaves this server (logs off or switches server), their
  * drones (pw_owner_<name>) are removed from every loaded map, and a drone that loads later (a chunk
@@ -58,6 +60,18 @@ public final class Tweaks implements ModInitializer {
                 {
                     dispatcher.register(Commands.literal("mydrone").executes(context -> myDrone(context.getSource())));
                     dispatcher.register(Commands.literal("debugstick").executes(context -> debugStick(context.getSource())));
+                    dispatcher.register(Commands.literal("flyspeed").requires(source -> maxFlySpeed(source) > 0)
+                            .executes(context -> flySpeed(context.getSource(), 1))
+                            .then(Commands.argument("speed", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(0, 10))
+                                    .executes(context -> flySpeed(context.getSource(),
+                                            com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "speed")))));
+                    var enderChest = dispatcher.register(Commands.literal("enderchest")
+                            .requires(source -> permitted(source, ENDERCHEST))
+                            .executes(context -> enderChest(context.getSource())));
+                    for (String alias : new String[] {"ec", "echest"}) {
+                        dispatcher.register(Commands.literal(alias).requires(enderChest.getRequirement())
+                                .executes(context -> enderChest(context.getSource())));
+                    }
                 });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -172,6 +186,78 @@ public final class Tweaks implements ModInitializer {
         nearest.setDeltaMovement(Vec3.ZERO);
         source.sendSuccess(() -> Component.literal("Your drone is here."), false);
         return 1;
+    }
+
+    /**
+     * /flyspeed <0-10>, like the hub's (EssentialsX): 1 is the normal flying speed, 10 ten times it;
+     * no number: back to 1. Only changes the speed (flying itself is creative or /fly). Up to the
+     * highest propwash.flyspeed.<1-10> the player has (LuckPerms, through the fabric-permissions-api
+     * Vanilla Permissions brings); none: no /flyspeed.
+     */
+    private static int flySpeed(CommandSourceStack source, float speed) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        int max = maxFlySpeed(source);
+        if (speed > max) {
+            source.sendFailure(Component.literal("You can fly at up to /flyspeed " + max + "."));
+            return 0;
+        }
+        player.getAbilities().setFlyingSpeed(NORMAL_FLYING_SPEED * speed);
+        player.onUpdateAbilities();
+        String shown = speed == Math.round(speed) ? String.valueOf(Math.round(speed)) : String.valueOf(speed);
+        source.sendSuccess(() -> Component.literal("Flying speed " + shown + (speed == 1 ? " (normal)." : ". /flyspeed 1 for normal.")), false);
+        return 1;
+    }
+
+    private static final String FLYSPEED = "propwash.flyspeed.";
+    private static final String ENDERCHEST = "propwash.enderchest";
+
+    /** /enderchest, /ec, /echest: the player's own ender chest, anywhere (propwash.enderchest). */
+    private static int enderChest(CommandSourceStack source) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                (id, inventory, p) -> net.minecraft.world.inventory.ChestMenu.threeRows(id, inventory, p.getEnderChestInventory()),
+                Component.translatable("container.enderchest")));
+        return 1;
+    }
+    private static final float NORMAL_FLYING_SPEED = 0.05f;
+    private static java.lang.invoke.MethodHandle permissionCheck;
+
+    static {
+        try {
+            permissionCheck = java.lang.invoke.MethodHandles.publicLookup().findStatic(
+                    Class.forName("me.lucko.fabric.api.permissions.v0.Permissions"), "check",
+                    java.lang.invoke.MethodType.methodType(boolean.class,
+                            net.minecraft.commands.SharedSuggestionProvider.class, String.class, boolean.class));
+        } catch (ReflectiveOperationException | LinkageError e) {
+            permissionCheck = null; // no permissions mod: only ops (level 2) get /flyspeed
+        }
+    }
+
+    /** The highest propwash.flyspeed.<n> (1 to 10) the source has, 0 for none. */
+    private static int maxFlySpeed(CommandSourceStack source) {
+        for (int n = 10; n >= 1; n--) {
+            if (permitted(source, FLYSPEED + n)) {
+                return n;
+            }
+        }
+        return 0;
+    }
+
+    private static boolean permitted(CommandSourceStack source, String permission) {
+        if (permissionCheck == null) {
+            return source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
+        }
+        try {
+            return (boolean) permissionCheck.invokeExact((net.minecraft.commands.SharedSuggestionProvider) source, permission, false);
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     private static int debugStick(CommandSourceStack source) {
