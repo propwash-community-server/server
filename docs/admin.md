@@ -413,6 +413,29 @@ The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the
 | Logs | `journalctl -u propwash-bot@bot`, `journalctl -u propwash-bot@api` |
 | API up | `curl -s 127.0.0.1:3006/v1/health` |
 
+## Stats
+
+The proxy records player activity for graphs (nothing is shown in game): [`mods/stats`](../mods/stats/)
+appends one JSON object per line to `plugins/stats/events-YYYY-MM.jsonl` on the velocity server,
+months in UTC:
+
+| `e` | Fields | When |
+|---|---|---|
+| `join` | `uuid`, `name` | joined the network |
+| `server` | `uuid`, `name`, `server`, `from` (none right after joining) | arrived on a server |
+| `leave` | `uuid`, `name`, `server` | left the network |
+| `online` | `total`, `servers` (`{"hub": 2, ...}`) | every 5 minutes |
+| `start`, `stop` | | the proxy started or stopped (a stop ends every session) |
+
+Every line has `t`, ISO-8601 UTC. No IP addresses; vanished players count like everyone. Unique
+players, new players, sessions, playtime, peak online and per-server use all come from these. The
+files are in `/home/mc/servers`, so they're backed up.
+
+Before the plugin, the same events (without `online`) were rebuilt from the proxy's logs, from
+2026-10-08: `backfill-YYYY-MM.jsonl`, each line with `"src": "log"`, made once with
+[`mods/stats/backfill.py`](../mods/stats/backfill.py) (`python3 backfill.py` shows what it would
+write, `--write` writes it; it stops at the plugin's first event).
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

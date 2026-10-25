@@ -35,6 +35,9 @@ plugins = [
     # Announcements every 15 minutes in chat on hub, fpv and plots
     # (files/plugins/announcements/announcements.toml): our mods/announcements, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/announcements-1.0.0.jar",
+    # Joins, server switches, leaves and players online, for graphs later (plugins/stats/*.jsonl, see
+    # docs/admin.md#stats): our mods/stats, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/stats-1.0.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.2.0.jar",
