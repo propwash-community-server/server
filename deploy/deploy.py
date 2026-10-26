@@ -592,7 +592,7 @@ systemd.service(name="backup timer", service="mc-backup.timer", running=True, en
 # The bot/ folder of github.com/Itsj5j6j7/pw-server at this commit; change it to update the bot.
 # Its own settings (channels, roles, bridge servers) are in that repo's src/config.js.
 BOT_REPO = "https://github.com/Itsj5j6j7/pw-server.git"
-BOT_COMMIT = "5e7d9124cfb0df2c98fff8a158a8dc9932c5278d"
+BOT_COMMIT = "7df297f0b3131325cbed48ef1b3746f8b9a14f83"
 BOT_DIR = "/home/bot/pw-server"
 PNPM = "9.15.9"
 
