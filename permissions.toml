@@ -131,6 +131,8 @@ permissions = [
     "propwash.enderchest",
     # /fly and /flyspeed in /help, after "On every server" (mods/staffhelp, files/plugins/staffhelp/supporter.txt).
     "propwash.help.supporter",
+    # Four plots instead of two (the highest fabricplots.limit.<n> wins: builders keep their 10).
+    "fabricplots.limit.4 server=plots",
 ]
 
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.

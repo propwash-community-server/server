@@ -72,7 +72,7 @@ lpv user <name> parent add senior-builder
 `supporter` is for Ko-fi donors: the `[Supporter]` tag, `/fly` on the hub and fpv, and `/flyspeed <0-10>`
 on every server (EssentialsX's on the hub, mods/tweaks' on fpv and plots: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6; on the hub EssentialsX's
 `max-fly-speed` 0.6, the same limit for everyone without `essentials.speed.bypass`), and `/enderchest`
-(`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`); below the builder ranks (a
+(`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 ## Protection
@@ -125,6 +125,11 @@ The `plots` server is a creative plot world from [FabricPlots](https://modrinth.
 (PlotSquared-style, on Fabric so drones work). Players arrive in the plot world (the datapack in
 `servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
 plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on fpv).
+
+`/plot delete` (wipe to flat ground and release) and `/plot clear` (wipe only) need the plot's number, the owner's
+plot N that `/plot info` shows, and it must be the plot the player stands on: `/plot delete` alone
+only says which plot this is, `/plot delete 2` checks it and asks for the same again within 15 s.
+The menu's Clear button only tells the command, so nobody confirms the wrong plot by mistake.
 
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
 `fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 2,
