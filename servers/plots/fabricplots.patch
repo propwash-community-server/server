@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..a54f4b6 100644
+index daaf686..c4069f3 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,15 +7,23 @@ index daaf686..a54f4b6 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.11
++mod_version=1.0.2-plotsize.12
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
 diff --git a/src/main/java/com/fabricplots/FabricPlots.java b/src/main/java/com/fabricplots/FabricPlots.java
-index c7e8ebe..8fc5341 100644
+index c7e8ebe..594b7a9 100644
 --- a/src/main/java/com/fabricplots/FabricPlots.java
 +++ b/src/main/java/com/fabricplots/FabricPlots.java
-@@ -69,6 +69,7 @@ public final class FabricPlots implements ModInitializer {
+@@ -8,6 +8,7 @@ import com.fabricplots.core.PlotExpiry;
+ import com.fabricplots.core.PlotManager;
+ import com.fabricplots.core.PlotsConfig;
+ import com.fabricplots.edit.PlotEditAccess;
++import com.fabricplots.player.DroneView;
+ import com.fabricplots.player.PlotAmbience;
+ import com.fabricplots.player.PlotPlaceholders;
+ import com.fabricplots.protect.PlotMobGuard;
+@@ -69,6 +70,7 @@ public final class FabricPlots implements ModInitializer {
              PlotManager.load(server);
              PlotWorldPainter.loadDecorated(server);
              PortalManager.load(server);
@@ -23,11 +31,31 @@ index c7e8ebe..8fc5341 100644
              PlotExpiry.load(server);
              applyWorldRules(server);
          });
+@@ -145,6 +147,7 @@ public final class FabricPlots implements ModInitializer {
+             StreetSweeper.sweep(server.getLevel(PLOTS_DIM));
+         }
+ 
++        DroneView.refresh(server.getLevel(PLOTS_DIM));
+         for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+             ResourceKey<Level> dim = p.level().dimension();
+ 
+@@ -168,7 +171,10 @@ public final class FabricPlots implements ModInitializer {
+                     // Action bar (small text above the hotbar), not chat — avoids spam as players move around.
+                     p.sendOverlayMessage(Component.literal("Welcome " + p.getName().getString() + " to " + label + "!"));
+                 }
+-                PlotAmbience.tick(p, pd); // per-plot sky illusion (client-only time/weather)
++                // Per-plot sky illusion (client-only time/weather), from the plot under the drone the
++                // player is flying, else under the player.
++                Entity drone = DroneView.flown(p);
++                PlotAmbience.tick(p, drone == null ? pd : PlotManager.owningPlot(drone.getBlockX(), drone.getBlockZ()));
+             } else {
+                 LAST_PLOT.remove(p.getUUID());
+                 PlotAmbience.reset(p); // back to the real sky when leaving the plot world
 diff --git a/src/main/java/com/fabricplots/command/PlotCommands.java b/src/main/java/com/fabricplots/command/PlotCommands.java
-index a5ee575..e0afb37 100644
+index a5ee575..1eec52d 100644
 --- a/src/main/java/com/fabricplots/command/PlotCommands.java
 +++ b/src/main/java/com/fabricplots/command/PlotCommands.java
-@@ -57,7 +57,12 @@ public final class PlotCommands {
+@@ -57,10 +57,21 @@ public final class PlotCommands {
                  .then(Commands.literal("world").executes(PlotCommands::world))
                  .then(Commands.literal("auto").executes(PlotCommands::auto))
                  .then(Commands.literal("claim").executes(PlotCommands::claim))
@@ -39,9 +67,20 @@ index a5ee575..e0afb37 100644
 +                                        : c.getSource().getPlayer().getUUID(), b))
 +                                .executes(PlotCommands::home)))
                  .then(Commands.literal("info").executes(PlotCommands::info))
-                 .then(Commands.literal("clear").executes(PlotCommands::clear))
-                 .then(Commands.literal("delete").executes(PlotCommands::delete))
-@@ -84,9 +89,22 @@ public final class PlotCommands {
+-                .then(Commands.literal("clear").executes(PlotCommands::clear))
+-                .then(Commands.literal("delete").executes(PlotCommands::delete))
++                // Both need the plot's number (its owner's plot N, as /plot info shows), matching the
++                // plot the player stands on, then the same command again to confirm.
++                .then(Commands.literal("clear").executes(ctx -> clear(ctx, -1))
++                        .then(Commands.argument("number", IntegerArgumentType.integer(1))
++                                .executes(ctx -> clear(ctx, IntegerArgumentType.getInteger(ctx, "number")))))
++                .then(Commands.literal("delete").executes(ctx -> delete(ctx, -1))
++                        .then(Commands.argument("number", IntegerArgumentType.integer(1))
++                                .executes(ctx -> delete(ctx, IntegerArgumentType.getInteger(ctx, "number")))))
+                 .then(Commands.literal("repaint")
+                         .executes(ctx -> repaint(ctx, 64))
+                         .then(Commands.argument("radius", IntegerArgumentType.integer(1, 128))
+@@ -84,9 +95,22 @@ public final class PlotCommands {
                          .then(Commands.argument("player", GameProfileArgument.gameProfile())
                                  .executes(ctx -> setDeny(ctx, false))))
                  .then(Commands.literal("uncombine").executes(PlotCommands::uncombine))
@@ -66,7 +105,7 @@ index a5ee575..e0afb37 100644
                  .then(Commands.literal("name")
                          .then(Commands.argument("name", StringArgumentType.greedyString())
                                  .executes(PlotCommands::namePlot)))
-@@ -102,7 +120,33 @@ public final class PlotCommands {
+@@ -102,7 +126,33 @@ public final class PlotCommands {
                                  .executes(PlotCommands::removeAll)))
                  .then(Commands.literal("menu").executes(PlotCommands::menu))
                  .then(Commands.literal("edit").executes(PlotCommands::listPlots)) // manage your plots — the build editor is /draft edit
@@ -101,7 +140,7 @@ index a5ee575..e0afb37 100644
                  .then(Commands.literal("sethome").executes(PlotCommands::setHome))
                  .then(Commands.literal("admin").executes(PlotCommands::adminMode))
                  .then(Commands.literal("setspawn").executes(PlotCommands::setSpawn))
-@@ -139,11 +183,11 @@ public final class PlotCommands {
+@@ -139,11 +189,11 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -115,7 +154,7 @@ index a5ee575..e0afb37 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -166,10 +210,10 @@ public final class PlotCommands {
+@@ -166,10 +216,10 @@ public final class PlotCommands {
                  else msg(ctx, "Claim failed to save; no money was kept. Please try again.");
                  return 0;
              }
@@ -128,7 +167,7 @@ index a5ee575..e0afb37 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -177,9 +221,10 @@ public final class PlotCommands {
+@@ -177,9 +227,10 @@ public final class PlotCommands {
      private static int home(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -142,7 +181,7 @@ index a5ee575..e0afb37 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -197,7 +242,8 @@ public final class PlotCommands {
+@@ -197,7 +248,8 @@ public final class PlotCommands {
              PlotData d = PlotManager.get(pp);
              if (d == null) { msg(ctx, "Plot " + pp.px() + "," + pp.pz() + " is unclaimed."); return 1; }
              msg(ctx, "Plot " + pp.px() + "," + pp.pz() + (d.name.isBlank() ? "" : " \"" + d.name + "\"")
@@ -152,7 +191,7 @@ index a5ee575..e0afb37 100644
                      + " · " + d.cells.size() + " cell" + (d.cells.size() == 1 ? "" : "s") + (d.isMerged() ? " (merged)" : "")
                      + " · trusted " + d.trusted.size() + " · denied " + d.denied.size()
                      + " · likes " + d.likes.size() + " · PvP " + (d.pvp ? "on" : "off"));
-@@ -257,6 +303,7 @@ public final class PlotCommands {
+@@ -257,6 +309,7 @@ public final class PlotCommands {
              if (!staff(ctx, p, "fabricplots.reload")) return 0;
              PlotsConfig.load();
              FabricPlots.applyWorldRules(ctx.getSource().getServer());
@@ -160,7 +199,7 @@ index a5ee575..e0afb37 100644
              msg(ctx, "Config reloaded. allow-player-combine=" + PlotsConfig.allowPlayerCombine
                      + ", max-merge-cells=" + PlotsConfig.maxMergeCells
                      + ", claim-limit=" + PlotsConfig.claimLimit
-@@ -276,9 +323,18 @@ public final class PlotCommands {
+@@ -276,9 +329,18 @@ public final class PlotCommands {
              if (d == null) return 0;
              if (!d.owner.equals(p.getUUID()) && !isOp(ctx, p)) { msg(ctx, "Stand on your own plot first."); return 0; }
              BlockPos oldHome = d.home;
@@ -181,7 +220,7 @@ index a5ee575..e0afb37 100644
              return 1;
          } catch (Exception e) { return err(ctx, e); }
      }
-@@ -293,8 +349,10 @@ public final class PlotCommands {
+@@ -293,8 +355,10 @@ public final class PlotCommands {
          section(src, "Getting around");
          line(src, "/plot world", "go to the plot world");
          line(src, "/plot menu", "open the menu");
@@ -194,7 +233,12 @@ index a5ee575..e0afb37 100644
          line(src, "/plot like", "like the plot you're standing on");
          line(src, "/plot leave", "return to the home world");
  
-@@ -307,7 +365,8 @@ public final class PlotCommands {
+@@ -303,16 +367,17 @@ public final class PlotCommands {
+         line(src, "/plot claim", "claim the plot you're standing in");
+         line(src, "/plot info", "info about this plot");
+         line(src, "/plot key", "get your plot's portal key (run it at your base)");
+-        line(src, "/plot delete", "release this plot");
++        line(src, "/plot delete <number>", "wipe and release this plot (its number: /plot info), then again to confirm");
  
          section(src, "Your plot");
          line(src, "/plot name <name>", "name this plot");
@@ -204,7 +248,13 @@ index a5ee575..e0afb37 100644
          line(src, "/plot trust <player>", "let someone build here");
          line(src, "/plot untrust <player>", "remove a trusted player");
          line(src, "/plot deny <player>", "ban a player from this plot");
-@@ -516,6 +575,7 @@ public final class PlotCommands {
+         line(src, "/plot undeny <player>", "un-ban a player");
+-        line(src, "/plot clear", "reset this plot to flat ground");
++        line(src, "/plot clear <number>", "reset this plot to flat ground (its number: /plot info), then again to confirm");
+ 
+         // Building/editor commands (edit, shapes, clipboard, measure, …) are DraftSmith's —
+         // it attaches them under /plot and documents them itself. Not advertised here.
+@@ -516,6 +581,7 @@ public final class PlotCommands {
      private static int key(CommandContext<CommandSourceStack> ctx) {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -212,7 +262,86 @@ index a5ee575..e0afb37 100644
              if (!allowed(ctx, p, "fabricplots.portal")) return 0;
              // In the plot world, standing on a plot you may use: give that one plot's key.
              if (p.level().dimension() == FabricPlots.PLOTS_DIM) {
-@@ -829,14 +889,117 @@ public final class PlotCommands {
+@@ -707,7 +773,28 @@ public final class PlotCommands {
+         } catch (Exception e) { return err(ctx, e); }
+     }
+ 
+-    private static int clear(CommandContext<CommandSourceStack> ctx) {
++    /**
++     * For /plot clear and /plot delete: false (after saying what to type) unless number is this plot's
++     * number; -1 when none was given.
++     */
++    private static boolean numberMatches(CommandContext<CommandSourceStack> ctx, PlotData d, int number, String command, String what) {
++        int n = plotNumber(d);
++        PlotPos pp = d.cells.isEmpty() ? null : d.cells.iterator().next();
++        String here = (d.name.isBlank() ? "" : "\"" + d.name + "\", ") + (pp == null ? "" : pp.px() + "," + pp.pz());
++        String whose = d.owner.equals(ctx.getSource().getPlayer() == null ? null : ctx.getSource().getPlayer().getUUID()) ? "your" : "their";
++        if (number < 0) {
++            msg(ctx, "You're on " + whose + " plot " + n + " (" + here + "). To " + what + " it: /plot " + command + " " + n);
++            return false;
++        }
++        if (number != n) {
++            msg(ctx, "You're on " + whose + " plot " + n + " (" + here + "), not plot " + number
++                    + ". Stand on the plot you mean (/plot home " + number + ") and try again.");
++            return false;
++        }
++        return true;
++    }
++
++    private static int clear(CommandContext<CommandSourceStack> ctx, int number) {
+         try {
+             ServerPlayer p = ctx.getSource().getPlayerOrException();
+             if (!allowed(ctx, p, "fabricplots.clear")) return 0;
+@@ -715,9 +802,11 @@ public final class PlotCommands {
+             PlotData d = claimedPlotHere(ctx, p, "That plot is unclaimed.");
+             if (d == null) return 0;
+             if (!d.owner.equals(p.getUUID()) && !isOp(ctx, p)) { msg(ctx, "That isn't your plot."); return 0; }
++            if (!numberMatches(ctx, d, number, "clear", "wipe")) return 0;
+             if (!PlotWorldPainter.canQueueWorldJob()) { msg(ctx, "The world-update queue is full. Try again shortly."); return 0; }
+-            if (!confirmed(ctx, p, "clear:" + d.cells.hashCode(),
+-                    "This permanently wipes every block and entity on the plot. Run /plot clear again within 15 seconds to confirm.")) return 0;
++            if (!confirmed(ctx, p, "clear:" + number + ":" + d.cells.hashCode(),
++                    "This permanently wipes every block and entity on plot " + number + ". Run /plot clear " + number
++                            + " again within 15 seconds to confirm.")) return 0;
+             int n = PlotWorldPainter.clearPlot(plotsLevel(ctx), d);
+             if (n < 0) { msg(ctx, "That plot is already being updated. Try again when it finishes."); return 0; }
+             msg(ctx, "Started clearing the plot safely in the background (up to " + n + " columns).");
+@@ -725,7 +814,7 @@ public final class PlotCommands {
+         } catch (Exception e) { return err(ctx, e); }
+     }
+ 
+-    private static int delete(CommandContext<CommandSourceStack> ctx) {
++    private static int delete(CommandContext<CommandSourceStack> ctx, int number) {
+         try {
+             ServerPlayer p = ctx.getSource().getPlayerOrException();
+             if (!allowed(ctx, p, "fabricplots.delete")) return 0;
+@@ -733,8 +822,14 @@ public final class PlotCommands {
+             if (d == null) return 0;
+             PlotPos pp = PlotManager.plotAt(p.getBlockX(), p.getBlockZ());
+             if (!d.owner.equals(p.getUUID()) && !isOp(ctx, p)) { msg(ctx, "That isn't your plot."); return 0; }
+-            if (!confirmed(ctx, p, "delete:" + d.cells.hashCode(),
+-                    "This releases the plot and cannot be undone. Run /plot delete again within 15 seconds to confirm.")) return 0;
++            if (!numberMatches(ctx, d, number, "delete", "release")) return 0;
++            if (!PlotWorldPainter.canQueueWorldJob()) { msg(ctx, "The world-update queue is full. Try again shortly."); return 0; }
++            if (!confirmed(ctx, p, "delete:" + number + ":" + d.cells.hashCode(),
++                    "This wipes every block and entity on plot " + number + " and releases it; it cannot be undone. Run /plot delete "
++                            + number + " again within 15 seconds to confirm.")) return 0;
++            // A released plot is flat ground again for the next owner (as /plot clear), wiped in the background.
++            int cleared = PlotWorldPainter.clearPlot(plotsLevel(ctx), d);
++            if (cleared < 0) { msg(ctx, "That plot is already being updated. Try again when it finishes."); return 0; }
+             // Refund only the owner deleting their own plot (an op cleaning up someone else's isn't refunded).
+             long refund = 0;
+             if (PlotsConfig.economyEnabled && PlotsConfig.refundOnDelete && d.paidAmount > 0 && p.getUUID().equals(d.owner)) {
+@@ -745,7 +840,7 @@ public final class PlotCommands {
+             if (!d.biomeId.isBlank()) PlotBiomes.resetBiome(plotsLevel(ctx), d);
+             for (PlotPos c : released) PortalManager.removeExitPortalIfOrphan(plotsLevel(ctx), c);
+             boolean refunded = refund <= 0 || PlotEconomy.refund(p, refund);
+-            msg(ctx, "Released plot " + pp.px() + "," + pp.pz()
++            msg(ctx, "Released plot " + pp.px() + "," + pp.pz() + " and wiping it in the background"
+                     + (refund > 0 && refunded ? " — refunded " + PlotEconomy.format(p, refund) : "")
+                     + (refund > 0 && !refunded ? " — refund failed; contact an administrator" : "") + ".");
+             return 1;
+@@ -829,14 +924,117 @@ public final class PlotCommands {
          try {
              ServerPlayer p = ctx.getSource().getPlayerOrException();
              if (!allowed(ctx, p, "fabricplots.visit")) return 0;
@@ -277,10 +406,10 @@ index a5ee575..e0afb37 100644
 +                sb.append(flags[i].id).append(d.flags.contains(flags[i].id) ? " ON" : " off");
 +            }
 +            msg(ctx, sb + "  (/plot flag help)");
-+            return 1;
-+        } catch (Exception e) { return err(ctx, e); }
-+    }
-+
+             return 1;
+         } catch (Exception e) { return err(ctx, e); }
+     }
+ 
 +    private static int flagSet(CommandContext<CommandSourceStack> ctx) {
 +        try {
 +            ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -298,10 +427,10 @@ index a5ee575..e0afb37 100644
 +                return 0;
 +            }
 +            msg(ctx, flag.id + " is now " + (value ? "ON: visitors may " + flag.description + "." : "off."));
-             return 1;
-         } catch (Exception e) { return err(ctx, e); }
-     }
- 
++            return 1;
++        } catch (Exception e) { return err(ctx, e); }
++    }
++
 +    /** Owner names of all claimed plots (not the server's), sorted. */
 +    private static List<String> ownerNames() {
 +        java.util.TreeSet<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -334,7 +463,7 @@ index a5ee575..e0afb37 100644
      // ---- helpers ---------------------------------------------------------
  
      /** Resolve the claimed plot the player is physically standing inside, never a road-adjacent cell. */
-@@ -875,16 +1038,71 @@ public final class PlotCommands {
+@@ -875,16 +1073,71 @@ public final class PlotCommands {
      }
  
      private static void teleport(ServerPlayer p, ServerLevel level, PlotPos pp) {
@@ -370,7 +499,7 @@ index a5ee575..e0afb37 100644
 +    }
 +
 +    /** This plot's number among its owner's plots. */
-+    private static int plotNumber(PlotData d) {
++    public static int plotNumber(PlotData d) {
 +        List<PlotData> owned = PlotManager.ownedPlots(d.owner);
 +        for (int i = 0; i < owned.size(); i++) if (owned.get(i) == d) return i + 1;
 +        return 1;
@@ -411,7 +540,7 @@ index a5ee575..e0afb37 100644
      private static boolean isOp(CommandContext<CommandSourceStack> ctx, ServerPlayer p) {
          return PlotProtection.isAdmin(p); // server op OR single-player host
      }
-@@ -950,9 +1168,7 @@ public final class PlotCommands {
+@@ -950,9 +1203,7 @@ public final class PlotCommands {
      }
  
      private static String nameOf(CommandContext<CommandSourceStack> ctx, UUID id) {
@@ -916,7 +1045,7 @@ index 5653241..ede2a4b 100644
          String v = p.getProperty(k);
          return v == null ? def : Boolean.parseBoolean(v.trim());
 diff --git a/src/main/java/com/fabricplots/gui/PlotMenus.java b/src/main/java/com/fabricplots/gui/PlotMenus.java
-index 04ddd3f..46a92b7 100644
+index 04ddd3f..3b98c68 100644
 --- a/src/main/java/com/fabricplots/gui/PlotMenus.java
 +++ b/src/main/java/com/fabricplots/gui/PlotMenus.java
 @@ -98,7 +98,7 @@ public final class PlotMenus {
@@ -947,7 +1076,25 @@ index 04ddd3f..46a92b7 100644
              List<Component> lore = List.of(
                      Component.literal("Cells: " + d.cells.size() + (d.isMerged() ? " (merged)" : "")),
                      Component.literal("Trusted: " + d.trusted.size() + " · Denied: " + d.denied.size()),
-@@ -224,10 +223,35 @@ public final class PlotMenus {
+@@ -215,8 +214,15 @@ public final class PlotMenus {
+             sp.sendSystemMessage(Component.literal("[Plots] Sent " + n + " visitor" + (n == 1 ? "" : "s") + " to spawn."));
+             settings(sp, anchor);
+         }));
+-        g.setSlot(24, btn(Items.TNT, "Clear plot", "Reset every block to flat ground.",
+-                (i, t, a, gg) -> { if (allowed(sp, "fabricplots.clear")) confirmClear(sp, anchor); }));
++        // Clearing takes the plot's number as a command (/plot clear <number>, twice), like /plot delete.
++        g.setSlot(24, btn(Items.TNT, "Clear plot", "Reset every block to flat ground: /plot clear <number>.",
++                (i, t, a, gg) -> {
++                    if (!allowed(sp, "fabricplots.clear")) return;
++                    int n = com.fabricplots.command.PlotCommands.plotNumber(d);
++                    sp.closeContainer();
++                    sp.sendSystemMessage(Component.literal("[Plots] To wipe plot " + n + (d.name.isBlank() ? "" : " (\"" + d.name + "\")")
++                            + ": stand on it, /plot clear " + n + ", then again to confirm."));
++                }));
+         g.setSlot(25, btn(biomeIcon(d), "Biome",
+                 "Currently: " + PlotBiomes.labelOf(d.biomeId) + " — recolor grass, leaves and sky on your plot.",
+                 (i, t, a, gg) -> { if (allowed(sp, "fabricplots.biome")) biomePicker(sp, anchor, 0); }));
+@@ -224,10 +230,35 @@ public final class PlotMenus {
                  "Hostile: " + (d.spawnHostile ? "ON" : "OFF") + " · Passive: " + (d.spawnPassive ? "ON" : "OFF")
                          + " — what your plot's biome may spawn.",
                  (i, t, a, gg) -> { if (allowed(sp, "fabricplots.mobs")) mobSpawnPicker(sp, anchor); }));
@@ -983,7 +1130,33 @@ index 04ddd3f..46a92b7 100644
      private static Item biomeIcon(PlotData d) {
          if (d.biomeId.isBlank()) return Items.GRASS_BLOCK;
          return itemByRegistryId(PlotBiomes.iconFor(d.biomeId));
-@@ -738,10 +762,7 @@ public final class PlotMenus {
+@@ -499,25 +530,6 @@ public final class PlotMenus {
+         return d.name.isBlank() ? nameOf(sp, d.owner) + "'s plot" : d.name;
+     }
+ 
+-    private static void confirmClear(ServerPlayer sp, PlotPos anchor) {
+-        SimpleGui g = new SimpleGui(MenuType.GENERIC_9x3, sp, false);
+-        g.setTitle(Component.literal("Clear this plot?"));
+-        g.setSlot(11, btn(Blocks.CONCRETE.lime().asItem(), "Yes, clear it", "Wipes the whole plot to flat ground.", (i, t, a, gg) -> {
+-            PlotData d = editable(sp, anchor, "fabricplots.clear");
+-            if (d == null) return;
+-            if (!PlotWorldPainter.canQueueWorldJob()) {
+-                sp.sendSystemMessage(Component.literal("[Plots] The world-update queue is full. Try again shortly."));
+-                return;
+-            }
+-            int n = PlotWorldPainter.clearPlot(plots(sp), d);
+-            if (n < 0) sp.sendSystemMessage(Component.literal("[Plots] That plot is already being updated."));
+-            else sp.sendSystemMessage(Component.literal("[Plots] Plot clear started safely in the background."));
+-            sp.closeContainer();
+-        }));
+-        g.setSlot(15, btn(Blocks.CONCRETE.red().asItem(), "No, go back", "", (i, t, a, gg) -> settings(sp, anchor)));
+-        g.open();
+-    }
+-
+     // ---- trusted / denied member lists -----------------------------------
+ 
+     public static void members(ServerPlayer sp, PlotPos anchor, boolean deny, int page) {
+@@ -738,10 +750,7 @@ public final class PlotMenus {
      private static void teleportVisit(ServerPlayer sp, PlotPos anchor) {
          ServerLevel level = plots(sp);
          PlotData d = PlotManager.get(anchor);
@@ -995,7 +1168,7 @@ index 04ddd3f..46a92b7 100644
          int[] xz = PlotManager.homeXZ(anchor);
          sp.teleportTo(level, xz[0] + 0.5, PlotConfig.FLOOR_Y, xz[1] + 0.5, Set.of(), sp.getYRot(), 0f, false);
      }
-@@ -799,8 +820,7 @@ public final class PlotMenus {
+@@ -799,8 +808,7 @@ public final class PlotMenus {
  
      private static String nameOf(ServerPlayer ctx, UUID id) {
          if (PlotManager.isServer(id)) return "Server";
@@ -1018,6 +1191,70 @@ index e6db3be..057721b 100644
  
          Entity cause = source.getEntity();
          if (!(cause instanceof ServerPlayer) && source.getDirectEntity() instanceof Projectile projectile) {
+diff --git a/src/main/java/com/fabricplots/player/DroneView.java b/src/main/java/com/fabricplots/player/DroneView.java
+new file mode 100644
+index 0000000..f931378
+--- /dev/null
++++ b/src/main/java/com/fabricplots/player/DroneView.java
+@@ -0,0 +1,58 @@
++package com.fabricplots.player;
++
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.invoke.MethodType;
++import java.util.HashMap;
++import java.util.Map;
++import java.util.Optional;
++import java.util.UUID;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.entity.EntityTypeTest;
++
++/**
++ * Propwash drones and who flies them, so the per-plot sky (PlotAmbience) follows a pilot's drone and
++ * not where they stand. Propwash is used by name (QuadcopterEntity.pilot()); without it, nobody flies.
++ * Rebuilt every half second from the drones in the plot world.
++ */
++public final class DroneView {
++    private DroneView() {}
++
++    private static Class<? extends Entity> droneClass;
++    private static MethodHandle pilot;
++    private static final Map<UUID, Entity> FLOWN = new HashMap<>();
++    private static int tick;
++
++    static {
++        try {
++            droneClass = Class.forName("de.lardtom.propwash.drone.QuadcopterEntity").asSubclass(Entity.class);
++            pilot = MethodHandles.publicLookup().findVirtual(droneClass, "pilot", MethodType.methodType(Optional.class));
++        } catch (ReflectiveOperationException | LinkageError | ClassCastException e) {
++            droneClass = null; // no Propwash
++        }
++    }
++
++    /** Call every tick: every 10th, which drone each player in the plot world is flying. */
++    public static void refresh(ServerLevel plots) {
++        if (++tick < 10) return;
++        tick = 0;
++        FLOWN.clear();
++        if (droneClass == null || plots == null) return;
++        for (Entity drone : plots.getEntities(EntityTypeTest.forClass(droneClass), e -> true)) {
++            try {
++                Optional<?> who = (Optional<?>) pilot.invoke(drone);
++                if (who.isPresent() && who.get() instanceof UUID id) FLOWN.put(id, drone);
++            } catch (Throwable ignored) {
++                // a drone we can't read: as if nobody flew it
++            }
++        }
++    }
++
++    /** The drone this player is flying in their own world, or null. */
++    public static Entity flown(ServerPlayer player) {
++        Entity drone = FLOWN.get(player.getUUID());
++        return drone != null && !drone.isRemoved() && drone.level() == player.level() ? drone : null;
++    }
++}
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
 index 70fb191..c34f560 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
