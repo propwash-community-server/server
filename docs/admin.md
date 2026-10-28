@@ -482,6 +482,26 @@ write, `--write` writes it; it stops at the plugin's first event). For a quick l
 peak online per day, and the top players). Stats 1.0.0 (to 2026-10-28) missed some leaves; the
 report ends those sessions at the player's last event.
 
+## Staff watch
+
+The proxy keeps a record of what staff do: [`mods/staffwatch`](../mods/staffwatch/). Watched is
+everyone with a group other than `default` and `supporter`, or a permission set on them directly
+(LuckPerms); it's checked again on every event, so a new builder or staff member is watched from
+then on. For them it records every command they type (whether it works or not, with the server they
+were on), their joins, server switches and leaves. On plots, [`mods/tweaks`](../mods/tweaks/) adds
+every block anyone breaks in `/plot admin` mode, with whose plot it was (or road).
+
+| Command | |
+|---|---|
+| `/staffwatch` | everything, newest first (12 per page, times in UTC) |
+| `/staffwatch <player> [page]` | one player; click "Older" for the next page |
+
+Only admins (`propwash.staffwatch`, from `*`). The records are one JSON object per line in
+`plugins/staffwatch/` on the velocity server, never rewritten, so they're backed up:
+`YYYY-MM.jsonl` from the proxy (`e`: `command`, `join`, `server`, `leave`) and
+`plots-YYYY-MM.jsonl` from plots (`e`: `admin_break`, with `block`, `x`, `y`, `z`, `plot`). Every
+line has `t` (ISO-8601 UTC), `uuid` and `name`.
+
 ## Backups
 
 Every night at 04:00, [restic](https://restic.net) backs up `/home/mc/servers` (without jars and

@@ -40,6 +40,10 @@ import net.minecraft.world.phys.Vec3;
  * Drones go with their owner: when a player leaves this server (logs off or switches server), their
  * drones (pw_owner_<name>) are removed from every loaded map, and a drone that loads later (a chunk
  * that wasn't loaded then) is removed if its owner isn't on this server.
+ *
+ * Staff watch: with staffwatch-folder in config/tweaks.properties (the proxy's plugins/staffwatch,
+ * mods/staffwatch), every block a player breaks in the plot world while in FabricPlots' /plot admin
+ * mode is added to plots-YYYY-MM.jsonl there, with whose plot it was.
  */
 public final class Tweaks implements ModInitializer {
     private static final long COOLDOWN_MS = 5000;
@@ -55,6 +59,7 @@ public final class Tweaks implements ModInitializer {
         // Flan checks in its own early phase; ours goes first (no effect without Flan).
         UseEntityCallback.EVENT.addPhaseOrdering(early, Identifier.fromNamespaceAndPath("flan", "events"));
         UseEntityCallback.EVENT.register(early, (player, world, hand, entity, hit) -> mapStand(player, hand, entity));
+        StaffWatch.init();
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 {
