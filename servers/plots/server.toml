@@ -17,7 +17,7 @@ mods = [
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     # WorldEdit for players, only on plots they may build on and with block limits ([config] below);
     # our mods/plotedit, built and uploaded by hand. Which commands they get is permissions.toml.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/plotedit-1.0.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/plotedit-1.1.0-26.3.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.

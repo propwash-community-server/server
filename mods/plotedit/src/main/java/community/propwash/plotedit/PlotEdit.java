@@ -47,12 +47,15 @@ import org.slf4j.LoggerFactory;
  * (config/plotedit.properties, reread when it changes); region commands are refused on selections
  * bigger than max-selection-volume (WorldEdit visits every position, and //copy holds them all in
  * memory, even where nothing may change). Players with propwash.plotedit.bypass
- * (staff) aren't limited. Which WorldEdit commands players get is LuckPerms (permissions.toml).
+ * (staff) aren't limited, anywhere; with propwash.plotedit.unlimited (mods) they have no limits but
+ * still only edit where they may build. Which WorldEdit commands players get is LuckPerms
+ * (permissions.toml).
  */
 public final class PlotEdit implements ModInitializer {
     static final Logger LOGGER = LoggerFactory.getLogger("plotedit");
     private static final String PLOTS = "fabricplots:plots";
     private static final String BYPASS = "propwash.plotedit.bypass";
+    private static final String UNLIMITED = "propwash.plotedit.unlimited";
     private static final Path CONFIG = FabricLoader.getInstance().getConfigDir().resolve("plotedit.properties");
 
     static volatile int perCommand = 60_000;
@@ -133,7 +136,7 @@ public final class PlotEdit implements ModInitializer {
         String command = Monitor.takeCommand(actor.getUniqueId());
         String name = command == null ? "" : command.replaceFirst("^/+", "").split(" ", 2)[0].toLowerCase().replaceFirst("^worldedit:", "");
         boolean free = name.equals("undo");
-        event.setExtent(new PlotExtent(event.getExtent(), player, actor, window, free));
+        event.setExtent(new PlotExtent(event.getExtent(), player, actor, window, free, actor.hasPermission(UNLIMITED)));
     }
 
     // Before WorldEdit runs a region command: the selection must not be bigger than max-selection-volume.
@@ -145,7 +148,7 @@ public final class PlotEdit implements ModInitializer {
         }
         Monitor.command(actor.getUniqueId(), "/" + event.getArguments().trim().replaceFirst("^/+", "/"));
         String command = event.getArguments().trim().replaceFirst("^/+", "").split(" ", 2)[0].toLowerCase();
-        if (!REGION_COMMANDS.contains(command)) {
+        if (!REGION_COMMANDS.contains(command) || actor.hasPermission(UNLIMITED)) {
             return;
         }
         LocalSession session = WorldEdit.getInstance().getSessionManager().get(actor);
@@ -283,15 +286,18 @@ public final class PlotEdit implements ModInitializer {
         private final Actor actor;
         private final Window window;
         private final boolean free;
+        /** propwash.plotedit.unlimited: none of the limits, only where they may build. */
+        private final boolean unlimited;
         private int changed;
         private boolean stopped;
 
-        PlotExtent(Extent extent, ServerPlayer player, Actor actor, Window window, boolean free) {
+        PlotExtent(Extent extent, ServerPlayer player, Actor actor, Window window, boolean free, boolean unlimited) {
             super(extent);
             this.player = player;
             this.actor = actor;
             this.window = window;
             this.free = free;
+            this.unlimited = unlimited;
         }
 
         /** The first time a limit is reached in this edit: tell the player and the monitor. */
@@ -322,6 +328,13 @@ public final class PlotEdit implements ModInitializer {
                 return false;
             }
             long now = System.currentTimeMillis();
+            if (unlimited) {
+                boolean set = super.setBlock(position, block);
+                if (set) {
+                    Monitor.changed(actor.getUniqueId(), actor.getName());
+                }
+                return set;
+            }
             if (!free && changed >= perCommand) {
                 stop(perCommand + " per command", "This edit reached the limit of " + perCommand
                         + " blocks per command; the rest wasn't changed (//undo takes back what was).");
