@@ -173,6 +173,13 @@ It also fixes `/plot admin` for staff who aren't op: upstream only lets vanilla 
 mode (editing roads and other plots); ours also accepts the `fabricplots.admin` permission, which
 staff and admin have on plots.
 
+And it closes a hole in upstream's protection: upstream only checks right-clicks on blocks, but
+buckets, lily pads / frogspawn, spawn eggs (on water) and boats act on their own raycast (`Item#use`),
+which the game sends separately, so anyone could pour water or lava onto any plot, or take fluid off
+one. Ours checks those too, the block hit and the block changed, by the same rules as building
+(plotsize.14). Every other vanilla item with its own `Item#use` changes nothing in the world or
+throws a projectile, which the `noprojectiles` datapack removes.
+
 Plot owners set what visitors (not trusted) may use on their plot with flags: `/plot flag set <flag>
 on|off` (or `true|false`) on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
 All are off by default and building stays owner and trusted only:

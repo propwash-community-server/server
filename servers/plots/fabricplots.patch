@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..3fe9f6c 100644
+index daaf686..0bf8e3b 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..3fe9f6c 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.13
++mod_version=1.0.2-plotsize.14
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -569,138 +569,13 @@ index a5ee575..1eec52d 100644
  
      private static void msg(CommandContext<CommandSourceStack> ctx, String text) {
 diff --git a/src/main/java/com/fabricplots/compat/Perms.java b/src/main/java/com/fabricplots/compat/Perms.java
-index 8a56494..a20c258 100644
+index 8a56494..8881651 100644
 --- a/src/main/java/com/fabricplots/compat/Perms.java
 +++ b/src/main/java/com/fabricplots/compat/Perms.java
-@@ -1,80 +1,100 @@
--package com.fabricplots.compat;
--
--import com.fabricplots.protect.PlotProtection;
--
--import net.fabricmc.loader.api.FabricLoader;
--import net.minecraft.server.level.ServerPlayer;
--
--/**
-- * Soft bridge to fabric-permissions-api (the check API LuckPerms and friends implement).
-- * When no permissions mod is installed — or a node is left undefined — the given default
-- * decides, so servers without one behave exactly as before. The inner holder keeps
-- * me.lucko classes from loading unless the API mod is actually present.
-- */
--public final class Perms {
--    private static final boolean LOADED = FabricLoader.getInstance().isModLoaded("fabric-permissions-api-v0");
--
--    /** Highest {@code fabricplots.limit.N} node scanned for per-player claim limits. */
--    private static final int MAX_LIMIT_NODE = 64;
--
--    /** Highest {@code fabricplots.mobcap.N} node scanned for per-owner mob-cap ceilings. */
--    private static final int MAX_MOBCAP_NODE = 64;
--
--    private Perms() {}
--
--    /** True/false from the permissions mod when it defines {@code node}; otherwise {@code def}. */
--    public static boolean check(ServerPlayer p, String node, boolean def) {
--        return LOADED ? Impl.check(p, node, def) : def;
--    }
--
--    /**
--     * Staff gate: the node when a permissions mod defines it; otherwise today's admin rule —
--     * FabricPlots' own op check ({@code opLevel} is the conventional fallback level, OP 2; the
--     * check also covers the single-player host, whose permission level isn't reliably exposed).
--     */
--    public static boolean checkOp(ServerPlayer p, String node, int opLevel) {
--        boolean fallback = PlotProtection.isAdmin(p); // ops (gamemaster+, >= level 2) + single-player host
--        return LOADED ? Impl.check(p, node, fallback) : fallback;
--    }
--
--    /**
--     * Per-player claim limit: scans the numeric nodes {@code fabricplots.limit.1} …
--     * {@code fabricplots.limit.64} and the HIGHEST granted one wins; players with none
--     * granted (or servers without a permissions mod) use {@code configDefault}.
--     */
--    public static int claimLimit(ServerPlayer p, int configDefault) {
--        return LOADED ? Impl.claimLimit(p, configDefault) : configDefault;
--    }
--
--    /**
--     * Per-owner mob-cap ceiling: scans the numeric nodes {@code fabricplots.mobcap.1} …
--     * {@code fabricplots.mobcap.64} and the HIGHEST granted one RAISES the config ceiling
--     * (a node at or below it changes nothing); owners with none granted (or servers without
--     * a permissions mod) use {@code configCeiling}. Permission checks need a live player,
--     * so this only resolves while the owner is ONLINE — offline owners keep the config
--     * ceiling (a deliberate, documented simplification).
--     */
--    public static int mobCap(ServerPlayer p, int configCeiling) {
--        return LOADED ? Impl.mobCap(p, configCeiling) : configCeiling;
--    }
--
--    private static final class Impl {
--        static boolean check(ServerPlayer p, String node, boolean def) {
--            return me.lucko.fabric.api.permissions.v0.Permissions.check(p, node, def);
--        }
--
--        static int claimLimit(ServerPlayer p, int configDefault) {
--            for (int i = MAX_LIMIT_NODE; i >= 1; i--) {
--                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.limit." + i, false)) return i;
--            }
--            return configDefault;
--        }
--
--        static int mobCap(ServerPlayer p, int configCeiling) {
--            for (int i = MAX_MOBCAP_NODE; i > configCeiling; i--) { // nodes at/below the config ceiling can't raise it
--                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.mobcap." + i, false)) return i;
--            }
--            return configCeiling;
--        }
--    }
--}
-+package com.fabricplots.compat;
-+
-+import com.fabricplots.protect.PlotProtection;
-+
-+import net.fabricmc.loader.api.FabricLoader;
-+import net.minecraft.server.level.ServerPlayer;
-+
-+/**
-+ * Soft bridge to fabric-permissions-api (the check API LuckPerms and friends implement).
-+ * When no permissions mod is installed — or a node is left undefined — the given default
-+ * decides, so servers without one behave exactly as before. The inner holder keeps
-+ * me.lucko classes from loading unless the API mod is actually present.
-+ */
-+public final class Perms {
-+    private static final boolean LOADED = FabricLoader.getInstance().isModLoaded("fabric-permissions-api-v0");
-+
-+    /** Highest {@code fabricplots.limit.N} node scanned for per-player claim limits. */
-+    private static final int MAX_LIMIT_NODE = 64;
-+
-+    /** Highest {@code fabricplots.mobcap.N} node scanned for per-owner mob-cap ceilings. */
-+    private static final int MAX_MOBCAP_NODE = 64;
-+
-+    private Perms() {}
-+
-+    /** True/false from the permissions mod when it defines {@code node}; otherwise {@code def}. */
-+    public static boolean check(ServerPlayer p, String node, boolean def) {
-+        return LOADED ? Impl.check(p, node, def) : def;
-+    }
-+
-+    /**
-+     * Staff gate: the node when a permissions mod defines it; otherwise today's admin rule —
-+     * FabricPlots' own op check ({@code opLevel} is the conventional fallback level, OP 2; the
-+     * check also covers the single-player host, whose permission level isn't reliably exposed).
-+     */
-+    public static boolean checkOp(ServerPlayer p, String node, int opLevel) {
-+        boolean fallback = PlotProtection.isAdmin(p); // ops (gamemaster+, >= level 2) + single-player host
-+        return LOADED ? Impl.check(p, node, fallback) : fallback;
-+    }
-+
-+    /**
-+     * Per-player claim limit: scans the numeric nodes {@code fabricplots.limit.1} …
-+     * {@code fabricplots.limit.64} and the HIGHEST granted one wins; players with none
-+     * granted (or servers without a permissions mod) use {@code configDefault}.
-+     */
-+    public static int claimLimit(ServerPlayer p, int configDefault) {
-+        return LOADED ? Impl.claimLimit(p, configDefault) : configDefault;
-+    }
-+
+@@ -46,6 +46,14 @@ public final class Perms {
+         return LOADED ? Impl.claimLimit(p, configDefault) : configDefault;
+     }
+ 
 +    /**
 +     * The same claim limit for any player by UUID, online or not (the permissions mod looks them up),
 +     * for locking plots over a lowered limit (PlotLocks).
@@ -709,30 +584,13 @@ index 8a56494..a20c258 100644
 +        return LOADED ? Impl.claimLimit(id, configDefault) : java.util.concurrent.CompletableFuture.completedFuture(configDefault);
 +    }
 +
-+    /**
-+     * Per-owner mob-cap ceiling: scans the numeric nodes {@code fabricplots.mobcap.1} …
-+     * {@code fabricplots.mobcap.64} and the HIGHEST granted one RAISES the config ceiling
-+     * (a node at or below it changes nothing); owners with none granted (or servers without
-+     * a permissions mod) use {@code configCeiling}. Permission checks need a live player,
-+     * so this only resolves while the owner is ONLINE — offline owners keep the config
-+     * ceiling (a deliberate, documented simplification).
-+     */
-+    public static int mobCap(ServerPlayer p, int configCeiling) {
-+        return LOADED ? Impl.mobCap(p, configCeiling) : configCeiling;
-+    }
-+
-+    private static final class Impl {
-+        static boolean check(ServerPlayer p, String node, boolean def) {
-+            return me.lucko.fabric.api.permissions.v0.Permissions.check(p, node, def);
-+        }
-+
-+        static int claimLimit(ServerPlayer p, int configDefault) {
-+            for (int i = MAX_LIMIT_NODE; i >= 1; i--) {
-+                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.limit." + i, false)) return i;
-+            }
-+            return configDefault;
-+        }
-+
+     /**
+      * Per-owner mob-cap ceiling: scans the numeric nodes {@code fabricplots.mobcap.1} …
+      * {@code fabricplots.mobcap.64} and the HIGHEST granted one RAISES the config ceiling
+@@ -70,6 +78,18 @@ public final class Perms {
+             return configDefault;
+         }
+ 
 +        static java.util.concurrent.CompletableFuture<Integer> claimLimit(java.util.UUID id, int configDefault) {
 +            @SuppressWarnings("unchecked")
 +            java.util.concurrent.CompletableFuture<Boolean>[] nodes = new java.util.concurrent.CompletableFuture[MAX_LIMIT_NODE];
@@ -745,68 +603,16 @@ index 8a56494..a20c258 100644
 +            });
 +        }
 +
-+        static int mobCap(ServerPlayer p, int configCeiling) {
-+            for (int i = MAX_MOBCAP_NODE; i > configCeiling; i--) { // nodes at/below the config ceiling can't raise it
-+                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.mobcap." + i, false)) return i;
-+            }
-+            return configCeiling;
-+        }
-+    }
-+}
+         static int mobCap(ServerPlayer p, int configCeiling) {
+             for (int i = MAX_MOBCAP_NODE; i > configCeiling; i--) { // nodes at/below the config ceiling can't raise it
+                 if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.mobcap." + i, false)) return i;
 diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
-index ec8c020..5960f15 100644
+index ec8c020..22e649b 100644
 --- a/src/main/java/com/fabricplots/core/PlotConfig.java
 +++ b/src/main/java/com/fabricplots/core/PlotConfig.java
-@@ -1,47 +1,78 @@
--package com.fabricplots.core;
--
--/**
-- * Tunables for the plot grid. A "cell" is one plot plus the road on its
-- * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
-- */
--public final class PlotConfig {
--    /** Build area of a single plot, in blocks. */
--    public static final int PLOT_SIZE = 32;
--    /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
--    public static final int ROAD_WIDTH = 17;
--    /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
--    public static final int SIDEWALK_DEPTH = 3;
--    /** Buildable area per plot: grass core + the sidewalk ring, i.e. stair-to-stair (38). */
--    public static final int BUILDABLE = PLOT_SIZE + 2 * SIDEWALK_DEPTH;
--    /** Distance from one plot's origin to the next. */
--    public static final int STEP = PLOT_SIZE + ROAD_WIDTH;
--
--    // Levels — raised above y64 so the void-fog horizon band disappears, with the
--    // road carved one block below the plots/sidewalks (the "raised plots").
--    /** Top solid block of plots and sidewalks (grass / chiseled tuff). */
--    public static final int GROUND_Y = 66;
--    /** Top solid block of the central road (one below ground). */
--    public static final int ROAD_Y = 65;
--    /** Bedrock floor at the very bottom (y-1): players (non-ops) can't break at or below this. */
--    public static final int BEDROCK_Y = -1;
--    /** Solid dirt fills from here up to (ROAD_Y) under the surface. */
--    public static final int DIRT_BOTTOM_Y = 0;
--    /** Highest buildable block (min_y -16 + height 272 - 1). Used when wiping a column top-to-bottom. */
--    public static final int WORLD_TOP_Y = 255;
--    /** Standing height on plots/sidewalks; furniture sits here. */
--    public static final int FLOOR_Y = 67;
--
--    public static final String DIM_NAMESPACE = "fabricplots";
--    public static final String DIM_PATH = "plots";
--
--    /** Unnamed mobs in the plots world are removed after this long (10 minutes). */
--    public static final int UNNAMED_MOB_GRACE_TICKS = 10 * 60 * 20; // 12000
--    /** How often (ticks) to scan for stale unnamed mobs. */
--    public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
--
--    /** /plot world drops players here — on the road plaza near plot (0,0). */
--    public static final int SPAWN_X = 40;
--    public static final int SPAWN_Z = 40;
--
--    private PlotConfig() {}
--}
-+package com.fabricplots.core;
-+
+@@ -1,12 +1,24 @@
+ package com.fabricplots.core;
+ 
 +import java.io.Reader;
 +import java.nio.file.Files;
 +import java.nio.file.Path;
@@ -814,11 +620,13 @@ index ec8c020..5960f15 100644
 +
 +import net.fabricmc.loader.api.FabricLoader;
 +
-+/**
-+ * Tunables for the plot grid. A "cell" is one plot plus the road on its
-+ * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
-+ */
-+public final class PlotConfig {
+ /**
+  * Tunables for the plot grid. A "cell" is one plot plus the road on its
+  * positive X/Z edges, so STEP = PLOT_SIZE + ROAD_WIDTH.
+  */
+ public final class PlotConfig {
+-    /** Build area of a single plot, in blocks. */
+-    public static final int PLOT_SIZE = 32;
 +    /** Default for "plot-size" in config/fabricplots.properties. */
 +    public static final int DEFAULT_PLOT_SIZE = 32;
 +    /**
@@ -826,43 +634,21 @@ index ec8c020..5960f15 100644
 +     * read once at startup (not on /plot reload). Changing it needs a fresh plot world.
 +     */
 +    public static final int PLOT_SIZE = readPlotSize();
-+    /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
-+    public static final int ROAD_WIDTH = 17;
-+    /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
-+    public static final int SIDEWALK_DEPTH = 3;
-+    /** Buildable area per plot: grass core + the sidewalk ring, i.e. stair-to-stair (38). */
-+    public static final int BUILDABLE = PLOT_SIZE + 2 * SIDEWALK_DEPTH;
-+    /** Distance from one plot's origin to the next. */
-+    public static final int STEP = PLOT_SIZE + ROAD_WIDTH;
-+
-+    // Levels — raised above y64 so the void-fog horizon band disappears, with the
-+    // road carved one block below the plots/sidewalks (the "raised plots").
-+    /** Top solid block of plots and sidewalks (grass / chiseled tuff). */
-+    public static final int GROUND_Y = 66;
-+    /** Top solid block of the central road (one below ground). */
-+    public static final int ROAD_Y = 65;
-+    /** Bedrock floor at the very bottom (y-1): players (non-ops) can't break at or below this. */
-+    public static final int BEDROCK_Y = -1;
-+    /** Solid dirt fills from here up to (ROAD_Y) under the surface. */
-+    public static final int DIRT_BOTTOM_Y = 0;
-+    /** Highest buildable block (min_y -16 + height 272 - 1). Used when wiping a column top-to-bottom. */
-+    public static final int WORLD_TOP_Y = 255;
-+    /** Standing height on plots/sidewalks; furniture sits here. */
-+    public static final int FLOOR_Y = 67;
-+
-+    public static final String DIM_NAMESPACE = "fabricplots";
-+    public static final String DIM_PATH = "plots";
-+
-+    /** Unnamed mobs in the plots world are removed after this long (10 minutes). */
-+    public static final int UNNAMED_MOB_GRACE_TICKS = 10 * 60 * 20; // 12000
-+    /** How often (ticks) to scan for stale unnamed mobs. */
-+    public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
-+
+     /** Road gap: 3 sidewalk + 1 stair + 9 road + 1 stair + 3 sidewalk = 17. */
+     public static final int ROAD_WIDTH = 17;
+     /** Sidewalk depth on each side (road distance 0..2). Road distance 3 = transition stair. */
+@@ -39,9 +51,28 @@ public final class PlotConfig {
+     /** How often (ticks) to scan for stale unnamed mobs. */
+     public static final int MOB_SCAN_INTERVAL_TICKS = 600; // 30s
+ 
+-    /** /plot world drops players here — on the road plaza near plot (0,0). */
+-    public static final int SPAWN_X = 40;
+-    public static final int SPAWN_Z = 40;
 +    /** /plot world drops players here — on the road plaza near plot (0,0): mid-road, 40 at the default size. */
 +    public static final int SPAWN_X = PLOT_SIZE + ROAD_WIDTH / 2;
 +    public static final int SPAWN_Z = SPAWN_X;
-+
-+    private PlotConfig() {}
+ 
+     private PlotConfig() {}
 +
 +    private static int readPlotSize() {
 +        Path file;
@@ -882,7 +668,7 @@ index ec8c020..5960f15 100644
 +            return DEFAULT_PLOT_SIZE;
 +        }
 +    }
-+}
+ }
 diff --git a/src/main/java/com/fabricplots/core/PlotData.java b/src/main/java/com/fabricplots/core/PlotData.java
 index 2435e70..6b3a714 100644
 --- a/src/main/java/com/fabricplots/core/PlotData.java
@@ -1597,7 +1383,7 @@ index 0000000..f931378
 +    }
 +}
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
-index 70fb191..481d83a 100644
+index 70fb191..f8fca24 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
 +++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
 @@ -4,6 +4,7 @@ import com.fabricplots.FabricPlots;
@@ -1608,7 +1394,15 @@ index 70fb191..481d83a 100644
  import com.fabricplots.world.PlotWorldPainter;
  
  import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-@@ -65,6 +66,22 @@ public final class PlotProtection {
+@@ -11,6 +12,7 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+ import net.fabricmc.fabric.api.event.player.UseEntityCallback;
++import net.fabricmc.fabric.api.event.player.UseItemCallback;
+ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.server.level.ServerLevel;
+@@ -65,6 +67,22 @@ public final class PlotProtection {
                  }
                  return InteractionResult.FAIL;
              }
@@ -1631,7 +1425,51 @@ index 70fb191..481d83a 100644
              if (!allowed(player, pos)) return InteractionResult.FAIL;
              // Placing a block (or fluid bucket) targets the clicked face's NEIGHBOUR unless the clicked
              // block is replaceable — that landing spot must be buildable too, or you could stand on the
-@@ -98,6 +115,7 @@ public final class PlotProtection {
+@@ -85,6 +103,43 @@ public final class PlotProtection {
+             return InteractionResult.PASS;
+         });
+ 
++        // Buckets, boats, lily pads / frogspawn and spawn eggs (on water) act on their OWN raycast in
++        // Item#use, which the client sends as a separate "use item" right after the block click:
++        // refusing the click above doesn't stop it, so without this anyone could pour water or lava
++        // onto any plot. The same raycast the item makes, and the same ownership check on what it
++        // would change. (Every other item with its own Item#use either changes nothing in the world or
++        // throws a projectile, which the noprojectiles datapack removes before it moves.)
++        UseItemCallback.EVENT.register((player, world, hand) -> {
++            if (!(world instanceof ServerLevel level) || !isPlots(world)) return InteractionResult.PASS;
++            net.minecraft.world.item.Item item = player.getItemInHand(hand).getItem();
++            boolean bucket = item instanceof net.minecraft.world.item.BucketItem;
++            boolean onWater = item instanceof net.minecraft.world.item.PlaceOnWaterBlockItem;
++            boolean egg = item instanceof net.minecraft.world.item.SpawnEggItem;
++            if (!bucket && !onWater && !egg && !(item instanceof net.minecraft.world.item.BoatItem)) return InteractionResult.PASS;
++            net.minecraft.world.level.ClipContext.Fluid fluid = item == net.minecraft.world.item.Items.BUCKET || onWater || egg
++                    ? net.minecraft.world.level.ClipContext.Fluid.SOURCE_ONLY
++                    : bucket ? net.minecraft.world.level.ClipContext.Fluid.NONE : net.minecraft.world.level.ClipContext.Fluid.ANY;
++            net.minecraft.world.phys.Vec3 eye = player.getEyePosition();
++            net.minecraft.world.phys.Vec3 end = eye.add(player.getViewVector(1.0F).scale(player.blockInteractionRange()));
++            net.minecraft.world.phys.BlockHitResult hit = world.clip(new net.minecraft.world.level.ClipContext(
++                    eye, end, net.minecraft.world.level.ClipContext.Block.OUTLINE, fluid, player));
++            if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return InteractionResult.PASS;
++            BlockPos pos = hit.getBlockPos();
++            // A full bucket fills the hit block if it can, else the one in front of the hit face; a lily
++            // pad goes on top of the water.
++            BlockPos target = onWater ? pos.above()
++                    : bucket && item != net.minecraft.world.item.Items.BUCKET && !world.getBlockState(pos).canBeReplaced()
++                    ? pos.relative(hit.getDirection()) : pos;
++            if (allowed(player, pos) && allowed(player, target)) return InteractionResult.PASS;
++            if (player instanceof ServerPlayer sp) {
++                // The client already shows the fluid or boat it predicted: put back what's really there.
++                sp.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, pos));
++                sp.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(level, target));
++                sp.containerMenu.sendAllDataToRemote();
++            }
++            return InteractionResult.FAIL;
++        });
++
+         // Left-click attack on a block (creative instant-break starts here).
+         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+             if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
+@@ -98,6 +153,7 @@ public final class PlotProtection {
              if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
              if (!isPlots(world)) return InteractionResult.PASS;
              if (entity instanceof ServerPlayer victim) return pvpAllowed(victim) ? InteractionResult.PASS : InteractionResult.FAIL;
@@ -1639,7 +1477,7 @@ index 70fb191..481d83a 100644
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -105,7 +123,10 @@ public final class PlotProtection {
+@@ -105,7 +161,10 @@ public final class PlotProtection {
          // villagers, boats and minecarts must obey the same ownership boundary as blocks.
          UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
              if (!(world instanceof ServerLevel)) return InteractionResult.PASS;
@@ -1651,7 +1489,7 @@ index 70fb191..481d83a 100644
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -131,6 +152,7 @@ public final class PlotProtection {
+@@ -131,6 +190,7 @@ public final class PlotProtection {
          if (player instanceof ServerPlayer sp && isBuildAdmin(sp)) return true;
          if (pos.getY() <= PlotConfig.BEDROCK_Y) return false;                         // bedrock floor: never for players
          if (data == null) return false;                                               // stair/road/unclaimed: locked
@@ -1659,7 +1497,7 @@ index 70fb191..481d83a 100644
          return data.canBuild(player.getUUID());
      }
  
-@@ -170,6 +192,43 @@ public final class PlotProtection {
+@@ -170,6 +230,43 @@ public final class PlotProtection {
          // On a dedicated server this is false, so real ops are gated by the permission check below.
          if (server.isSingleplayer()) return true;
          if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;
