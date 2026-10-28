@@ -323,7 +323,7 @@ def rtp_bounds(m):
     out = {}
     for axis in ("x", "z"):
         lo, hi = sorted(area.get(axis, edge[axis]))
-        lo, hi = max(lo, edge[axis][0]), min(hi, edge[axis][1])
+        lo, hi = int(max(lo, edge[axis][0])), int(min(hi, edge[axis][1]))  # a border centre may be x.5
         if lo >= hi:
             raise SystemExit(f"servers/fpv/maps/{m['name']}.toml: rtp_area {axis} is outside the border")
         out[axis] = (lo, hi)
