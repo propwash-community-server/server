@@ -37,7 +37,7 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 ## Permissions
 
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
-(`default`, `supporter`, `junior-builder`, `senior-builder`, `staff`, `admin`). Each entry is passed to
+(`default`, `supporter`, `junior-builder`, `senior-builder`, `mod`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
@@ -74,6 +74,15 @@ on every server (EssentialsX's on the hub, mods/tweaks' on fpv and plots: up to 
 `max-fly-speed` 0.6, the same limit for everyone without `essentials.speed.bypass`), and `/enderchest`
 (`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
+
+`mod` (blue `[Mod]`, between builders and staff) has everything `supporter` has (it includes it) and
+only this besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/vote start` and
+`/vote end`, `/maintenance on` and `off` (and staying on during it), `/kick`, `/ban`, `/mute`, `/unban`,
+`/unmute` and `/history` (players, not IPs), `/tp <player>`, `/spy`, `/v` and `/v auto` (and seeing
+vanished players), WorldEdit on plots without plotedit's limits but only where they may build
+(`propwash.plotedit.unlimited`, not the bypass), and `/gamemode creative` and `survival` on the hub.
+Their `/help` part is [`mod.txt`](../servers/velocity/files/plugins/staffhelp/mod.txt) (`/help mod`
+shows only it), in place of the supporter one. `lpv user <name> parent add mod`.
 
 ## Protection
 
@@ -335,12 +344,13 @@ of each server's own; a player on another server is moved there first:
 |---|---|---|
 | Ask to go to someone / ask them to come to you | `/tpa <player>`, `/tpahere <player>` | everyone (`propwash.tpa`) |
 | Answer (clickable in the message) | `/tpaccept [player]`, `/tpdeny [player]` | everyone |
-| Go to someone | `/tp <player>` | staff (`propwash.tp`) |
+| Go to someone | `/tp <player>` | staff and mods (`propwash.tp`) |
 | See and change someone's inventory | `/invsee <player>` | staff (`propwash.invsee`) |
 
 Requests last two minutes. The teleport itself is a console `tp` over rcon (the deploy writes the
 ports and password to `plugins/crossserver/`), a second after arriving, since the hub sends arrivals
-to spawn. `/tp` with anything else (coordinates, someone on the same server) is the server's own.
+to spawn; on the same server it's that console `tp` right away (mods have no `/tp` of the server's
+own). `/tp` with anything else (coordinates, two players) is the server's own.
 Each server keeps its own inventory of a player, so `/invsee` shows the one on the server they're
 on: EssentialsX `/invsee` on the hub, [InvView](https://modrinth.com/mod/invview) `/view inv` on
 fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories

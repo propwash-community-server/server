@@ -7,5 +7,6 @@ dim = "dark_gray"  # [Local]
 accent = "yellow"  # commands in /help, staff chat messages
 supporter = "gold"
 builder = "green"
+mod = "blue"
 staff = "gold"
 admin = "red"

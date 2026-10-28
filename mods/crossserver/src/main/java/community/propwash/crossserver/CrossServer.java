@@ -47,7 +47,7 @@ import org.slf4j.Logger;
  * (propwash.exempt) toggles the propwash.exempt tag (boats, projectiles, dropping items) on every server:
  * kept here and set over rcon on each server the player arrives on. /vote: see Vote.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.2.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.3.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true)})
 public final class CrossServer {
@@ -152,7 +152,8 @@ public final class CrossServer {
         }).schedule();
     }
 
-    // Staff /tp <player> to someone on another server; any other /tp goes on to the server as it is.
+    // Staff and mod /tp <player>, on this server or another (mods don't have the server's own /tp); any
+    // other /tp (coordinates, two players) goes on to the server as it is.
     @Subscribe
     public void onCommand(CommandExecuteEvent event) {
         if (!(event.getCommandSource() instanceof Player player) || !player.hasPermission(TP)) {
@@ -163,7 +164,7 @@ public final class CrossServer {
             return;
         }
         Optional<Player> target = proxy.getPlayer(parts[1]);
-        if (target.isEmpty() || target.get().equals(player) || sameServer(player, target.get())) {
+        if (target.isEmpty() || target.get().equals(player) || target.get().getCurrentServer().isEmpty()) {
             return;
         }
         event.setResult(CommandResult.denied());
@@ -286,11 +287,6 @@ public final class CrossServer {
                 .filter(Predicate.class::isInstance)
                 .map(plugin -> !((Predicate<UUID>) plugin).test(target.getUniqueId()))
                 .orElse(true);
-    }
-
-    private boolean sameServer(Player a, Player b) {
-        return a.getCurrentServer().map(s -> s.getServerInfo().getName())
-                .equals(b.getCurrentServer().map(s -> s.getServerInfo().getName()));
     }
 
     private void register(String name, String permission, BiConsumer<Player, String[]> action, boolean namesPlayer) {

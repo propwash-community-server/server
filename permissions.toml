@@ -166,6 +166,57 @@ permissions = [
     "minecraft.command.tp server=fpv",
 ]
 
+# Moderators: everything supporters have, plus these and nothing else. /help shows them all
+# (mods/staffhelp, files/plugins/staffhelp/mod.txt).
+[groups.mod]
+permissions = [
+    "weight.150",
+    '"prefix.150.<mod>[Mod]</mod> "',
+    "group.supporter",
+    # Staff chat channel (/staff, /sc, or start a message with #).
+    "carbon.channel.staff",
+    "carbon.channel.staff.see",
+    "carbon.channel.staff.speak",
+    # /flyspeed up to 10 on fpv and plots (mods/tweaks), and /speed up to 10 on the hub (EssentialsX,
+    # past its max-fly-speed).
+    "propwash.flyspeed.10",
+    "essentials.speed.bypass server=hub",
+    # /vote start and /vote end (mods/crossserver).
+    "propwash.vote",
+    # /maintenance on|off, and staying on while it's on (it kicks everyone without the bypass).
+    "maintenance.command",
+    "maintenance.toggle",
+    "maintenance.bypass",
+    # /kick, /ban, /mute, /unban, /unmute and /history (LibertyBans, players only, not IPs).
+    "libertybans.commands",
+    "libertybans.kick.do.target.uuid",
+    "libertybans.ban.do.target.uuid",
+    "libertybans.ban.undo.target.uuid",
+    "libertybans.mute.do.target.uuid",
+    "libertybans.mute.undo.target.uuid",
+    "libertybans.list.history",
+    # /tp <player> on any server (mods/crossserver).
+    "propwash.tp",
+    # /spy: see private messages and other servers' local chat (Carbon).
+    "carbon.spy",
+    # /v and /v auto (mods/vanish), and seeing vanished players like staff do.
+    "propwash.vanish",
+    "propwash.vanish.see",
+    "tab.seevanished",
+    "vanish.feature.view",
+    "essentials.vanish.see",
+    "carbon.whisper.vanished",
+    # WorldEdit on plots without mods/plotedit's limits, still only where they may build (not the
+    # bypass, which edits anywhere).
+    "propwash.plotedit.unlimited server=plots",
+    # /gamemode creative (and back to survival) on the hub (EssentialsX).
+    "essentials.gamemode server=hub",
+    "essentials.gamemode.creative server=hub",
+    "essentials.gamemode.survival server=hub",
+    # The mod part of /help (mods/staffhelp).
+    "propwash.help.mod",
+]
+
 [groups.staff]
 permissions = [
     "weight.200",
