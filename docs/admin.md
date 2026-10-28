@@ -25,7 +25,7 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 | `mariadb.secret.sops` | password of the `minecraft` database user |
 | `backup.env.sops` | [restic](https://restic.net) repository + password, S3 keys |
 | `s3.env.sops` | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` (world store, for [`upload`](../tools/upload.py)) |
-| `bot.env.sops` | the [Discord bot](#discord-bot)'s `.env`: `CLIENT_TOKEN`, `TYPESAFE_API_KEY`, one `BRIDGE_KEY_<SERVER>` per server with the bridge mod |
+| `bot.env.sops` | the [Discord bot](#discord-bot)'s `.env`: `CLIENT_TOKEN`, `TYPESAFE_API_KEY`, one `BRIDGE_KEY_<SERVER>` per server with the bridge mod, `KOFI_TOKEN` (Ko-fi's webhook verification token); and `TUNNEL_TOKEN`, the Cloudflare Tunnel's (not passed to the bot) |
 
 The first three are random strings. To regenerate one, run the following; the next deploy rolls it out:
 
@@ -419,6 +419,19 @@ it and deploy. The bot's channels, roles and bridge servers are in that repo's `
 The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the world store under
 `mods/`) is on fpv and plots. Each server gets its key from `BRIDGE_KEY_<SERVER>` in
 `bot.env.sops` as `PROPWASH_BRIDGE_API_KEY`; a server added to the bot's config needs a key there too.
+
+Supporters come from [Ko-fi](https://ko-fi.com/propwashfpv): Ko-fi sends every payment to the bot API's
+`POST /kofi` (checked against `KOFI_TOKEN`) through a Cloudflare Tunnel (`cloudflared`, installed by
+the deploy when `TUNNEL_TOKEN` is set). The tunnel is in the propwashfpv.com Cloudflare account (Zero
+Trust > Networks > Tunnels): `kofi.propwashfpv.com`, path `^/kofi$` only (the rest of the bot API must
+stay private), to `http://localhost:3006`; Ko-fi's webhook URL is `https://kofi.propwashfpv.com/kofi`.
+Every 5 EUR of a donation or membership payment is a month of supporter time for the Discord account
+the donor connected on Ko-fi, added after what's left: the bot gives the "Ko-fi supporter" role while
+there is time, and takes it away when it's up; the role brings the `supporter` group on the servers
+for the linked Minecraft account (`/link`). Ko-fi's own role reward is off, so the bot is the only one
+changing the role. Each payment is posted in the bot's supporter log channel; payments it can't match
+(no Discord on Ko-fi, another currency) get their months from staff with `/supporter add <user>
+<months>` (`/supporter info`, `/supporter remove`).
 
 | Task (as root) | Command |
 |---|---|

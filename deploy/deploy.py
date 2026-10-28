@@ -592,7 +592,7 @@ systemd.service(name="backup timer", service="mc-backup.timer", running=True, en
 # The bot/ folder of github.com/Itsj5j6j7/pw-server at this commit; change it to update the bot.
 # Its own settings (channels, roles, bridge servers) are in that repo's src/config.js.
 BOT_REPO = "https://github.com/Itsj5j6j7/pw-server.git"
-BOT_COMMIT = "cea6fe167f82b3607179d12ec3b243e8ea57f0cd"
+BOT_COMMIT = "bbbf34b48a6bd60ddc456806da13ed102c8890d5"
 BOT_DIR = "/home/bot/pw-server"
 PNPM = "9.15.9"
 
@@ -629,7 +629,9 @@ if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
 # The hub's RCON too: the bot gives Ko-fi supporters (Discord role) the LuckPerms supporter group with
 # lp commands there.
 bot_rcon = f"RCON_PORT={backends['hub']['port'] + 10000}\nRCON_PASSWORD={rcon_password}\n"
-bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_env + "\n" + bot_rcon), dest=f"{BOT_DIR}/bot/.env",
+# TUNNEL_TOKEN is cloudflared's (below), not the bot's.
+bot_dotenv = "\n".join(line for line in bot_env.splitlines() if not line.startswith("TUNNEL_TOKEN="))
+bot_changes.append(files.put(name="bot: .env", src=StringIO(bot_dotenv + "\n" + bot_rcon), dest=f"{BOT_DIR}/bot/.env",
                              mode="600", user="bot", group="bot"))
 # The bot's README copies example.database.yml (empty) to database.yml; an existing one is kept as it is.
 files.file(name="bot: database.yml", path=f"{BOT_DIR}/bot/database.yml", user="bot", group="bot")
@@ -645,6 +647,49 @@ for unit in ["api"] if LOCAL else ["api", "bot"]:
         _if=any_changed(*bot_changes),
     )
     systemd.service(name=f"bot: {unit} running", service=f"propwash-bot@{unit}", running=True, enabled=True, daemon_reload=True)
+
+# Cloudflare Tunnel: Ko-fi's webhook reaches the bot API's POST /kofi (127.0.0.1:3006) through it, with
+# no port open on the VPS. The tunnel and its public hostname are set up in Cloudflare (Zero Trust >
+# Networks > Tunnels: kofi.propwashfpv.com, path ^/kofi$ only, so the rest of the API stays private,
+# service http://localhost:3006); its token is TUNNEL_TOKEN in bot.env.sops.
+# Without one, no tunnel. To update, change the version and both checksums (the release notes list them).
+CLOUDFLARED = "2026.10.3"
+CLOUDFLARED_SHA256 = {
+    "amd64": "053b80b0a23031a038fdbf3c073f59f82b8f1f152aa67971d7383ffafc0dbab0",
+    "arm64": "89297ebfb9e8c99c0dc013a1140601453cf3798d8306c5591651f4a3f5210be8",
+}
+CLOUDFLARED_UNIT = """[Unit]
+Description=Cloudflare Tunnel (Ko-fi webhook to the bot API)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/cloudflared.env
+DynamicUser=yes
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+"""
+if bot_keys.get("TUNNEL_TOKEN") and not LOCAL:
+    tunnel_changes = [
+        server.shell(name="cloudflared", commands=[
+            'case "$(uname -m)" in x86_64) a=amd64;; aarch64) a=arm64;; *) echo "no cloudflared build for $(uname -m)"; exit 1;; esac; '
+            f'case $a in amd64) sum={CLOUDFLARED_SHA256["amd64"]};; arm64) sum={CLOUDFLARED_SHA256["arm64"]};; esac; '
+            f'/usr/local/bin/cloudflared --version 2>/dev/null | grep -q " {CLOUDFLARED} " || '
+            f'{{ curl -fsSL -o /tmp/cloudflared https://github.com/cloudflare/cloudflared/releases/download/{CLOUDFLARED}/cloudflared-linux-$a '
+            '&& echo "$sum  /tmp/cloudflared" | sha256sum -c - && install -m 755 /tmp/cloudflared /usr/local/bin/cloudflared && rm /tmp/cloudflared; }',
+        ]),
+        files.put(name="cloudflared: token", src=StringIO(f"TUNNEL_TOKEN={bot_keys['TUNNEL_TOKEN']}\n"),
+                  dest="/etc/cloudflared.env", mode="600", **ROOT_OWNER),
+        files.put(name="cloudflared: unit", src=StringIO(CLOUDFLARED_UNIT), dest="/etc/systemd/system/cloudflared.service",
+                  **ROOT_OWNER),
+    ]
+    systemd.service(name="cloudflared: restart if changed", service="cloudflared", running=None, restarted=True,
+                    daemon_reload=True, _if=any_changed(*tunnel_changes))
+    systemd.service(name="cloudflared: running", service="cloudflared", running=True, enabled=True, daemon_reload=True)
 
 # --- Velocity (first: Paper backends read its forwarding.secret) ------------
 
