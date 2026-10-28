@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..c4069f3 100644
+index daaf686..3fe9f6c 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,12 +7,12 @@ index daaf686..c4069f3 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.12
++mod_version=1.0.2-plotsize.13
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
 diff --git a/src/main/java/com/fabricplots/FabricPlots.java b/src/main/java/com/fabricplots/FabricPlots.java
-index c7e8ebe..594b7a9 100644
+index c7e8ebe..9d726ad 100644
 --- a/src/main/java/com/fabricplots/FabricPlots.java
 +++ b/src/main/java/com/fabricplots/FabricPlots.java
 @@ -8,6 +8,7 @@ import com.fabricplots.core.PlotExpiry;
@@ -23,23 +23,40 @@ index c7e8ebe..594b7a9 100644
  import com.fabricplots.player.PlotAmbience;
  import com.fabricplots.player.PlotPlaceholders;
  import com.fabricplots.protect.PlotMobGuard;
-@@ -69,6 +70,7 @@ public final class FabricPlots implements ModInitializer {
+@@ -69,6 +70,8 @@ public final class FabricPlots implements ModInitializer {
              PlotManager.load(server);
              PlotWorldPainter.loadDecorated(server);
              PortalManager.load(server);
++            com.fabricplots.core.PlotLocks.checkAll(server); // limits may have changed while it was down
 +            if (!PlotsConfig.portals) PortalManager.removeAll(server.getLevel(PLOTS_DIM));
              PlotExpiry.load(server);
              applyWorldRules(server);
          });
-@@ -145,6 +147,7 @@ public final class FabricPlots implements ModInitializer {
+@@ -104,9 +107,11 @@ public final class FabricPlots implements ModInitializer {
+         ServerTickEvents.END_SERVER_TICK.register(FabricPlots::onServerTick);
+ 
+         // Onboarding: point new arrivals at the plot world.
+-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+-                handler.player.sendSystemMessage(Component.literal(
+-                        "Welcome! Step through the portal at spawn, or type /plot world, to start building your plot. /plot help for commands.")));
++        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
++            handler.player.sendSystemMessage(Component.literal(
++                    "Welcome! Step through the portal at spawn, or type /plot world, to start building your plot. /plot help for commands."));
++            com.fabricplots.core.PlotLocks.onJoin(server, handler.player);
++        });
+     }
+ 
+     private static int portalParticleTick = 0;
+@@ -145,6 +150,8 @@ public final class FabricPlots implements ModInitializer {
              StreetSweeper.sweep(server.getLevel(PLOTS_DIM));
          }
  
 +        DroneView.refresh(server.getLevel(PLOTS_DIM));
++        com.fabricplots.core.PlotLocks.tick(server);
          for (ServerPlayer p : server.getPlayerList().getPlayers()) {
              ResourceKey<Level> dim = p.level().dimension();
  
-@@ -168,7 +171,10 @@ public final class FabricPlots implements ModInitializer {
+@@ -168,7 +175,10 @@ public final class FabricPlots implements ModInitializer {
                      // Action bar (small text above the hotbar), not chat — avoids spam as players move around.
                      p.sendOverlayMessage(Component.literal("Welcome " + p.getName().getString() + " to " + label + "!"));
                  }
@@ -551,6 +568,191 @@ index a5ee575..1eec52d 100644
      }
  
      private static void msg(CommandContext<CommandSourceStack> ctx, String text) {
+diff --git a/src/main/java/com/fabricplots/compat/Perms.java b/src/main/java/com/fabricplots/compat/Perms.java
+index 8a56494..a20c258 100644
+--- a/src/main/java/com/fabricplots/compat/Perms.java
++++ b/src/main/java/com/fabricplots/compat/Perms.java
+@@ -1,80 +1,100 @@
+-package com.fabricplots.compat;
+-
+-import com.fabricplots.protect.PlotProtection;
+-
+-import net.fabricmc.loader.api.FabricLoader;
+-import net.minecraft.server.level.ServerPlayer;
+-
+-/**
+- * Soft bridge to fabric-permissions-api (the check API LuckPerms and friends implement).
+- * When no permissions mod is installed — or a node is left undefined — the given default
+- * decides, so servers without one behave exactly as before. The inner holder keeps
+- * me.lucko classes from loading unless the API mod is actually present.
+- */
+-public final class Perms {
+-    private static final boolean LOADED = FabricLoader.getInstance().isModLoaded("fabric-permissions-api-v0");
+-
+-    /** Highest {@code fabricplots.limit.N} node scanned for per-player claim limits. */
+-    private static final int MAX_LIMIT_NODE = 64;
+-
+-    /** Highest {@code fabricplots.mobcap.N} node scanned for per-owner mob-cap ceilings. */
+-    private static final int MAX_MOBCAP_NODE = 64;
+-
+-    private Perms() {}
+-
+-    /** True/false from the permissions mod when it defines {@code node}; otherwise {@code def}. */
+-    public static boolean check(ServerPlayer p, String node, boolean def) {
+-        return LOADED ? Impl.check(p, node, def) : def;
+-    }
+-
+-    /**
+-     * Staff gate: the node when a permissions mod defines it; otherwise today's admin rule —
+-     * FabricPlots' own op check ({@code opLevel} is the conventional fallback level, OP 2; the
+-     * check also covers the single-player host, whose permission level isn't reliably exposed).
+-     */
+-    public static boolean checkOp(ServerPlayer p, String node, int opLevel) {
+-        boolean fallback = PlotProtection.isAdmin(p); // ops (gamemaster+, >= level 2) + single-player host
+-        return LOADED ? Impl.check(p, node, fallback) : fallback;
+-    }
+-
+-    /**
+-     * Per-player claim limit: scans the numeric nodes {@code fabricplots.limit.1} …
+-     * {@code fabricplots.limit.64} and the HIGHEST granted one wins; players with none
+-     * granted (or servers without a permissions mod) use {@code configDefault}.
+-     */
+-    public static int claimLimit(ServerPlayer p, int configDefault) {
+-        return LOADED ? Impl.claimLimit(p, configDefault) : configDefault;
+-    }
+-
+-    /**
+-     * Per-owner mob-cap ceiling: scans the numeric nodes {@code fabricplots.mobcap.1} …
+-     * {@code fabricplots.mobcap.64} and the HIGHEST granted one RAISES the config ceiling
+-     * (a node at or below it changes nothing); owners with none granted (or servers without
+-     * a permissions mod) use {@code configCeiling}. Permission checks need a live player,
+-     * so this only resolves while the owner is ONLINE — offline owners keep the config
+-     * ceiling (a deliberate, documented simplification).
+-     */
+-    public static int mobCap(ServerPlayer p, int configCeiling) {
+-        return LOADED ? Impl.mobCap(p, configCeiling) : configCeiling;
+-    }
+-
+-    private static final class Impl {
+-        static boolean check(ServerPlayer p, String node, boolean def) {
+-            return me.lucko.fabric.api.permissions.v0.Permissions.check(p, node, def);
+-        }
+-
+-        static int claimLimit(ServerPlayer p, int configDefault) {
+-            for (int i = MAX_LIMIT_NODE; i >= 1; i--) {
+-                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.limit." + i, false)) return i;
+-            }
+-            return configDefault;
+-        }
+-
+-        static int mobCap(ServerPlayer p, int configCeiling) {
+-            for (int i = MAX_MOBCAP_NODE; i > configCeiling; i--) { // nodes at/below the config ceiling can't raise it
+-                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.mobcap." + i, false)) return i;
+-            }
+-            return configCeiling;
+-        }
+-    }
+-}
++package com.fabricplots.compat;
++
++import com.fabricplots.protect.PlotProtection;
++
++import net.fabricmc.loader.api.FabricLoader;
++import net.minecraft.server.level.ServerPlayer;
++
++/**
++ * Soft bridge to fabric-permissions-api (the check API LuckPerms and friends implement).
++ * When no permissions mod is installed — or a node is left undefined — the given default
++ * decides, so servers without one behave exactly as before. The inner holder keeps
++ * me.lucko classes from loading unless the API mod is actually present.
++ */
++public final class Perms {
++    private static final boolean LOADED = FabricLoader.getInstance().isModLoaded("fabric-permissions-api-v0");
++
++    /** Highest {@code fabricplots.limit.N} node scanned for per-player claim limits. */
++    private static final int MAX_LIMIT_NODE = 64;
++
++    /** Highest {@code fabricplots.mobcap.N} node scanned for per-owner mob-cap ceilings. */
++    private static final int MAX_MOBCAP_NODE = 64;
++
++    private Perms() {}
++
++    /** True/false from the permissions mod when it defines {@code node}; otherwise {@code def}. */
++    public static boolean check(ServerPlayer p, String node, boolean def) {
++        return LOADED ? Impl.check(p, node, def) : def;
++    }
++
++    /**
++     * Staff gate: the node when a permissions mod defines it; otherwise today's admin rule —
++     * FabricPlots' own op check ({@code opLevel} is the conventional fallback level, OP 2; the
++     * check also covers the single-player host, whose permission level isn't reliably exposed).
++     */
++    public static boolean checkOp(ServerPlayer p, String node, int opLevel) {
++        boolean fallback = PlotProtection.isAdmin(p); // ops (gamemaster+, >= level 2) + single-player host
++        return LOADED ? Impl.check(p, node, fallback) : fallback;
++    }
++
++    /**
++     * Per-player claim limit: scans the numeric nodes {@code fabricplots.limit.1} …
++     * {@code fabricplots.limit.64} and the HIGHEST granted one wins; players with none
++     * granted (or servers without a permissions mod) use {@code configDefault}.
++     */
++    public static int claimLimit(ServerPlayer p, int configDefault) {
++        return LOADED ? Impl.claimLimit(p, configDefault) : configDefault;
++    }
++
++    /**
++     * The same claim limit for any player by UUID, online or not (the permissions mod looks them up),
++     * for locking plots over a lowered limit (PlotLocks).
++     */
++    public static java.util.concurrent.CompletableFuture<Integer> claimLimit(java.util.UUID id, int configDefault) {
++        return LOADED ? Impl.claimLimit(id, configDefault) : java.util.concurrent.CompletableFuture.completedFuture(configDefault);
++    }
++
++    /**
++     * Per-owner mob-cap ceiling: scans the numeric nodes {@code fabricplots.mobcap.1} …
++     * {@code fabricplots.mobcap.64} and the HIGHEST granted one RAISES the config ceiling
++     * (a node at or below it changes nothing); owners with none granted (or servers without
++     * a permissions mod) use {@code configCeiling}. Permission checks need a live player,
++     * so this only resolves while the owner is ONLINE — offline owners keep the config
++     * ceiling (a deliberate, documented simplification).
++     */
++    public static int mobCap(ServerPlayer p, int configCeiling) {
++        return LOADED ? Impl.mobCap(p, configCeiling) : configCeiling;
++    }
++
++    private static final class Impl {
++        static boolean check(ServerPlayer p, String node, boolean def) {
++            return me.lucko.fabric.api.permissions.v0.Permissions.check(p, node, def);
++        }
++
++        static int claimLimit(ServerPlayer p, int configDefault) {
++            for (int i = MAX_LIMIT_NODE; i >= 1; i--) {
++                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.limit." + i, false)) return i;
++            }
++            return configDefault;
++        }
++
++        static java.util.concurrent.CompletableFuture<Integer> claimLimit(java.util.UUID id, int configDefault) {
++            @SuppressWarnings("unchecked")
++            java.util.concurrent.CompletableFuture<Boolean>[] nodes = new java.util.concurrent.CompletableFuture[MAX_LIMIT_NODE];
++            for (int i = 1; i <= MAX_LIMIT_NODE; i++) {
++                nodes[i - 1] = me.lucko.fabric.api.permissions.v0.Permissions.check(id, "fabricplots.limit." + i, false);
++            }
++            return java.util.concurrent.CompletableFuture.allOf(nodes).thenApply(done -> {
++                for (int i = MAX_LIMIT_NODE; i >= 1; i--) if (nodes[i - 1].join()) return i;
++                return configDefault;
++            });
++        }
++
++        static int mobCap(ServerPlayer p, int configCeiling) {
++            for (int i = MAX_MOBCAP_NODE; i > configCeiling; i--) { // nodes at/below the config ceiling can't raise it
++                if (me.lucko.fabric.api.permissions.v0.Permissions.check(p, "fabricplots.mobcap." + i, false)) return i;
++            }
++            return configCeiling;
++        }
++    }
++}
 diff --git a/src/main/java/com/fabricplots/core/PlotConfig.java b/src/main/java/com/fabricplots/core/PlotConfig.java
 index ec8c020..5960f15 100644
 --- a/src/main/java/com/fabricplots/core/PlotConfig.java
@@ -682,21 +884,24 @@ index ec8c020..5960f15 100644
 +    }
 +}
 diff --git a/src/main/java/com/fabricplots/core/PlotData.java b/src/main/java/com/fabricplots/core/PlotData.java
-index 2435e70..0d03e1d 100644
+index 2435e70..6b3a714 100644
 --- a/src/main/java/com/fabricplots/core/PlotData.java
 +++ b/src/main/java/com/fabricplots/core/PlotData.java
-@@ -14,6 +14,10 @@ public final class PlotData {
+@@ -14,6 +14,13 @@ public final class PlotData {
      public String ownerName = "";   // cached so the welcome message works for offline owners
      public String name = "";        // optional plot name set by the owner
      public BlockPos home = null;    // optional /plot home target inside the plot (else the cell centre)
 +    public float homeYaw = Float.NaN; // facing direction saved with home by /plot sethome; NaN = keep the arriving player's
 +    public float homePitch = 0f;
 +    public int glassRegenSeconds = 180; // with the drone-glass flag: seconds until broken glass comes back
++    public boolean frozen = false; // over the owner's plot limit (PlotLocks): a server plot, kept as it is, nobody may build
++    public UUID lockedFor = null;  // with frozen: the owner it goes back to (PlotLocks), and their name
++    public String lockedName = "";
 +    public long claimedAt = 0L;     // when it was claimed (ms); orders an owner's plots (1, 2, ...). 0 = before this was recorded
      public String floorBlockId = "";// surface block id (e.g. "minecraft:sandstone"); blank = default grass
      public boolean pvp = false;     // is player-vs-player combat allowed on this plot?
      public String greeting = "";    // optional custom welcome (action bar) shown to visitors; blank = default
-@@ -30,6 +34,7 @@ public final class PlotData {
+@@ -30,6 +37,7 @@ public final class PlotData {
      public final Set<UUID> trusted = new LinkedHashSet<>();
      public final Set<UUID> denied = new LinkedHashSet<>();   // banned from entering this plot
      public final Set<UUID> likes = new LinkedHashSet<>();    // players who liked this plot
@@ -706,7 +911,7 @@ index 2435e70..0d03e1d 100644
      public PlotData(UUID owner, String ownerName) {
 diff --git a/src/main/java/com/fabricplots/core/PlotFlags.java b/src/main/java/com/fabricplots/core/PlotFlags.java
 new file mode 100644
-index 0000000..3a0ac34
+index 0000000..83308db
 --- /dev/null
 +++ b/src/main/java/com/fabricplots/core/PlotFlags.java
 @@ -0,0 +1,85 @@
@@ -772,7 +977,7 @@ index 0000000..3a0ac34
 +    }
 +
 +    public static boolean on(PlotData plot, Flag flag) {
-+        return plot != null && plot.flags.contains(flag.id);
++        return plot != null && !plot.frozen && plot.flags.contains(flag.id);
 +    }
 +
 +    /** A block visitors may right-click on this plot because of its flags. */
@@ -795,8 +1000,134 @@ index 0000000..3a0ac34
 +    private static final BiPredicate<Level, BlockPos> isContainer = (level, pos) ->
 +            level.getBlockEntity(pos) instanceof net.minecraft.world.Container;
 +}
+diff --git a/src/main/java/com/fabricplots/core/PlotLocks.java b/src/main/java/com/fabricplots/core/PlotLocks.java
+new file mode 100644
+index 0000000..37bb229
+--- /dev/null
++++ b/src/main/java/com/fabricplots/core/PlotLocks.java
+@@ -0,0 +1,120 @@
++package com.fabricplots.core;
++
++import com.fabricplots.compat.Perms;
++import java.util.ArrayList;
++import java.util.Comparator;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Set;
++import java.util.UUID;
++import net.minecraft.network.chat.Component;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerPlayer;
++
++/**
++ * Plots over their owner's limit are locked: when a limit goes down (a supporter's time ends), the
++ * owner keeps their first plots, and the newest ones become server plots with every block on them
++ * (PlotData.frozen, lockedFor = the owner): anyone may walk in and look, nobody may build or use
++ * anything (only build-admin staff), nobody can claim them, and they're off the owner's /plot list
++ * and /plot home. They go back to the owner, as they are, once their limit allows them again.
++ * Checked for every owner at start, every 5 minutes (offline owners too: the permissions mod answers
++ * by UUID) and on join.
++ */
++public final class PlotLocks {
++    private PlotLocks() {}
++
++    private static final int EVERY_TICKS = 20 * 60 * 5;
++    private static int tick;
++
++    public static void tick(MinecraftServer server) {
++        if (++tick < EVERY_TICKS) return;
++        tick = 0;
++        checkAll(server);
++    }
++
++    /** Every owner with more than one plot, and everyone with locked plots. */
++    public static void checkAll(MinecraftServer server) {
++        Set<UUID> owners = new HashSet<>();
++        Set<UUID> seen = new HashSet<>();
++        for (PlotData d : PlotManager.allPlots()) {
++            if (d.lockedFor != null) owners.add(d.lockedFor);
++            else if (d.owner != null && !PlotManager.isServer(d.owner) && !seen.add(d.owner)) owners.add(d.owner);
++        }
++        for (UUID owner : owners) check(server, owner);
++    }
++
++    public static void check(MinecraftServer server, UUID owner) {
++        Perms.claimLimit(owner, PlotsConfig.claimLimit).thenAccept(limit -> server.execute(() -> apply(server, owner, limit)));
++    }
++
++    /** The owner's locked plots, oldest claim first. */
++    static List<PlotData> lockedOf(UUID owner) {
++        List<PlotData> out = new ArrayList<>();
++        for (PlotData d : PlotManager.allPlots()) if (owner.equals(d.lockedFor)) out.add(d);
++        out.sort(Comparator.comparingLong(d -> d.claimedAt));
++        return out;
++    }
++
++    /** Locks the owner's plots past limit (newest first), gives locked ones back up to it; 0 = no limit. */
++    static void apply(MinecraftServer server, UUID owner, int limit) {
++        List<PlotData> owned = PlotManager.ownedPlots(owner);
++        List<PlotData> locked = lockedOf(owner);
++        int nowLocked = 0;
++        int nowBack = 0;
++        if (limit > 0 && owned.size() > limit) {
++            for (PlotData d : owned.subList(limit, owned.size())) {
++                String name = d.ownerName;
++                if (PlotManager.update(d, plot -> {
++                    plot.lockedFor = owner;
++                    plot.lockedName = name;
++                    plot.owner = PlotManager.SERVER_UUID;
++                    plot.ownerName = "Server";
++                    plot.frozen = true;
++                })) nowLocked++;
++            }
++        } else {
++            int room = limit <= 0 ? locked.size() : Math.min(locked.size(), limit - owned.size());
++            for (PlotData d : locked.subList(0, Math.max(0, room))) {
++                String name = d.lockedName;
++                if (PlotManager.update(d, plot -> {
++                    plot.owner = owner;
++                    plot.ownerName = name;
++                    plot.lockedFor = null;
++                    plot.lockedName = "";
++                    plot.frozen = false;
++                })) nowBack++;
++            }
++        }
++        ServerPlayer player = server.getPlayerList().getPlayer(owner);
++        if (player == null) return;
++        if (nowLocked > 0) {
++            player.sendSystemMessage(Component.literal("[Plots] You can have " + limit + " plot" + (limit == 1 ? "" : "s")
++                    + " now, so " + count(nowLocked) + " of yours " + (nowLocked == 1 ? "is" : "are") + " locked: kept as "
++                    + (nowLocked == 1 ? "it is" : "they are") + " as a server plot (anyone can look, nobody can build)."
++                    + " You get " + (nowLocked == 1 ? "it" : "them") + " back when you can have more plots again (supporter)."));
++        }
++        if (nowBack > 0) {
++            player.sendSystemMessage(Component.literal("[Plots] " + capital(count(nowBack)) + " of your locked plots "
++                    + (nowBack == 1 ? "is" : "are") + " yours again, as you left " + (nowBack == 1 ? "it" : "them") + "."));
++        }
++    }
++
++    /** On join: tell the owner about locked plots, and check their limit now. */
++    public static void onJoin(MinecraftServer server, ServerPlayer player) {
++        int locked = lockedOf(player.getUUID()).size();
++        if (locked > 0) {
++            player.sendSystemMessage(Component.literal("[Plots] " + capital(count(locked)) + " of your plots "
++                    + (locked == 1 ? "is" : "are") + " locked (over your plot limit): kept as server plots, and yours again"
++                    + " when you can have more plots (supporter)."));
++        }
++        check(server, player.getUUID());
++    }
++
++    private static String count(int n) {
++        return n == 1 ? "one" : n == 2 ? "two" : n == 3 ? "three" : String.valueOf(n);
++    }
++
++    private static String capital(String s) {
++        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
++    }
++}
 diff --git a/src/main/java/com/fabricplots/core/PlotManager.java b/src/main/java/com/fabricplots/core/PlotManager.java
-index f1ee48a..df64114 100644
+index f1ee48a..2504aec 100644
 --- a/src/main/java/com/fabricplots/core/PlotManager.java
 +++ b/src/main/java/com/fabricplots/core/PlotManager.java
 @@ -85,6 +85,7 @@ public final class PlotManager {
@@ -807,7 +1138,7 @@ index f1ee48a..df64114 100644
          d.cells.add(p);
          if (PLOTS.putIfAbsent(p, d) != null) return false;
          if (save()) return true;
-@@ -134,6 +135,10 @@ public final class PlotManager {
+@@ -134,6 +135,13 @@ public final class PlotManager {
      private static void copySettings(PlotData from, PlotData to) {
          to.name = from.name;
          to.home = from.home;
@@ -815,10 +1146,13 @@ index f1ee48a..df64114 100644
 +        to.homePitch = from.homePitch;
 +        to.claimedAt = from.claimedAt;
 +        to.glassRegenSeconds = from.glassRegenSeconds;
++        to.frozen = from.frozen;
++        to.lockedFor = from.lockedFor;
++        to.lockedName = from.lockedName;
          to.floorBlockId = from.floorBlockId;
          to.pvp = from.pvp;
          to.greeting = from.greeting;
-@@ -142,6 +147,8 @@ public final class PlotManager {
+@@ -142,6 +150,8 @@ public final class PlotManager {
          to.spawnHostile = from.spawnHostile;
          to.spawnPassive = from.spawnPassive;
          to.mobCap = from.mobCap;
@@ -827,7 +1161,7 @@ index f1ee48a..df64114 100644
          to.sidewalkPattern = from.sidewalkPattern;
          to.wallPattern = from.wallPattern;
          to.trusted.addAll(from.trusted);
-@@ -171,6 +178,10 @@ public final class PlotManager {
+@@ -171,6 +181,13 @@ public final class PlotManager {
          target.ownerName = source.ownerName;
          target.name = source.name;
          target.home = source.home;
@@ -835,10 +1169,13 @@ index f1ee48a..df64114 100644
 +        target.homePitch = source.homePitch;
 +        target.claimedAt = source.claimedAt;
 +        target.glassRegenSeconds = source.glassRegenSeconds;
++        target.frozen = source.frozen;
++        target.lockedFor = source.lockedFor;
++        target.lockedName = source.lockedName;
          target.floorBlockId = source.floorBlockId;
          target.pvp = source.pvp;
          target.greeting = source.greeting;
-@@ -179,6 +190,8 @@ public final class PlotManager {
+@@ -179,6 +196,8 @@ public final class PlotManager {
          target.spawnHostile = source.spawnHostile;
          target.spawnPassive = source.spawnPassive;
          target.mobCap = source.mobCap;
@@ -847,7 +1184,7 @@ index f1ee48a..df64114 100644
          target.sidewalkPattern = source.sidewalkPattern;
          target.wallPattern = source.wallPattern;
          target.paidAmount = source.paidAmount;
-@@ -269,10 +282,82 @@ public final class PlotManager {
+@@ -269,10 +288,82 @@ public final class PlotManager {
  
      /** First plot owned by a player (used by /plot home). */
      public static PlotPos firstOwned(UUID owner) {
@@ -893,7 +1230,7 @@ index f1ee48a..df64114 100644
 +     */
 +    public static int droneGlassSeconds(int x, int z, UUID pilot) {
 +        PlotData d = owningPlot(x, z);
-+        if (d == null) return 0;
++        if (d == null || d.frozen) return 0;
 +        boolean member = pilot != null && (pilot.equals(d.owner) || d.trusted.contains(pilot));
 +        boolean on = d.flags.contains(PlotFlags.Flag.DRONE_GLASS_MEMBERS.id) ? member
 +                : d.flags.contains(PlotFlags.Flag.DRONE_GLASS.id);
@@ -933,7 +1270,7 @@ index f1ee48a..df64114 100644
      }
  
      /** Next unclaimed plot, spiralling outward from the origin (like /plot auto). */
-@@ -326,6 +411,7 @@ public final class PlotManager {
+@@ -326,6 +417,7 @@ public final class PlotManager {
                  if (parts.length > 6 && !parts[6].isBlank()) {
                      String[] h = parts[6].split(":");
                      d.home = new net.minecraft.core.BlockPos(Integer.parseInt(h[0]), Integer.parseInt(h[1]), Integer.parseInt(h[2]));
@@ -941,7 +1278,7 @@ index f1ee48a..df64114 100644
                  }
                  if (parts.length > 7) d.floorBlockId = parts[7];
                  if (parts.length > 8 && !parts[8].isBlank()) d.pvp = Boolean.parseBoolean(parts[8].trim());
-@@ -340,6 +426,10 @@ public final class PlotManager {
+@@ -340,6 +432,13 @@ public final class PlotManager {
                  if (parts.length > 16 && !parts[16].isBlank()) d.spawnHostile = Boolean.parseBoolean(parts[16].trim());
                  if (parts.length > 17 && !parts[17].isBlank()) d.spawnPassive = Boolean.parseBoolean(parts[17].trim());
                  if (parts.length > 18 && !parts[18].isBlank()) { try { d.mobCap = Integer.parseInt(parts[18].trim()); } catch (NumberFormatException ignored) {} }
@@ -949,10 +1286,13 @@ index f1ee48a..df64114 100644
 +                    for (String f : parts[19].split(",")) if (PlotFlags.byId(f.trim()) != null) d.flags.add(f.trim());
 +                if (parts.length > 20 && !parts[20].isBlank()) { try { d.claimedAt = Long.parseLong(parts[20].trim()); } catch (NumberFormatException ignored) {} }
 +                if (parts.length > 21 && !parts[21].isBlank()) { try { d.glassRegenSeconds = Integer.parseInt(parts[21].trim()); } catch (NumberFormatException ignored) {} }
++                if (parts.length > 22) d.frozen = Boolean.parseBoolean(parts[22].trim());
++                if (parts.length > 23 && !parts[23].isBlank()) { try { d.lockedFor = UUID.fromString(parts[23].trim()); } catch (IllegalArgumentException ignored) {} }
++                if (parts.length > 24) d.lockedName = parts[24].trim();
                  for (PlotPos c : d.cells) PLOTS.put(c, d);
              } catch (Exception e) {
                  System.err.println("[FabricPlots] Skipped bad plot line: " + line + " (" + e + ")");
-@@ -367,12 +457,15 @@ public final class PlotManager {
+@@ -367,12 +466,16 @@ public final class PlotManager {
              for (UUID dn : d.denied) dj.add(dn.toString());
              StringJoiner lj = new StringJoiner(",");
              for (UUID lk : d.likes) lj.add(lk.toString());
@@ -966,7 +1306,8 @@ index f1ee48a..df64114 100644
                      + ";" + d.greeting + ";" + d.ambience + ";" + d.sidewalkPattern + ";" + d.wallPattern
 -                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap);
 +                    + ";" + d.biomeId + ";" + d.spawnHostile + ";" + d.spawnPassive + ";" + d.mobCap
-+                    + ";" + String.join(",", d.flags) + ";" + d.claimedAt + ";" + d.glassRegenSeconds);
++                    + ";" + String.join(",", d.flags) + ";" + d.claimedAt + ";" + d.glassRegenSeconds + ";" + d.frozen
++                    + ";" + (d.lockedFor == null ? "" : d.lockedFor) + ";" + d.lockedName);
          }
          try {
              AtomicFiles.writeLines(saveFile, lines);
@@ -1256,7 +1597,7 @@ index 0000000..f931378
 +    }
 +}
 diff --git a/src/main/java/com/fabricplots/protect/PlotProtection.java b/src/main/java/com/fabricplots/protect/PlotProtection.java
-index 70fb191..c34f560 100644
+index 70fb191..481d83a 100644
 --- a/src/main/java/com/fabricplots/protect/PlotProtection.java
 +++ b/src/main/java/com/fabricplots/protect/PlotProtection.java
 @@ -4,6 +4,7 @@ import com.fabricplots.FabricPlots;
@@ -1310,7 +1651,15 @@ index 70fb191..c34f560 100644
              return allowed(player, entity.blockPosition()) ? InteractionResult.PASS : InteractionResult.FAIL;
          });
  
-@@ -170,6 +191,43 @@ public final class PlotProtection {
+@@ -131,6 +152,7 @@ public final class PlotProtection {
+         if (player instanceof ServerPlayer sp && isBuildAdmin(sp)) return true;
+         if (pos.getY() <= PlotConfig.BEDROCK_Y) return false;                         // bedrock floor: never for players
+         if (data == null) return false;                                               // stair/road/unclaimed: locked
++        if (data.frozen) return false;                                                // over its owner's limit (PlotLocks)
+         return data.canBuild(player.getUUID());
+     }
+ 
+@@ -170,6 +192,43 @@ public final class PlotProtection {
          // On a dedicated server this is false, so real ops are gated by the permission check below.
          if (server.isSingleplayer()) return true;
          if (sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) return true;

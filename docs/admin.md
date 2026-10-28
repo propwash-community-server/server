@@ -131,6 +131,14 @@ plot N that `/plot info` shows, and it must be the plot the player stands on: `/
 only says which plot this is, `/plot delete 2` checks it and asks for the same again within 15 s.
 The menu's Clear button only tells the command, so nobody confirms the wrong plot by mistake.
 
+Plots over their owner's limit are locked (FabricPlots' PlotLocks): when a limit goes down, for
+example when a supporter's time ends (4 plots, then 2), the owner keeps their first plots as
+usual, and the newest ones become server plots with every block on them: anyone can walk in and
+look, nobody can build or use anything (only staff in `/plot admin`), nobody can claim them, and
+they're off the owner's `/plot list` and `/plot home`. They go back to the owner, as they are, when
+the limit allows them again. Limits are checked at start, on join and every 5 minutes, offline
+owners too.
+
 Plots are 120x120 with roads in between: `/plot auto` gives a whole plot, no merging. Limits are
 `fabricplots.limit.<n> server=plots` in [`permissions.toml`](../permissions.toml) (default 2,
 builders 10, staff 64).
