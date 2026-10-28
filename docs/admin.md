@@ -439,7 +439,10 @@ files are in `/home/mc/servers`, so they're backed up.
 Before the plugin, the same events (without `online`) were rebuilt from the proxy's logs, from
 2026-10-08: `backfill-YYYY-MM.jsonl`, each line with `"src": "log"`, made once with
 [`mods/stats/backfill.py`](../mods/stats/backfill.py) (`python3 backfill.py` shows what it would
-write, `--write` writes it; it stops at the plugin's first event).
+write, `--write` writes it; it stops at the plugin's first event). For a quick look, on the VPS: [`mods/stats/report.py`](../mods/stats/report.py)
+(`python3 report.py --days 7`; checks the data, then players, new players, sessions, play time and
+peak online per day, and the top players). Stats 1.0.0 (to 2026-10-28) missed some leaves; the
+report ends those sessions at the player's last event.
 
 ## Backups
 

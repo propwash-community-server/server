@@ -22,6 +22,9 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
@@ -39,7 +42,7 @@ import org.slf4j.Logger;
  * </ul>
  * t is ISO-8601 UTC. No IP addresses. Vanished players are counted like everyone else.
  */
-@Plugin(id = "stats", name = "Stats", version = "1.0.0",
+@Plugin(id = "stats", name = "Stats", version = "1.0.1",
         description = "Records joins, server switches, leaves and players online for graphs")
 public final class Stats {
     private static final long SAMPLE_MINUTES = 5;
@@ -47,6 +50,8 @@ public final class Stats {
     private final ProxyServer proxy;
     private final Logger logger;
     private final Path folder;
+    /** Who has a join without a leave yet: every one of them gets their leave, whatever the disconnect's status. */
+    private final Set<UUID> joined = ConcurrentHashMap.newKeySet();
 
     @Inject
     public Stats(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
@@ -69,6 +74,7 @@ public final class Stats {
 
     @Subscribe(order = PostOrder.LAST)
     public void onJoin(PostLoginEvent event) {
+        joined.add(event.getPlayer().getUniqueId());
         write(player("join", event.getPlayer()));
     }
 
@@ -82,7 +88,7 @@ public final class Stats {
 
     @Subscribe(order = PostOrder.LAST)
     public void onLeave(DisconnectEvent event) {
-        if (event.getLoginStatus() != DisconnectEvent.LoginStatus.SUCCESSFUL_LOGIN) {
+        if (!joined.remove(event.getPlayer().getUniqueId())) {
             return; // never joined (refused, banned, gone during login): no join was written either
         }
         JsonObject o = player("leave", event.getPlayer());
