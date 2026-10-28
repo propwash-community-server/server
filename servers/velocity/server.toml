@@ -38,6 +38,9 @@ plugins = [
     # Joins, server switches, leaves and players online, for graphs later (plugins/stats/*.jsonl, see
     # docs/admin.md#stats): our mods/stats, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/stats-1.0.1.jar",
+    # Staff commands, joins and leaves, and blocks broken in /plot admin mode (plugins/staffwatch/*.jsonl,
+    # /staffwatch; see docs/admin.md#staff-watch): our mods/staffwatch, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffwatch-1.0.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.3.0.jar",

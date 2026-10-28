@@ -35,7 +35,7 @@ mods = [
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.7.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.8.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
@@ -182,6 +182,11 @@ items = "3"
 "supporter.kits" = "3"
 "supporter.items" = "18"
 storage = "/home/mc/kits"
+
+# mods/tweaks: blocks broken in /plot admin mode go to the proxy's staff watch (mods/staffwatch,
+# docs/admin.md#staff-watch). Read on start.
+[config."config/tweaks.properties"]
+staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
 
 # Essential Commands' /enderchest would merge with mods/tweaks' (/enderchest, /ec, /echest for
 # propwash.enderchest). Its other settings aren't managed here (it doesn't use LuckPerms on plots).
