@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..0bf8e3b 100644
+index daaf686..c7a8f0d 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..0bf8e3b 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.14
++mod_version=1.0.2-plotsize.15
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -1318,6 +1318,43 @@ index e6db3be..057721b 100644
  
          Entity cause = source.getEntity();
          if (!(cause instanceof ServerPlayer) && source.getDirectEntity() instanceof Projectile projectile) {
+diff --git a/src/main/java/com/fabricplots/mixin/FarmlandTrampleMixin.java b/src/main/java/com/fabricplots/mixin/FarmlandTrampleMixin.java
+new file mode 100644
+index 0000000..df12d22
+--- /dev/null
++++ b/src/main/java/com/fabricplots/mixin/FarmlandTrampleMixin.java
+@@ -0,0 +1,31 @@
++package com.fabricplots.mixin;
++
++import com.fabricplots.FabricPlots;
++import com.fabricplots.protect.PlotProtection;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.FarmlandBlock;
++import net.minecraft.world.level.block.state.BlockState;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Players trample farmland whatever the game rules say (mobs only with mob_griefing, which is off on
++ * plots): in the plot world only a player who may build there does, so nobody can stomp the crops on
++ * someone else's plot. Farmland drying out (no player) is untouched.
++ */
++@Mixin(FarmlandBlock.class)
++public abstract class FarmlandTrampleMixin {
++    @Inject(method = "turnToBaseBlock", at = @At("HEAD"), cancellable = true)
++    private void fabricplots$noTrampling(Entity entity, BlockState state, Level level, BlockPos pos, CallbackInfo ci) {
++        if (entity instanceof ServerPlayer player && level.dimension() == FabricPlots.PLOTS_DIM
++                && !PlotProtection.canModifyEntity(player, pos)) {
++            ci.cancel();
++        }
++    }
++}
 diff --git a/src/main/java/com/fabricplots/player/DroneView.java b/src/main/java/com/fabricplots/player/DroneView.java
 new file mode 100644
 index 0000000..f931378
@@ -1581,3 +1618,17 @@ index 4db585f..1f253ee 100644
      /** True if a block belongs to a live portal in the plot world — the painter must leave these alone. */
      public static boolean isProtected(BlockPos pos) {
          if (ACTIVE.containsKey(key(FabricPlots.PLOTS_DIM, pos))) return true;
+diff --git a/src/main/resources/fabricplots.mixins.json b/src/main/resources/fabricplots.mixins.json
+index cca6f57..ece946d 100644
+--- a/src/main/resources/fabricplots.mixins.json
++++ b/src/main/resources/fabricplots.mixins.json
+@@ -9,7 +9,8 @@
+     "DraftEditSafetyMixin",
+     "DraftEditAccessor",
+     "DraftShapesSafetyMixin",
+-    "EntityDamageProtectionMixin"
++    "EntityDamageProtectionMixin",
++    "FarmlandTrampleMixin"
+   ],
+   "injectors": {
+     "defaultRequire": 1

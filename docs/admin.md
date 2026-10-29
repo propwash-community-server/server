@@ -195,6 +195,10 @@ one. Ours checks those too, the block hit and the block changed, by the same rul
 (plotsize.14). Every other vanilla item with its own `Item#use` changes nothing in the world or
 throws a projectile, which the `noprojectiles` datapack removes.
 
+Players trample farmland whatever the game rules say (mobs only with `mob_griefing`, off here), so
+anyone could stomp the crops on any plot. Ours lets farmland turn to dirt under a player only where
+they may build (plotsize.15); farmland drying out is unchanged.
+
 Plot owners set what visitors (not trusted) may use on their plot with flags: `/plot flag set <flag>
 on|off` (or `true|false`) on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
 All are off by default and building stays owner and trusted only:
