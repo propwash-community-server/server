@@ -445,10 +445,23 @@ stay private), to `http://localhost:3006`; Ko-fi's webhook URL is `https://kofi.
 Every 5 EUR of a donation or membership payment is a month of supporter time for the Discord account
 the donor connected on Ko-fi, added after what's left: the bot gives the "Ko-fi supporter" role while
 there is time, and takes it away when it's up; the role brings the `supporter` group on the servers
-for the linked Minecraft account (`/link`). Ko-fi's own role reward is off, so the bot is the only one
-changing the role. Each payment is posted in the bot's supporter log channel; payments it can't match
-(no Discord on Ko-fi, another currency) get their months from staff with `/supporter add <user>
-<months>` (`/supporter info`, `/supporter remove`).
+for the linked Minecraft account (`/link`). Each payment is posted in the bot's supporter log channel;
+payments it can't match (no Discord on Ko-fi, another currency, under 5 EUR) get their months from
+staff with `/supporter add <user> <months>` (`/supporter info`, `/supporter remove`).
+
+Two Discord roles, and only one of them is the bot's:
+
+| Role | Given by | Lasts | Brings |
+|---|---|---|---|
+| Ko-fi supporter | the bot only, from supporter time | until the time is up | the `supporter` group in game (`/link`ed account) |
+| Ko-fi donor | Ko-fi (Settings > Discord, "Roles for supporters"), on any payment | for good (Ko-fi never takes it back) | nothing, it's a thank-you |
+
+Ko-fi must not give "Ko-fi supporter": the bot only takes the role back from people it has supporter
+time for, so one Ko-fi gave it to (for a donation under 5 EUR or in another currency) would keep it, and the
+rank, forever. Ko-fi still gives a role ("Ko-fi donor", the only one under "Roles for supporters";
+"Roles for monthly members" is empty) so that it keeps asking donors to connect their Discord: that's
+what puts their Discord account in each payment it sends. The Discord connection itself ("Connected to
+Propwash FPV") stays on.
 
 | Task (as root) | Command |
 |---|---|
