@@ -42,8 +42,8 @@ import net.minecraft.world.phys.Vec3;
  * that wasn't loaded then) is removed if its owner isn't on this server.
  *
  * Staff watch: with staffwatch-folder in config/tweaks.properties (the proxy's plugins/staffwatch,
- * mods/staffwatch), every block a player breaks in the plot world while in FabricPlots' /plot admin
- * mode is added to plots-YYYY-MM.jsonl there, with whose plot it was.
+ * mods/staffwatch), every block a player breaks or places (buckets too) in the plot world while in
+ * FabricPlots' /plot admin mode is added to plots-YYYY-MM.jsonl there, with whose plot it was.
  */
 public final class Tweaks implements ModInitializer {
     private static final long COOLDOWN_MS = 5000;
