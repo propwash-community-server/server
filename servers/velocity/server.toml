@@ -52,6 +52,7 @@ expansions = [
 ]
 # Where players land, in order.
 try = ["hub", "fpv"]
+# Server list icon: files/server-icon.png (64x64 PNG; Velocity reads it on start).
 # Server list MOTD, in MiniMessage with palette.toml tags.
 motd = "<brand>Propwash FPV Community Server"
 # Added to the end of every server's /help.
