@@ -145,6 +145,9 @@ permissions = [
     "essentials.fly server=hub",
     # Plots: ten plots (the highest fabricplots.limit.<n> wins).
     "fabricplots.limit.10 server=plots",
+    # WorldEdit on plots with mods/plotedit's staff limits (80,000 blocks), like mods: still only on
+    # their own and trusted plots.
+    "propwash.plotedit.staff server=plots",
 ]
 
 [groups.senior-builder]
