@@ -57,10 +57,11 @@ import org.slf4j.Logger;
  *   <li>{"t":..., "e":"leave", "uuid":..., "name":..., "server":...}</li>
  * </ul>
  * Other files in the folder are read too: mods/tweaks on plots writes plots-YYYY-MM.jsonl there, with
- * {"e":"admin_break", ..., "block":..., "x":..., "y":..., "z":..., "plot":...} for every block broken in
- * /plot admin mode. /staffwatch [player] [page] shows it all, newest first (propwash.staffwatch).
+ * {"e":"admin_break" or "admin_place", ..., "block":..., "x":..., "y":..., "z":..., "plot":...} for every
+ * block broken or placed (or bucket poured) in /plot admin mode. /staffwatch [player] [page] shows it
+ * all, newest first (propwash.staffwatch).
  */
-@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.0.0",
+@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.1.0",
         description = "Records staff commands, joins and leaves; /staffwatch shows them",
         dependencies = {@Dependency(id = "luckperms")})
 public final class StaffWatch {
@@ -215,13 +216,14 @@ public final class StaffWatch {
             case "join" -> "joined";
             case "server" -> "to " + server + (o.has("from") ? " (from " + text(o, "from") + ")" : "");
             case "leave" -> "left" + (server.isEmpty() ? "" : " (on " + server + ")");
-            case "admin_break" -> server + ": broke " + text(o, "block").replace("minecraft:", "") + " at "
+            case "admin_break", "admin_place" -> server + (text(o, "e").equals("admin_break") ? ": broke " : ": placed ")
+                    + text(o, "block").replace("minecraft:", "") + " at "
                     + text(o, "x") + " " + text(o, "y") + " " + text(o, "z") + " (" + text(o, "plot") + ", plot admin)";
             default -> text(o, "e");
         };
         NamedTextColor color = switch (text(o, "e")) {
             case "command" -> NamedTextColor.WHITE;
-            case "admin_break" -> NamedTextColor.GOLD;
+            case "admin_break", "admin_place" -> NamedTextColor.GOLD;
             default -> NamedTextColor.GRAY;
         };
         return Component.text(time + " ", NamedTextColor.DARK_GRAY)

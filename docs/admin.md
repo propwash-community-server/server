@@ -502,7 +502,9 @@ everyone with a group other than `default` and `supporter`, or a permission set 
 (LuckPerms); it's checked again on every event, so a new builder or staff member is watched from
 then on. For them it records every command they type (whether it works or not, with the server they
 were on), their joins, server switches and leaves. On plots, [`mods/tweaks`](../mods/tweaks/) adds
-every block anyone breaks in `/plot admin` mode, with whose plot it was (or road).
+every block anyone breaks or places in `/plot admin` mode (and water, lava and the like poured from a
+bucket), with whose plot it was (or road). Only players in that mode cost anything: a line handed to a
+thread of its own, which writes it, so the server never waits for the disk.
 
 | Command | |
 |---|---|
@@ -512,7 +514,8 @@ every block anyone breaks in `/plot admin` mode, with whose plot it was (or road
 Only admins (`propwash.staffwatch`, from `*`). The records are one JSON object per line in
 `plugins/staffwatch/` on the velocity server, never rewritten, so they're backed up:
 `YYYY-MM.jsonl` from the proxy (`e`: `command`, `join`, `server`, `leave`) and
-`plots-YYYY-MM.jsonl` from plots (`e`: `admin_break`, with `block`, `x`, `y`, `z`, `plot`). Every
+`plots-YYYY-MM.jsonl` from plots (`e`: `admin_break` or `admin_place`, with `block` (for a bucket, the
+bucket's id), `x`, `y`, `z`, `plot`). Every
 line has `t` (ISO-8601 UTC), `uuid` and `name`.
 
 ## Backups

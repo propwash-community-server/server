@@ -14,23 +14,29 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Blocks broken in FabricPlots' /plot admin mode, for the proxy's staff watch (mods/staffwatch):
- * {"t":..., "e":"admin_break", "uuid":..., "name":..., "server":"plots", "block":..., "x":..., "y":...,
- * "z":..., "plot":"Steve's plot" or "road"} per line in plots-YYYY-MM.jsonl, in the staffwatch-folder
- * of config/tweaks.properties (none: off). FabricPlots is reached by name, so tweaks still runs
- * without it (on fpv) and nothing breaks if it changes.
+ * Blocks broken and placed in FabricPlots' /plot admin mode, for the proxy's staff watch
+ * (mods/staffwatch): {"t":..., "e":"admin_break" or "admin_place", "uuid":..., "name":..., "server":"plots",
+ * "block":..., "x":..., "y":..., "z":..., "plot":"Steve's plot" or "road"} per line in plots-YYYY-MM.jsonl,
+ * in the staffwatch-folder of config/tweaks.properties (none: off). Placing is a block (StaffWatchPlaceMixin)
+ * or a bucket of water, lava and the like ("block" is then the bucket). The lines are written on a thread
+ * of their own, so the server never waits for the disk. FabricPlots is reached by name, so tweaks still
+ * runs without it (on fpv) and nothing breaks if it changes.
  */
-final class StaffWatch {
+public final class StaffWatch {
     private static final Logger LOGGER = LoggerFactory.getLogger("tweaks");
     private static final Path CONFIG = FabricLoader.getInstance().getConfigDir().resolve("tweaks.properties");
     private static Path folder;
@@ -38,6 +44,7 @@ final class StaffWatch {
     private static Method owningPlot;
     private static Field owner;
     private static Field ownerName;
+    private static ExecutorService writer;
 
     private StaffWatch() {}
 
@@ -67,12 +74,37 @@ final class StaffWatch {
             return; // no FabricPlots here: no plot admin mode
         }
         folder = Path.of(path);
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            if (player instanceof ServerPlayer sp && "fabricplots:plots".equals(world.dimension().identifier().toString())
-                    && buildAdmin(sp)) {
-                write(sp, pos, state);
+        // A daemon thread (it must never keep the server from exiting), emptied when the server stops.
+        writer = Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "tweaks staff watch");
+            thread.setDaemon(true);
+            return thread;
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            writer.shutdown();
+            try {
+                writer.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            if (player instanceof ServerPlayer sp && watched(sp, world)) {
+                write(sp, "admin_break", pos, BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
+            }
+        });
+    }
+
+    /** StaffWatchPlaceMixin: a block or a bucket's contents placed; what is the block's or the bucket's id. */
+    public static void placed(ServerPlayer player, Level level, BlockPos pos, String what) {
+        if (watched(player, level)) {
+            write(player, "admin_place", pos, what);
+        }
+    }
+
+    /** In the plot world and in /plot admin mode (the cheap checks first: this runs for every block). */
+    private static boolean watched(ServerPlayer player, Level level) {
+        return folder != null && "fabricplots:plots".equals(level.dimension().identifier().toString()) && buildAdmin(player);
     }
 
     private static boolean buildAdmin(ServerPlayer player) {
@@ -99,24 +131,32 @@ final class StaffWatch {
         }
     }
 
-    private static synchronized void write(ServerPlayer player, BlockPos pos, BlockState state) {
+    /** The line is made here (the plot lookup needs the server thread), written on the writer's thread. */
+    private static void write(ServerPlayer player, String event, BlockPos pos, String what) {
         JsonObject o = new JsonObject();
         o.addProperty("t", Instant.now().toString());
-        o.addProperty("e", "admin_break");
+        o.addProperty("e", event);
         o.addProperty("uuid", player.getUUID().toString());
         o.addProperty("name", player.getGameProfile().name());
         o.addProperty("server", "plots");
-        o.addProperty("block", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
+        o.addProperty("block", what);
         o.addProperty("x", pos.getX());
         o.addProperty("y", pos.getY());
         o.addProperty("z", pos.getZ());
         o.addProperty("plot", plot(pos));
+        String line = o + "\n";
         Path file = folder.resolve("plots-" + YearMonth.now(ZoneOffset.UTC) + ".jsonl");
         try {
-            Files.createDirectories(folder);
-            Files.writeString(file, o + "\n", StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            LOGGER.warn("Couldn't write to {}", file, e);
+            writer.execute(() -> {
+                try {
+                    Files.createDirectories(folder);
+                    Files.writeString(file, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                } catch (IOException e) {
+                    LOGGER.warn("Couldn't write to {}", file, e);
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // the server is stopping
         }
     }
 }
