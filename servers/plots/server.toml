@@ -17,7 +17,7 @@ mods = [
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     # WorldEdit for players, only on plots they may build on and with block limits ([config] below);
     # our mods/plotedit, built and uploaded by hand. Which commands they get is permissions.toml.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/plotedit-1.1.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/plotedit-1.2.0-26.3.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
@@ -108,6 +108,9 @@ max-blocks-per-window = "45000"
 window-seconds = "30"
 # Region commands (//set, //copy...) refuse bigger selections: WorldEdit visits every position.
 max-selection-volume = "1000000"
+# With propwash.plotedit.staff (mods): higher limits, still only where they may build.
+"staff.max-blocks-per-command" = "80000"
+"staff.max-blocks-per-window" = "80000"
 # The monitor (logs/plotedit.log on plots): ticks slower than lag-log-ms during players' WorldEdit are
 # logged with whose edits ran in them; above lag-alert-ms staff are told in chat, and also when a player
 # hits a limit limit-alert-count times in 10 minutes.

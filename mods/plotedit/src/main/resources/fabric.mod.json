@@ -3,7 +3,7 @@
   "id": "plotedit",
   "version": "${version}",
   "name": "PlotEdit",
-  "description": "WorldEdit for players on plots: only where FabricPlots lets them build, with block limits per command and per time window (config/plotedit.properties).",
+  "description": "WorldEdit for players on plots: only where FabricPlots lets them build, with block limits per command and per time window, higher with propwash.plotedit.staff (config/plotedit.properties).",
   "license": "MIT",
   "environment": "server",
   "entrypoints": {

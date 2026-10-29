@@ -47,21 +47,23 @@ import org.slf4j.LoggerFactory;
  * (config/plotedit.properties, reread when it changes); region commands are refused on selections
  * bigger than max-selection-volume (WorldEdit visits every position, and //copy holds them all in
  * memory, even where nothing may change). Players with propwash.plotedit.bypass
- * (staff) aren't limited, anywhere; with propwash.plotedit.unlimited (mods) they have no limits but
- * still only edit where they may build. Which WorldEdit commands players get is LuckPerms
+ * (staff) aren't limited, anywhere; with propwash.plotedit.staff (mods) they get the staff.* limits
+ * instead, still only where they may build. Which WorldEdit commands players get is LuckPerms
  * (permissions.toml).
  */
 public final class PlotEdit implements ModInitializer {
     static final Logger LOGGER = LoggerFactory.getLogger("plotedit");
     private static final String PLOTS = "fabricplots:plots";
     private static final String BYPASS = "propwash.plotedit.bypass";
-    private static final String UNLIMITED = "propwash.plotedit.unlimited";
+    private static final String STAFF = "propwash.plotedit.staff";
     private static final Path CONFIG = FabricLoader.getInstance().getConfigDir().resolve("plotedit.properties");
 
     static volatile int perCommand = 60_000;
     static volatile int perWindow = 60_000;
     static volatile long windowMs = 30_000;
     static volatile long maxSelection = 1_000_000;
+    static volatile int staffPerCommand = 80_000;
+    static volatile int staffPerWindow = 80_000;
     // Commands that work on the whole selection (without their slashes).
     private static final Set<String> REGION_COMMANDS = Set.of("set", "replace", "rep", "overlay", "center", "middle",
             "walls", "faces", "outline", "hollow", "line", "curve", "move", "stack", "smooth", "naturalize",
@@ -136,7 +138,9 @@ public final class PlotEdit implements ModInitializer {
         String command = Monitor.takeCommand(actor.getUniqueId());
         String name = command == null ? "" : command.replaceFirst("^/+", "").split(" ", 2)[0].toLowerCase().replaceFirst("^worldedit:", "");
         boolean free = name.equals("undo");
-        event.setExtent(new PlotExtent(event.getExtent(), player, actor, window, free, actor.hasPermission(UNLIMITED)));
+        boolean staff = actor.hasPermission(STAFF);
+        event.setExtent(new PlotExtent(event.getExtent(), player, actor, window, free,
+                staff ? staffPerCommand : perCommand, staff ? staffPerWindow : perWindow));
     }
 
     // Before WorldEdit runs a region command: the selection must not be bigger than max-selection-volume.
@@ -148,7 +152,7 @@ public final class PlotEdit implements ModInitializer {
         }
         Monitor.command(actor.getUniqueId(), "/" + event.getArguments().trim().replaceFirst("^/+", "/"));
         String command = event.getArguments().trim().replaceFirst("^/+", "").split(" ", 2)[0].toLowerCase();
-        if (!REGION_COMMANDS.contains(command) || actor.hasPermission(UNLIMITED)) {
+        if (!REGION_COMMANDS.contains(command)) {
             return;
         }
         LocalSession session = WorldEdit.getInstance().getSessionManager().get(actor);
@@ -204,6 +208,8 @@ public final class PlotEdit implements ModInitializer {
                 Files.writeString(CONFIG, "# WorldEdit limits for players on plots (staff with propwash.plotedit.bypass aren't limited).\n"
                         + "max-blocks-per-command=60000\nmax-blocks-per-window=60000\nwindow-seconds=30\n"
                         + "max-selection-volume=1000000\n"
+                        + "# With propwash.plotedit.staff.\n"
+                        + "staff.max-blocks-per-command=80000\nstaff.max-blocks-per-window=80000\n"
                         + "# Monitor (logs/plotedit.log): log ticks slower than lag-log-ms during WorldEdit, tell staff\n"
                         + "# above lag-alert-ms, and when a player hits a limit limit-alert-count times in 10 minutes.\n"
                         + "lag-log-ms=250\nlag-alert-ms=1000\nlimit-alert-count=5\n");
@@ -220,12 +226,14 @@ public final class PlotEdit implements ModInitializer {
             perWindow = Math.max(1, Integer.parseInt(p.getProperty("max-blocks-per-window", "60000").trim()));
             windowMs = Math.max(1, Integer.parseInt(p.getProperty("window-seconds", "30").trim())) * 1000L;
             maxSelection = Math.max(1, Long.parseLong(p.getProperty("max-selection-volume", "1000000").trim()));
+            staffPerCommand = Math.max(1, Integer.parseInt(p.getProperty("staff.max-blocks-per-command", "80000").trim()));
+            staffPerWindow = Math.max(1, Integer.parseInt(p.getProperty("staff.max-blocks-per-window", "80000").trim()));
             Monitor.lagLogMs = Math.max(1, Long.parseLong(p.getProperty("lag-log-ms", "250").trim()));
             Monitor.lagAlertMs = Math.max(1, Long.parseLong(p.getProperty("lag-alert-ms", "1000").trim()));
             Monitor.limitAlertCount = Math.max(1, Integer.parseInt(p.getProperty("limit-alert-count", "5").trim()));
             configModified = modified;
-            LOGGER.info("Limits: {} blocks per command, {} per {} s, selections up to {}", perCommand, perWindow,
-                    windowMs / 1000, maxSelection);
+            LOGGER.info("Limits: {} blocks per command, {} per {} s, selections up to {}; staff {}, {}",
+                    perCommand, perWindow, windowMs / 1000, maxSelection, staffPerCommand, staffPerWindow);
         } catch (IOException | RuntimeException e) {
             LOGGER.warn("Couldn't read {}; keeping the limits as they were", CONFIG, e);
         }
@@ -286,18 +294,21 @@ public final class PlotEdit implements ModInitializer {
         private final Actor actor;
         private final Window window;
         private final boolean free;
-        /** propwash.plotedit.unlimited: none of the limits, only where they may build. */
-        private final boolean unlimited;
+        /** This player's limits: max-blocks-per-command and -per-window, or the staff.* ones. */
+        private final int commandLimit;
+        private final int windowLimit;
         private int changed;
         private boolean stopped;
 
-        PlotExtent(Extent extent, ServerPlayer player, Actor actor, Window window, boolean free, boolean unlimited) {
+        PlotExtent(Extent extent, ServerPlayer player, Actor actor, Window window, boolean free,
+                   int commandLimit, int windowLimit) {
             super(extent);
             this.player = player;
             this.actor = actor;
             this.window = window;
             this.free = free;
-            this.unlimited = unlimited;
+            this.commandLimit = commandLimit;
+            this.windowLimit = windowLimit;
         }
 
         /** The first time a limit is reached in this edit: tell the player and the monitor. */
@@ -328,31 +339,24 @@ public final class PlotEdit implements ModInitializer {
                 return false;
             }
             long now = System.currentTimeMillis();
-            if (unlimited) {
-                boolean set = super.setBlock(position, block);
-                if (set) {
-                    Monitor.changed(actor.getUniqueId(), actor.getName());
-                }
-                return set;
-            }
-            if (!free && changed >= perCommand) {
-                stop(perCommand + " per command", "This edit reached the limit of " + perCommand
+            if (!free && changed >= commandLimit) {
+                stop(commandLimit + " per command", "This edit reached the limit of " + commandLimit
                         + " blocks per command; the rest wasn't changed (//undo takes back what was).");
                 return false;
             }
             // Past the window's limit a player is paused for a whole window (no trickle of partial edits as
             // the oldest changes age out); //undo still works then.
             if (!free && window.paused(now)) {
-                stop("paused", "You've reached the limit of " + perWindow + " blocks per " + windowMs / 1000
+                stop("paused", "You've reached the limit of " + windowLimit + " blocks per " + windowMs / 1000
                         + " seconds: you can use WorldEdit again in " + window.secondsLeft(now)
                         + " s. Nothing was changed (//undo still works).");
                 return false;
             }
-            if (window.used(now) >= (free ? 2L * perWindow : perWindow)) {
+            if (window.used(now) >= (free ? 2L * windowLimit : windowLimit)) {
                 if (!free) {
                     window.pause(now);
                 }
-                stop(perWindow + " per " + windowMs / 1000 + " s", "You've changed " + perWindow + " blocks in "
+                stop(windowLimit + " per " + windowMs / 1000 + " s", "You've changed " + windowLimit + " blocks in "
                         + windowMs / 1000 + " seconds, so the rest of this edit wasn't changed: you can use WorldEdit"
                         + " again in " + Math.max(1, window.secondsLeft(now)) + " s (//undo still works).");
                 return false;
