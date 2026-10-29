@@ -206,9 +206,15 @@ permissions = [
     "vanish.feature.view",
     "essentials.vanish.see",
     "carbon.whisper.vanished",
-    # WorldEdit on plots without mods/plotedit's limits, still only where they may build (not the
-    # bypass, which edits anywhere).
-    "propwash.plotedit.unlimited server=plots",
+    # WorldEdit on plots with mods/plotedit's staff limits (80,000 blocks), still only where they may
+    # build (not the bypass, which edits anywhere), and /up.
+    "propwash.plotedit.staff server=plots",
+    "worldedit.navigation.up server=plots",
+    # /plot admin: build-admin mode, editing any plot and the roads (and their WorldEdit too, with the
+    # staff limits); FabricPlots' other admin tools (/plot setowner, /plot reload) stay with staff.
+    "fabricplots.admin server=plots",
+    # /flan bypass: build on fpv maps (Flan's claims), as senior builders can.
+    "flan.command.bypass.claim server=fpv",
     # /gamemode creative (and back to survival) on the hub (EssentialsX).
     "essentials.gamemode server=hub",
     "essentials.gamemode.creative server=hub",

@@ -9,6 +9,9 @@
 <accent>/vote start <question></accent>: a yes/no vote on every server for 60 s; <accent>/vote end</accent> ends it early
 <accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it
 <accent>/gamemode creative</accent>, <accent>/gamemode survival</accent>: on the hub
-WorldEdit on plots without limits, on your own and trusted plots
+WorldEdit on plots up to 80,000 blocks per command, on your own and trusted plots
+<accent>/up <blocks></accent>: up that far, onto a glass block (plots)
+<accent>/plot admin</accent>: edit any plot and the roads (plots; again to stop)
+<accent>/flan bypass</accent>: build on fpv maps (again to stop)
 <accent>/fly</accent>: fly (on plots you always can)
 <accent>/flyspeed <1-10></accent>: how fast you fly, 1 is normal

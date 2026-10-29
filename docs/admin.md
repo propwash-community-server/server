@@ -79,8 +79,13 @@ builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent a
 only this besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/vote start` and
 `/vote end`, `/maintenance on` and `off` (and staying on during it), `/kick`, `/ban`, `/mute`, `/unban`,
 `/unmute` and `/history` (players, not IPs), `/tp <player>`, `/spy`, `/v` and `/v auto` (and seeing
-vanished players), WorldEdit on plots without plotedit's limits but only where they may build
-(`propwash.plotedit.unlimited`, not the bypass), and `/gamemode creative` and `survival` on the hub.
+vanished players), WorldEdit on plots with plotedit's staff limits (80,000 blocks), only where they
+may build (`propwash.plotedit.staff`, not the bypass), and `/up` there, `/plot admin`
+(`fabricplots.admin`: in it they may build, and WorldEdit, on any plot and the roads; it also lets
+them change any plot's settings and flags and go onto plots they're denied from, like staff; not
+`/plot setowner` or `/plot reload`), `/flan bypass` on fpv (building on the maps by hand; no
+WorldEdit there), and `/gamemode creative` and `survival` on the hub. What they break and place in
+`/plot admin` is in the staff watch.
 Their `/help` part is [`mod.txt`](../servers/velocity/files/plugins/staffhelp/mod.txt) (`/help mod`
 shows only it), in place of the supporter one. `lpv user <name> parent add mod`.
 
@@ -252,7 +257,9 @@ limited.
 `//redo` is limited like any edit.
 
 WorldEdit's own `max-radius` (40 on plots, for everyone) limits `//sphere`, `//cyl`, `//fill` and
-the like. Staff have `propwash.plotedit.bypass`: no limits, and they get the notices.
+the like. Mods have `propwash.plotedit.staff`: the `staff.*` limits instead (80,000 blocks per
+command and per window), still only where they may build. Staff have `propwash.plotedit.bypass`: no
+limits, anywhere, and they get the notices.
 
 `logs/plotedit.log` on plots has a line per player edit (`EDIT`: player, command, blocks changed and
 skipped, time, slowest tick, the limit that stopped it), per slow tick (`LAG`: whose edits ran in it) and
