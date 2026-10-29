@@ -1,5 +1,5 @@
 diff --git a/gradle.properties b/gradle.properties
-index daaf686..c7a8f0d 100644
+index daaf686..655e500 100644
 --- a/gradle.properties
 +++ b/gradle.properties
 @@ -7,7 +7,7 @@ loader_version=0.19.5
@@ -7,7 +7,7 @@ index daaf686..c7a8f0d 100644
  
  # Mod
 -mod_version=1.0.2
-+mod_version=1.0.2-plotsize.15
++mod_version=1.0.2-plotsize.16
  draftsmith_version=1.0.1
  sgui_version=2.2.0+26.3
  maven_group=com.fabricplots
@@ -1355,6 +1355,40 @@ index 0000000..df12d22
 +        }
 +    }
 +}
+diff --git a/src/main/java/com/fabricplots/mixin/NoFallingBlocksMixin.java b/src/main/java/com/fabricplots/mixin/NoFallingBlocksMixin.java
+new file mode 100644
+index 0000000..0c2ec1b
+--- /dev/null
++++ b/src/main/java/com/fabricplots/mixin/NoFallingBlocksMixin.java
+@@ -0,0 +1,28 @@
++package com.fabricplots.mixin;
++
++import com.fabricplots.FabricPlots;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.block.FallingBlock;
++import net.minecraft.world.level.block.state.BlockState;
++import org.spongepowered.asm.mixin.Mixin;
++import org.spongepowered.asm.mixin.injection.At;
++import org.spongepowered.asm.mixin.injection.Inject;
++import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
++
++/**
++ * Sand, gravel, concrete powder, anvils and the other gravity blocks don't fall in the plot world: they
++ * stay where they're placed. A shape of sand from WorldEdit or DraftSmith (a sphere: everything below
++ * its middle has nothing under it) turned thousands of blocks into falling ones at once, and their
++ * collision checks with each other froze the server until the watchdog stopped it. The fall starts in
++ * FallingBlock#tick, scheduled when the block is placed or a neighbour changes; here it does nothing.
++ */
++@Mixin(FallingBlock.class)
++public abstract class NoFallingBlocksMixin {
++    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
++    private void fabricplots$noFalling(BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
++        if (level.dimension() == FabricPlots.PLOTS_DIM) ci.cancel();
++    }
++}
 diff --git a/src/main/java/com/fabricplots/player/DroneView.java b/src/main/java/com/fabricplots/player/DroneView.java
 new file mode 100644
 index 0000000..f931378
@@ -1619,16 +1653,17 @@ index 4db585f..1f253ee 100644
      public static boolean isProtected(BlockPos pos) {
          if (ACTIVE.containsKey(key(FabricPlots.PLOTS_DIM, pos))) return true;
 diff --git a/src/main/resources/fabricplots.mixins.json b/src/main/resources/fabricplots.mixins.json
-index cca6f57..ece946d 100644
+index cca6f57..379c4c4 100644
 --- a/src/main/resources/fabricplots.mixins.json
 +++ b/src/main/resources/fabricplots.mixins.json
-@@ -9,7 +9,8 @@
+@@ -9,7 +9,9 @@
      "DraftEditSafetyMixin",
      "DraftEditAccessor",
      "DraftShapesSafetyMixin",
 -    "EntityDamageProtectionMixin"
 +    "EntityDamageProtectionMixin",
-+    "FarmlandTrampleMixin"
++    "FarmlandTrampleMixin",
++    "NoFallingBlocksMixin"
    ],
    "injectors": {
      "defaultRequire": 1

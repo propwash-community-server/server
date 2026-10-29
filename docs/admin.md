@@ -199,6 +199,11 @@ Players trample farmland whatever the game rules say (mobs only with `mob_griefi
 anyone could stomp the crops on any plot. Ours lets farmland turn to dirt under a player only where
 they may build (plotsize.15); farmland drying out is unchanged.
 
+Sand, gravel, concrete powder, anvils and the other gravity blocks don't fall in the plot world
+(plotsize.16): they stay where they're placed. A sand sphere from a shape tool turned some 22,000
+blocks into falling ones at once (everything below its middle has nothing under it), and their
+collision checks with each other froze plots until the watchdog stopped it (2026-10-29).
+
 Plot owners set what visitors (not trusted) may use on their plot with flags: `/plot flag set <flag>
 on|off` (or `true|false`) on the plot, or `/plot menu` > the plot > Visitor permissions; `/plot flag help` lists them.
 All are off by default and building stays owner and trusted only:
