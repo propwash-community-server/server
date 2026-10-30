@@ -518,7 +518,9 @@ The proxy keeps a record of what staff do: [`mods/staffwatch`](../mods/staffwatc
 everyone with a group other than `default` and `supporter`, or a permission set on them directly
 (LuckPerms); it's checked again on every event, so a new builder or staff member is watched from
 then on. For them it records every command they type (whether it works or not, with the server they
-were on), their joins, server switches and leaves. On plots, [`mods/tweaks`](../mods/tweaks/) adds
+were on), their joins, server switches and leaves. Private messages keep who they're to but not what
+they say: `msg Steve …`, `r …`, `mail send Steve …` (Carbon's whisper, reply and continue and their
+aliases, EssentialsX's, `/mail send`). On plots, [`mods/tweaks`](../mods/tweaks/) adds
 every block anyone breaks or places in `/plot admin` mode (and water, lava and the like poured from a
 bucket), with whose plot it was (or road). Only players in that mode cost anything: a line handed to a
 thread of its own, which writes it, so the server never waits for the disk.
