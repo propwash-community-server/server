@@ -48,7 +48,8 @@ import org.slf4j.Logger;
 /**
  * What staff do: for everyone with a group other than default and supporter, or a permission of their
  * own (LuckPerms, set on the player), every command they type (whether it works or not), their joins,
- * server switches and leaves. One JSON object per line in plugins/staffwatch/YYYY-MM.jsonl (UTC
+ * server switches and leaves. Private messages keep who they're to but not what they say
+ * ("msg Steve …"; see privateText). One JSON object per line in plugins/staffwatch/YYYY-MM.jsonl (UTC
  * months), never rewritten:
  * <ul>
  *   <li>{"t":..., "e":"command", "uuid":..., "name":..., "server":..., "command":"gamemode creative"}</li>
@@ -61,7 +62,7 @@ import org.slf4j.Logger;
  * block broken or placed (or bucket poured) in /plot admin mode. /staffwatch [player] [page] shows it
  * all, newest first (propwash.staffwatch).
  */
-@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.1.0",
+@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.2.0",
         description = "Records staff commands, joins and leaves; /staffwatch shows them",
         dependencies = {@Dependency(id = "luckperms")})
 public final class StaffWatch {
@@ -69,6 +70,11 @@ public final class StaffWatch {
     /** Groups everyone has: only these don't make a player watched. */
     private static final Set<String> ORDINARY = Set.of("default", "supporter");
     private static final int PAGE = 12;
+    /** Private messages to a player (Carbon's whisper and its aliases, EssentialsX's): "msg Steve …". */
+    private static final Set<String> TO_PLAYER = Set.of("whisper", "w", "message", "msg", "m", "tell", "pm",
+            "emsg", "etell", "ewhisper", "epm");
+    /** Private messages without a name (a reply, the same conversation, the team): "r …". */
+    private static final Set<String> NO_NAME = Set.of("reply", "r", "continue", "c", "ereply", "er", "teammsg", "tm");
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("MM-dd HH:mm").withZone(ZoneOffset.UTC);
 
     private final ProxyServer proxy;
@@ -96,7 +102,7 @@ public final class StaffWatch {
         if (event.getCommandSource() instanceof Player player && watching(player)) {
             JsonObject o = player("command", player);
             player.getCurrentServer().ifPresent(s -> o.addProperty("server", s.getServerInfo().getName()));
-            o.addProperty("command", event.getCommand());
+            o.addProperty("command", privateText(event.getCommand()));
             write(o);
         }
     }
@@ -137,6 +143,26 @@ public final class StaffWatch {
             return true;
         }
         return false;
+    }
+
+    /**
+     * A command with the text of a private message left out, so the watch shows who staff messaged but
+     * not what they said: "msg Steve …", "r …", "mail send Steve …". Anything else as it was typed.
+     */
+    static String privateText(String command) {
+        String[] parts = command.strip().split("\\s+", 4);
+        String name = parts[0].toLowerCase(Locale.ROOT);
+        name = name.substring(name.indexOf(':') + 1); // carbon:whisper, minecraft:msg
+        if (TO_PLAYER.contains(name) && parts.length > 2) {
+            return parts[0] + " " + parts[1] + " …";
+        }
+        if (NO_NAME.contains(name) && parts.length > 1) {
+            return parts[0] + " …";
+        }
+        if ((name.equals("mail") || name.equals("email")) && parts.length > 3 && parts[1].equalsIgnoreCase("send")) {
+            return parts[0] + " send " + parts[2] + " …";
+        }
+        return command;
     }
 
     /** A group other than default and supporter, or any permission set on the player themselves. */
