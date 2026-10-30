@@ -77,9 +77,10 @@ on every server (EssentialsX's on the hub, mods/tweaks' on fpv and plots: up to 
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
-it) and besides: `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any server, and
-`/gamemode creative` and `survival` on the hub. Helpers are in the staff watch. Their `/help` is the
-supporter one. `lpv user <name> parent add helper`.
+it) and besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any
+server, and `/gamemode creative` and `survival` on the hub. Helpers are in the staff watch. Their `/help`
+part is [`helper.txt`](../servers/velocity/files/plugins/staffhelp/helper.txt) (`/help helper` shows only
+it), in place of the supporter one. `lpv user <name> parent add helper`.
 
 `mod` (blue `[Mod]`, between builders and staff) has everything `supporter` has (it includes it) and
 only this besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/vote start` and

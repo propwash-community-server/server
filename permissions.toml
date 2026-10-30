@@ -169,13 +169,18 @@ permissions = [
     "minecraft.command.tp server=fpv",
 ]
 
-# Helpers: everything supporters have, plus these. Between builders and mods; in the staff watch like
+# Helpers: everything supporters have, plus these. /help shows them all (mods/staffhelp,
+# files/plugins/staffhelp/helper.txt). Between builders and mods; in the staff watch like
 # every group but default and supporter.
 [groups.helper]
 permissions = [
     "weight.120",
     '"prefix.120.<helper>[Helper]</helper> "',
     "group.supporter",
+    # Staff chat channel (/staff, /sc, or start a message with #).
+    "carbon.channel.staff",
+    "carbon.channel.staff.see",
+    "carbon.channel.staff.speak",
     # /flyspeed up to 10 on fpv and plots (mods/tweaks), and /speed up to 10 on the hub (EssentialsX,
     # past its max-fly-speed).
     "propwash.flyspeed.10",
@@ -186,6 +191,9 @@ permissions = [
     "essentials.gamemode server=hub",
     "essentials.gamemode.creative server=hub",
     "essentials.gamemode.survival server=hub",
+    # The helper part of /help (mods/staffhelp, files/plugins/staffhelp/helper.txt), in place of the
+    # supporter one.
+    "propwash.help.helper",
 ]
 
 # Moderators: everything supporters have, plus these and nothing else. /help shows them all

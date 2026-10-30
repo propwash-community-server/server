@@ -22,13 +22,16 @@ import org.slf4j.Logger;
  * get plugins/staffhelp/supporter.txt: no blank line, so it reads as more of the "On every server"
  * lines that end every /help. Mods (propwash.help.mod, not staff) get plugins/staffhelp/mod.txt
  * instead of the supporter part (it has the supporter commands they have, too); /help mod shows only it.
+ * Helpers (propwash.help.helper, not mod or staff) likewise get plugins/staffhelp/helper.txt; /help helper
+ * shows only it.
  */
-@Plugin(id = "staffhelp", name = "StaffHelp", version = "1.2.0",
-        description = "The supporter, mod and staff parts of /help")
+@Plugin(id = "staffhelp", name = "StaffHelp", version = "1.3.0",
+        description = "The supporter, helper, mod and staff parts of /help")
 public final class StaffHelp {
     private static final String PERMISSION = "propwash.help.staff";
     private static final String SUPPORTER = "propwash.help.supporter";
     private static final String MOD = "propwash.help.mod";
+    private static final String HELPER = "propwash.help.helper";
     // The server's /help comes back through the proxy first; this lands after it.
     private static final long DELAY_MS = 300;
 
@@ -37,6 +40,7 @@ public final class StaffHelp {
     private final Path helpFile;
     private final Path supporterFile;
     private final Path modFile;
+    private final Path helperFile;
 
     @Inject
     public StaffHelp(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
@@ -45,6 +49,7 @@ public final class StaffHelp {
         this.helpFile = dataDirectory.resolve("help.txt");
         this.supporterFile = dataDirectory.resolve("supporter.txt");
         this.modFile = dataDirectory.resolve("mod.txt");
+        this.helperFile = dataDirectory.resolve("helper.txt");
     }
 
     @Subscribe
@@ -55,7 +60,8 @@ public final class StaffHelp {
         boolean staff = player.hasPermission(PERMISSION);
         // Admins' "*" includes the mod node: staff get the staff part, not the mod one.
         boolean mod = !staff && player.hasPermission(MOD);
-        boolean supporter = !mod && player.hasPermission(SUPPORTER);
+        boolean helper = !staff && !mod && player.hasPermission(HELPER);
+        boolean supporter = !mod && !helper && player.hasPermission(SUPPORTER);
         String command = event.getCommand().trim().toLowerCase();
         if (staff && (command.equals("help staff") || command.equals("help admin"))) {
             event.setResult(CommandResult.denied());
@@ -63,10 +69,16 @@ public final class StaffHelp {
         } else if (mod && command.equals("help mod")) {
             event.setResult(CommandResult.denied());
             show(player, modFile);
-        } else if (command.equals("help") && (staff || mod || supporter)) {
+        } else if (helper && command.equals("help helper")) {
+            event.setResult(CommandResult.denied());
+            show(player, helperFile);
+        } else if (command.equals("help") && (staff || mod || helper || supporter)) {
             proxy.getScheduler().buildTask(this, () -> {
                 if (supporter) {
                     show(player, supporterFile);
+                }
+                if (helper) {
+                    show(player, helperFile);
                 }
                 if (mod) {
                     show(player, modFile);
