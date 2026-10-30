@@ -169,6 +169,25 @@ permissions = [
     "minecraft.command.tp server=fpv",
 ]
 
+# Helpers: everything supporters have, plus these. Between builders and mods; in the staff watch like
+# every group but default and supporter.
+[groups.helper]
+permissions = [
+    "weight.120",
+    '"prefix.120.<helper>[Helper]</helper> "',
+    "group.supporter",
+    # /flyspeed up to 10 on fpv and plots (mods/tweaks), and /speed up to 10 on the hub (EssentialsX,
+    # past its max-fly-speed).
+    "propwash.flyspeed.10",
+    "essentials.speed.bypass server=hub",
+    # /tp <player> on any server (mods/crossserver).
+    "propwash.tp",
+    # /gamemode creative (and back to survival) on the hub (EssentialsX).
+    "essentials.gamemode server=hub",
+    "essentials.gamemode.creative server=hub",
+    "essentials.gamemode.survival server=hub",
+]
+
 # Moderators: everything supporters have, plus these and nothing else. /help shows them all
 # (mods/staffhelp, files/plugins/staffhelp/mod.txt).
 [groups.mod]
