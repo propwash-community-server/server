@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,12 +24,16 @@ import org.slf4j.Logger;
  * /vote across all servers: admins (propwash.vote) /vote start <question> a yes/no vote that everyone
  * answers with /vote yes or /vote no (clickable); it ends after 60 seconds or with /vote end, and
  * everyone gets the result. One vote at a time, one answer per player (changeable). The question is
- * shown as plain text, so it can't carry formatting or click actions.
+ * shown as plain text, so it can't carry formatting or click actions. A chime sounds with the question
+ * and with the result.
  */
 final class Vote {
     private static final String ADMIN = "propwash.vote";
     private static final Duration LENGTH = Duration.ofSeconds(60);
     private static final Component PREFIX = Component.text("[Vote] ", NamedTextColor.GOLD, TextDecoration.BOLD);
+    // Master volume, so players who turned block or player sounds down still hear it.
+    private static final Sound START_SOUND = Sound.sound(Key.key("block.note_block.pling"), Sound.Source.MASTER, 1f, 1.2f);
+    private static final Sound END_SOUND = Sound.sound(Key.key("block.note_block.chime"), Sound.Source.MASTER, 1f, 1f);
 
     private final ProxyServer proxy;
     private final Object plugin;
@@ -104,7 +110,7 @@ final class Vote {
                 .append(button("[Yes]", NamedTextColor.GREEN, "/vote yes"))
                 .append(Component.text(" "))
                 .append(button("[No]", NamedTextColor.RED, "/vote no"))
-                .append(Component.text("  (" + LENGTH.toSeconds() + " s)", NamedTextColor.GRAY)));
+                .append(Component.text("  (" + LENGTH.toSeconds() + " s)", NamedTextColor.GRAY)), START_SOUND);
     }
 
     private synchronized void answer(CommandSource source, boolean yes) {
@@ -133,7 +139,7 @@ final class Vote {
                 .append(Component.text(question, NamedTextColor.WHITE))
                 .append(Component.text("  Yes " + yes, NamedTextColor.GREEN))
                 .append(Component.text(", ", NamedTextColor.GRAY))
-                .append(Component.text("No " + no, NamedTextColor.RED)));
+                .append(Component.text("No " + no, NamedTextColor.RED)), END_SOUND);
         question = null;
         timer = null;
         answers.clear();
@@ -153,9 +159,13 @@ final class Vote {
                 .append(Component.text("  (" + left + " s left, " + answers.size() + " voted)", NamedTextColor.GRAY)));
     }
 
-    private void broadcast(Component message) {
+    private void broadcast(Component message, Sound sound) {
         Component line = PREFIX.append(message);
-        proxy.getAllPlayers().forEach(p -> p.sendMessage(line));
+        proxy.getAllPlayers().forEach(p -> {
+            p.sendMessage(line);
+            // Velocity can only play a sound at the player themselves.
+            p.playSound(sound, Sound.Emitter.self());
+        });
     }
 
     private static Component button(String text, NamedTextColor color, String command) {
