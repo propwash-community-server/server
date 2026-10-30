@@ -78,7 +78,7 @@ builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent a
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
 it) and besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any
-server, and `/gamemode creative` and `survival` on the hub. Helpers are in the staff watch. Their `/help`
+server, `/gamemode creative` and `survival` on the hub, and `/maintenance on` and `off` (and staying on during it). Helpers are in the staff watch. Their `/help`
 part is [`helper.txt`](../servers/velocity/files/plugins/staffhelp/helper.txt) (`/help helper` shows only
 it), in place of the supporter one. `lpv user <name> parent add helper`.
 
@@ -343,7 +343,7 @@ world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in t
 ## Maintenance
 
 [Maintenance](https://modrinth.com/plugin/maintenance) on the proxy closes the network to everyone but
-staff and admin (`maintenance.bypass`). Turning it on kicks everyone else, and they get "The server
+helpers, mods, staff and admin (`maintenance.bypass`). Turning it on kicks everyone else, and they get "The server
 is currently under maintenance!" until it's off; it stays on through a restart. Each countdown
 message of a timer, and turning it on or off, plays a note block to everyone online (mods/crossserver). The server list shows
 it too. Its commands need `maintenance.admin` (admins, through `*`).
