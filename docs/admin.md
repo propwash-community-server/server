@@ -344,7 +344,8 @@ world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in t
 
 [Maintenance](https://modrinth.com/plugin/maintenance) on the proxy closes the network to everyone but
 staff and admin (`maintenance.bypass`). Turning it on kicks everyone else, and they get "The server
-is currently under maintenance!" until it's off; it stays on through a restart. The server list shows
+is currently under maintenance!" until it's off; it stays on through a restart. Each countdown
+message of a timer, and turning it on or off, plays a note block to everyone online (mods/crossserver). The server list shows
 it too. Its commands need `maintenance.admin` (admins, through `*`).
 
 | Task | Command |
@@ -396,7 +397,7 @@ Everyone gets 1 kit of up to 3 items; supporters (`propwash.kits.supporter`) 3 o
 
 Admins (`propwash.vote`) run a yes/no vote on every server with `/vote start <question>`: everyone
 gets the question with clickable Yes and No (`/vote yes`, `/vote no`; changing your answer is fine),
-and after 60 seconds, or `/vote end`, the result. `/vote` shows the running vote. One at a time; the
+and after 60 seconds, or `/vote end`, the result; a note block sounds with each. `/vote` shows the running vote. One at a time; the
 question is plain text (no formatting or click actions), at most 200 characters. Part of
 `mods/crossserver`; votes and results are in the proxy log.
 
