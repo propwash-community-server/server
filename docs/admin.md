@@ -78,7 +78,7 @@ builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent a
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
 it) and besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any
-server, `/gamemode creative` and `survival` on the hub, and staying on during `/maintenance`. Helpers are in the staff watch. Their `/help`
+server, `/gamemode creative` and `survival` on the hub, and `/maintenance on` and `off` (and staying on during it). Helpers are in the staff watch. Their `/help`
 part is [`helper.txt`](../servers/velocity/files/plugins/staffhelp/helper.txt) (`/help helper` shows only
 it), in place of the supporter one. `lpv user <name> parent add helper`.
 

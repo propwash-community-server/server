@@ -187,7 +187,9 @@ permissions = [
     "essentials.speed.bypass server=hub",
     # /tp <player> on any server (mods/crossserver).
     "propwash.tp",
-    # Staying on during /maintenance (it kicks everyone without it).
+    # /maintenance on|off, and staying on while it's on (it kicks everyone without the bypass).
+    "maintenance.command",
+    "maintenance.toggle",
     "maintenance.bypass",
     # /gamemode creative (and back to survival) on the hub (EssentialsX).
     "essentials.gamemode server=hub",
