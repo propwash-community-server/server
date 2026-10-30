@@ -401,6 +401,15 @@ and after 60 seconds, or `/vote end`, the result; a note block sounds with each.
 question is plain text (no formatting or click actions), at most 200 characters. Part of
 `mods/crossserver`; votes and results are in the proxy log.
 
+## AFK
+
+Everyone can `/afk` on every server: `[AFK]` after their name in the tab list, no chat message, until
+they move, `/afk` again or leave. Whoever runs a command naming them (`/msg`, `/tp`, `/tpa`, ...) gets
+a note that they're AFK; the command still runs (not for a vanished player, unless they can see
+vanished players). Part of `mods/crossserver`, on the proxy: it can't see movement, so every 3 seconds
+it asks the player's server over rcon where each AFK player is. It isn't in `/help`. The automatic AFK after 15 minutes (Essential Commands, EssentialsX) is separate and doesn't
+show in the tab list.
+
 ## Vanish
 
 `/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
