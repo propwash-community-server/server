@@ -368,13 +368,15 @@ of each server's own; a player on another server is moved there first:
 |---|---|---|
 | Ask to go to someone / ask them to come to you | `/tpa <player>`, `/tpahere <player>` | everyone (`propwash.tpa`) |
 | Answer (clickable in the message) | `/tpaccept [player]`, `/tpdeny [player]` | everyone |
-| Go to someone | `/tp <player>` | staff and mods (`propwash.tp`) |
+| Go to someone, bring them to you, or one player to another | `/tp <player>`, `/tphere <player>`, `/tp <player> <player>` | helpers, mods and staff (`propwash.tp`) |
 | See and change someone's inventory | `/invsee <player>` | staff (`propwash.invsee`) |
 
 Requests last two minutes. The teleport itself is a console `tp` over rcon (the deploy writes the
 ports and password to `plugins/crossserver/`), a second after arriving, since the hub sends arrivals
 to spawn; on the same server it's that console `tp` right away (mods have no `/tp` of the server's
-own). `/tp` with anything else (coordinates, two players) is the server's own.
+own). `/tp` is a proxy command so that helpers' and mods' game clients offer it at all (a client only
+sends commands its server lists for it). `/tp` with anything else (coordinates, a selector) goes on to
+the server as `/teleport`, which only staff have there.
 Each server keeps its own inventory of a player, so `/invsee` shows the one on the server they're
 on: EssentialsX `/invsee` on the hub, [InvView](https://modrinth.com/mod/invview) `/view inv` on
 fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories

@@ -2,6 +2,7 @@
 <helper><bold>Helper</bold></helper> <muted>(only helpers see this; <accent>/help helper</accent> shows just this part)</muted>
 <accent>#<message></accent>, <accent>/sc</accent>: staff chat
 <accent>/tp <player></accent>: go to a player, on any server
+<accent>/tphere <player></accent>, <accent>/tp <player> <player></accent>: bring them to you, or one to another (any server)
 <accent>/maintenance on</accent>: kick everyone but staff and keep them out; <accent>/maintenance off</accent> ends it <red><bold>(emergencies only!)</bold></red>
 <accent>/gamemode creative</accent>, <accent>/gamemode survival</accent>: on the hub
 <accent>/fly</accent>: fly (on plots you always can)

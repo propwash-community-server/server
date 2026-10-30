@@ -3,6 +3,7 @@
 <accent>#<message></accent>, <accent>/sc</accent>: staff chat
 <accent>/ban <player> [7d]</accent>, <accent>/mute</accent>, <accent>/kick</accent>, <accent>/unban</accent>, <accent>/history</accent>: on every server
 <accent>/tp <player></accent>, <accent>/invsee <player></accent>: on any server (takes you there)
+<accent>/tphere <player></accent>, <accent>/tp <player> <player></accent>: bring them to you, or one to another (any server)
 <accent>/view echest <player></accent>: their ender chest (fpv, plots; <accent>/enderchest <player></accent> on the hub)
 <accent>/spy</accent>: see private messages and other servers' local chat
 <accent>/plot admin</accent>: edit any plot (plots; again to stop), <accent>/plot setowner</accent>

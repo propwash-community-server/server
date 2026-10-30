@@ -3,6 +3,7 @@
 <accent>#<message></accent>, <accent>/sc</accent>: staff chat
 <accent>/ban <player> [7d]</accent>, <accent>/mute</accent>, <accent>/kick</accent>, <accent>/unban</accent>, <accent>/unmute</accent>, <accent>/history</accent>: on every server
 <accent>/tp <player></accent>: go to a player, on any server
+<accent>/tphere <player></accent>, <accent>/tp <player> <player></accent>: bring them to you, or one to another (any server)
 <accent>/spy</accent>: see private messages and other servers' local chat
 <accent>/v</accent> or <accent>/vanish</accent>: vanish on every server (again to show yourself); everyone sees you leave and join
 <accent>/v auto on</accent>, <accent>/v auto off</accent>: always arrive vanished, or always visible; <accent>/v auto</accent> shows yours

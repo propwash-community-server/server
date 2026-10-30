@@ -3,8 +3,6 @@ package community.propwash.crossserver;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.command.CommandExecuteEvent;
-import com.velocitypowered.api.event.command.CommandExecuteEvent.CommandResult;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Dependency;
@@ -48,7 +46,7 @@ import org.slf4j.Logger;
  * kept here and set over rcon on each server the player arrives on. /vote: see Vote. Sounds with the
  * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.5.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.6.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true), @Dependency(id = "maintenance", optional = true),
                 @Dependency(id = "tab", optional = true)})
@@ -98,6 +96,7 @@ public final class CrossServer {
         register("tpaccept", TPA, (player, args) -> answer(player, args, true), false);
         register("tpdeny", TPA, (player, args) -> answer(player, args, false), false);
         register("invsee", INVSEE, this::invsee, true);
+        registerTp();
         new Vote(proxy, this, logger).register();
         new MaintenanceSounds(proxy, this, logger).register();
         new Afk(proxy, this, logger, (server, command) -> Rcon.run(port(server), password(), command), this::visible).register();
@@ -156,23 +155,55 @@ public final class CrossServer {
         }).schedule();
     }
 
-    // Staff and mod /tp <player>, on this server or another (mods don't have the server's own /tp); any
-    // other /tp (coordinates, two players) goes on to the server as it is.
-    @Subscribe
-    public void onCommand(CommandExecuteEvent event) {
-        if (!(event.getCommandSource() instanceof Player player) || !player.hasPermission(TP)) {
-            return;
-        }
-        String[] parts = event.getCommand().trim().split("\\s+");
-        if (parts.length != 2 || !(parts[0].equalsIgnoreCase("tp") || parts[0].equalsIgnoreCase("teleport"))) {
-            return;
-        }
-        Optional<Player> target = proxy.getPlayer(parts[1]);
-        if (target.isEmpty() || target.get().equals(player) || target.get().getCurrentServer().isEmpty()) {
-            return;
-        }
-        event.setResult(CommandResult.denied());
-        move(player, target.get());
+    // /tp <player> for propwash.tp, on this server or another. A proxy command, so the client offers it
+    // to helpers and mods too: a client only sends commands the server listed for it, and their servers
+    // don't list the vanilla /tp. Any other /tp (coordinates, two players, a selector) goes on to the
+    // server as /teleport, which staff have: vanilla's on Fabric (it has no minecraft:tp, only Paper adds
+    // those), EssentialsX's on the hub. /teleport itself isn't taken here, so it doesn't come back.
+    // Also /tp <player> <player> (the first to the second, across servers) and /tphere <player> (them to you).
+    private void registerTp() {
+        SimpleCommand tp = new SimpleCommand() {
+            @Override
+            public void execute(Invocation invocation) {
+                if (!(invocation.source() instanceof Player player)) {
+                    return;
+                }
+                String[] args = invocation.arguments();
+                Optional<Player> first = args.length == 2 ? online(player, args[0]) : Optional.empty();
+                Optional<Player> second = args.length == 2 ? online(player, args[1]) : Optional.empty();
+                if (args.length == 1 && !args[0].startsWith("@") || args.length == 0) {
+                    target(player, args, "/tp <player>").ifPresent(to -> move(player, to));
+                } else if (first.isPresent() && second.isPresent()) {
+                    if (!first.get().equals(second.get())) {
+                        move(first.get(), second.get());
+                    }
+                } else {
+                    player.spoofChatInput("/teleport " + String.join(" ", args));
+                }
+            }
+
+            @Override
+            public boolean hasPermission(Invocation invocation) {
+                return invocation.source().hasPermission(TP);
+            }
+
+            @Override
+            public List<String> suggest(Invocation invocation) {
+                if (!(invocation.source() instanceof Player player) || invocation.arguments().length > 1) {
+                    return List.of();
+                }
+                String prefix = invocation.arguments().length == 0 ? "" : invocation.arguments()[0].toLowerCase();
+                return proxy.getAllPlayers().stream().filter(p -> !p.equals(player) && visible(player, p))
+                        .map(Player::getUsername).filter(n -> n.toLowerCase().startsWith(prefix)).sorted().toList();
+            }
+        };
+        proxy.getCommandManager().register(proxy.getCommandManager().metaBuilder("tp").plugin(this).build(), tp);
+        register("tphere", TP, (player, args) -> target(player, args, "/tphere <player>").ifPresent(them -> move(them, player)), true);
+    }
+
+    // The online player with this name, if the viewer may see them (not vanished, or may see vanished).
+    private Optional<Player> online(Player viewer, String name) {
+        return proxy.getPlayer(name).filter(p -> visible(viewer, p) && p.getCurrentServer().isPresent());
     }
 
     private synchronized void request(Player from, String[] args, boolean here) {
