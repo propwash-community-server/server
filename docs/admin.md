@@ -37,7 +37,7 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 ## Permissions
 
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
-(`default`, `supporter`, `junior-builder`, `senior-builder`, `mod`, `staff`, `admin`). Each entry is passed to
+(`default`, `supporter`, `junior-builder`, `senior-builder`, `helper`, `mod`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
@@ -75,6 +75,11 @@ on every server (EssentialsX's on the hub, mods/tweaks' on fpv and plots: up to 
 `max-fly-speed` 0.6, the same limit for everyone without `essentials.speed.bypass`), and `/enderchest`
 (`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
+
+`helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
+it) and besides: `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any server, and
+`/gamemode creative` and `survival` on the hub. Helpers are in the staff watch. Their `/help` is the
+supporter one. `lpv user <name> parent add helper`.
 
 `mod` (blue `[Mod]`, between builders and staff) has everything `supporter` has (it includes it) and
 only this besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/vote start` and
