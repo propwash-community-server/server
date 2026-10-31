@@ -3,6 +3,7 @@
 # Values are MiniMessage color names or "#rrggbb".
 brand = "#09add3"  # MOTD, map titles, /help headings
 muted = "gray"  # server tags, separators, subtitles
+propwash = "#FFBB00"  # Propwash Yellow, the brand kit's one accent (MOTD); its text is white, secondary text #B0B0B0
 dim = "dark_gray"  # [Local]
 accent = "yellow"  # commands in /help, staff chat messages
 supporter = "gold"
