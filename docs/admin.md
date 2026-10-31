@@ -430,7 +430,8 @@ server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
 `/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
 server switches: not in any tab list, the server list or `/list`, not drawn at all (no invisibility
 particles), not in name suggestions, and commands, `/tpa` and `/msg` don't find you. Public chat is
-off while vanished; staff chat (`#` or `/sc`) works. Staff and admin see vanished players
+off while vanished; staff chat works (`#`, `/sc <message>`, or after `/sc` made it your chat). `/g <message>` and `/l <message>`
+still go out on purpose: it takes intent, and staff may want to speak while vanished. Staff and admin see vanished players
 (`propwash.vanish.see`, `tab.seevanished`, `vanish.feature.view`, `essentials.vanish.see`,
 `carbon.whisper.vanished`), with a gray `[V]` after their name in the tab list, and are told in chat
 when someone vanishes or shows themselves again.

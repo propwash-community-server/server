@@ -49,7 +49,7 @@ import org.slf4j.Logger;
  * the usual join message (NetworkJoinMessages' own /njoinspoof), so nobody can tell; staff are told
  * who vanished. On Paper servers (hub), which have no vanish boss bar of their own, it shows one.
  */
-@Plugin(id = "vanish", name = "Vanish", version = "1.2.0",
+@Plugin(id = "vanish", name = "Vanish", version = "1.3.0",
         description = "Network-wide /v",
         dependencies = {@Dependency(id = "luckperms"), @Dependency(id = "tab", optional = true),
                 @Dependency(id = "networkjoinmessages", optional = true)})
@@ -329,16 +329,47 @@ public final class Vanish implements Predicate<UUID> {
         }
     }
 
-    // Before Carbon (which runs late): a vanished player's chat would give them away. Staff chat
-    // with the # prefix still goes through. Denying signed chat is deprecated in Velocity; SignedVelocity
-    // makes it work, as it does for Carbon.
+    // Before Carbon (which runs late): a vanished player's chat would give them away. Staff chat still
+    // goes through: with the # prefix, or when /sc (no message) made it their chat channel. Denying
+    // signed chat is deprecated in Velocity; SignedVelocity makes it work, as it does for Carbon.
     @Subscribe
     @SuppressWarnings("deprecation")
     public void onChat(PlayerChatEvent event) {
-        if (vanished.contains(event.getPlayer().getUniqueId()) && !event.getMessage().startsWith("#")) {
+        if (vanished.contains(event.getPlayer().getUniqueId()) && !event.getMessage().startsWith("#")
+                && !inStaffChat(event.getPlayer().getUniqueId())) {
             event.setResult(ChatResult.denied());
             event.getPlayer().sendMessage(Component.text(
                     "You are vanished: public chat is off. Use # or /sc for staff chat.", NamedTextColor.GRAY));
+        }
+    }
+
+    private static final String STAFF_CHANNEL = "carbon:staff";
+
+    /**
+     * Whether Carbon has staff chat as the player's channel. Carbon depends on this plugin (it asks who is
+     * vanished), so its API is reached through its own class loader, by reflection, when needed.
+     */
+    private boolean inStaffChat(UUID player) {
+        try {
+            Object carbonPlugin = proxy.getPluginManager().getPlugin("carbonchat").flatMap(p -> p.getInstance()).orElse(null);
+            if (carbonPlugin == null) {
+                return false;
+            }
+            Class<?> provider = Class.forName("net.draycia.carbon.api.CarbonChatProvider", true, carbonPlugin.getClass().getClassLoader());
+            Object carbon = provider.getMethod("carbonChat").invoke(null);
+            Object users = carbon.getClass().getMethod("userManager").invoke(carbon);
+            Object user = ((java.util.concurrent.CompletableFuture<?>) users.getClass().getMethod("user", UUID.class)
+                    .invoke(users, player)).getNow(null);
+            if (user == null) {
+                return false;
+            }
+            java.lang.reflect.Method selected = user.getClass().getMethod("selectedChannel");
+            selected.setAccessible(true);
+            Object channel = selected.invoke(user);
+            return channel instanceof net.kyori.adventure.key.Keyed keyed && keyed.key().asString().equals(STAFF_CHANNEL);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            logger.warn("Can't ask Carbon for {}'s chat channel", player, e);
+            return false;
         }
     }
 
