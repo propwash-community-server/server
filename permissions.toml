@@ -247,6 +247,8 @@ permissions = [
     # /plot admin: build-admin mode, editing any plot and the roads (and their WorldEdit too, with the
     # staff limits); FabricPlots' other admin tools (/plot setowner, /plot reload) stay with staff.
     "fabricplots.admin server=plots",
+    # /plot feature: featured plots, listed first in /plot list (our FabricPlots build).
+    "fabricplots.feature server=plots",
     # /flan bypass: build on fpv maps (Flan's claims), as senior builders can.
     "flan.command.bypass.claim server=fpv",
     # /gamemode creative (and back to survival) on the hub (EssentialsX).
@@ -308,6 +310,8 @@ permissions = [
     # by default (nobody is op): /plot admin to edit any plot, /plot setowner, /plot reload.
     "fabricplots.limit.64 server=plots",
     "fabricplots.admin server=plots",
+    # /plot feature: featured plots, listed first in /plot list (our FabricPlots build).
+    "fabricplots.feature server=plots",
     "fabricplots.setowner server=plots",
     "fabricplots.reload server=plots",
     # WorldEdit on plots without mods/plotedit's limits (staff have worldedit.* already).
