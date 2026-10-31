@@ -210,7 +210,7 @@ Sand, gravel, concrete powder, anvils and the other gravity blocks don't fall in
 blocks into falling ones at once (everything below its middle has nothing under it), and their
 collision checks with each other froze plots until the watchdog stopped it (2026-10-29).
 
-Featured plots (plotsize.18): mods and staff (`fabricplots.feature`) stand on a plot and run
+Featured plots (plotsize.18, colours plotsize.19): mods and staff (`fabricplots.feature`) stand on a plot and run
 `/plot feature` (again to stop); `/plot list` then shows a Featured line first, each plot by its name
 (or "<owner>'s plot") and clickable to visit. Saved with the plot (`featured`, the last field).
 Animals tagged `propwash.pet` (mods/pets) are never removed as stray mobs (plotsize.17).
