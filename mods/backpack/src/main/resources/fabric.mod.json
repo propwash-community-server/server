@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "backpack",
+  "version": "${version}",
+  "name": "Backpack",
+  "description": "Propwash backpack cosmetic (propwash.backpack): /backpack wears a backpack (the propwash_cosmetics:backpack model from the server resource pack), /backpack drone puts the Propwash drone in your hand on it. Server-side only; on or off is LuckPerms meta, shared by every server.",
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["community.propwash.backpack.Backpack"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3",
+    "fabric-api": "*",
+    "luckperms": "*"
+  }
+}

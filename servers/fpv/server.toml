@@ -33,6 +33,9 @@ mods = [
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
+    # /backpack: a backpack on your back (propwash.backpack; for now only admins have it), with your drone on it
+    # (/backpack drone); its model is in the maps resource pack. Our mods/backpack, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # Server status, race records and /link for the Discord bot; its key is BRIDGE_KEY_FPV (see docs/admin.md#discord-bot).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.

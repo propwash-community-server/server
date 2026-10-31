@@ -1,0 +1,33 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
+    id 'java'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+base.archivesName = 'backpack'
+
+dependencies {
+    // Minecraft 26.x ships with Mojang's names, so no mappings.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // Commands, ticks, joins and leaves; the servers run the same Fabric API.
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // On or off is LuckPerms meta, so every server shares it; the servers have LuckPerms.
+    compileOnly 'net.luckperms:api:5.4'
+}
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}

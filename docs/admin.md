@@ -412,6 +412,19 @@ vanished players). Part of `mods/crossserver`, on the proxy: it can't see moveme
 it asks the player's server over rcon where each AFK player is. It isn't in `/help`. The automatic AFK after 15 minutes (Essential Commands, EssentialsX) is separate and doesn't
 show in the tab list.
 
+## Backpack
+
+Admins for now (`propwash.backpack`, which only `*` gives) wear a backpack with `/backpack` (again to take it off) on fpv and
+plots, and `/backpack drone` puts a copy of the Propwash drone in their hand on the outside of it
+(`/backpack drone off` takes it off). Our Fabric mod [`mods/backpack`](../mods/backpack/): item displays
+that every player's game is told ride the player (in 26.3 nothing can really ride a player), turned
+with their body every tick, so nothing is needed on the client. The backpack is the
+`propwash_cosmetics:backpack` model in the maps resource pack; without the pack it shows as the
+missing-model cube. Its item, model, size and position, and the drone's, are in each server's
+`config/backpack.properties` (written on first start, read on start). Hidden while vanished, in
+spectator or dead. On or off is LuckPerms meta (`propwash-backpack`), so it follows players to every
+server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
+
 ## Vanish
 
 `/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
