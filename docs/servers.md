@@ -46,6 +46,19 @@ plugins that comes from the URL, for the server jar it is `jar`.
 | Update a server jar | change `url` and `jar`, deploy |
 | Add a server | add `servers/<name>/server.toml` with a free port |
 
+## Limbo
+
+Players who can't join the Fabric servers (no Fabric, another game version, missing or wrong mods)
+go to `limbo` instead of being disconnected: when a server refuses a player while they join (also
+their first join into the network), [`mods/crossserver`](../mods/crossserver/) sends them to limbo and
+tells them why, with links to [propwashfpv.com](https://propwashfpv.com/) and
+[Discord](https://discord.propwashfpv.com). A player refused while already on limbo just gets the
+message. Limbo is Paper with [ViaVersion](https://modrinth.com/plugin/viaversion) and ViaBackwards,
+so other game versions get in, and EssentialsX; staff go there with `/server limbo`. Its world was
+built on dev and put in place by hand before the first deploy (the deploy never changes worlds), from
+`limbo/limbo-world-2026-11-01.tar.gz` in the world store; it also has the hub's `mountains`
+dimension, a datapack in the world itself.
+
 ## Colors
 
 Texts the repo writes (chat formats, the tab list, rank prefixes, the MOTD, map titles, `/map`,

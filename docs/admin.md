@@ -71,19 +71,18 @@ lpv user <name> parent add senior-builder
 ```
 
 `supporter` is for Ko-fi donors: the `[Supporter]` tag, `/fly` on the hub and fpv, and `/flyspeed <0-10>`
-on every server (EssentialsX's on the hub, mods/tweaks' on fpv and plots: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6; on the hub EssentialsX's
-`max-fly-speed` 0.6, the same limit for everyone without `essentials.speed.bypass`), and `/enderchest`
+on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6), and `/enderchest`
 (`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
-it) and besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/tp <player>` on any
+it) and besides: staff chat, `/flyspeed` up to 10, `/tp <player>` on any
 server, `/gamemode creative` and `survival` on the hub, and `/maintenance on` and `off` (and staying on during it). Helpers are in the staff watch. Their `/help`
 part is [`helper.txt`](../servers/velocity/files/plugins/staffhelp/helper.txt) (`/help helper` shows only
 it), in place of the supporter one. `lpv user <name> parent add helper`.
 
 `mod` (blue `[Mod]`, between builders and staff) has everything `supporter` has (it includes it) and
-only this besides: staff chat, `/flyspeed` up to 10 (and `/speed` 10 on the hub), `/vote start` and
+only this besides: staff chat, `/flyspeed` up to 10, `/vote start` and
 `/vote end`, `/maintenance on` and `off` (and staying on during it), `/kick`, `/ban`, `/mute`, `/unban`,
 `/unmute` and `/history` (players, not IPs), `/tp <player>`, `/spy`, `/v` and `/v auto` (and seeing
 vanished players), WorldEdit on plots with plotedit's staff limits (80,000 blocks), only where they
@@ -120,8 +119,8 @@ works on every server: `mods/crossserver` remembers it and sets the `propwash.ex
 server the player arrives on (over rcon), so a `/tag` set by hand doesn't last.
 
 A dropped item (Q, out of the inventory, from the creative menu) is deleted instead of landing on
-the ground, except for `propwash.exempt` players: on fpv and plots by our Fabric mod
-[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`), on the hub by the `nodrop` datapack.
+the ground, except for `propwash.exempt` players: on the hub, fpv and plots by our Fabric mod
+[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`), on limbo by the `nodrop` datapack.
 `mods/tweaks` also makes vanishing and
 un-vanishing show at once: the Vanish mod left that to vanilla, which only re-checks who sees whom
 when someone moves into another 16-block section. That part hooks into Vanish by name; after
@@ -329,15 +328,16 @@ chat (the server log still has joins, leaves and AFK):
 
 | Server | Join, leave and AFK | Advancements |
 |---|---|---|
-| hub | EssentialsX `custom-join-message`, `custom-quit-message`, `broadcast-afk-message` | `files/world/datapacks/quiet` |
+| hub | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
+| limbo | EssentialsX `custom-join-message`, `custom-quit-message`, `broadcast-afk-message` | `files/world/datapacks/quiet` |
 | fpv | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
 | plots | our [`mods/quiet`](../mods/quiet/) | `[gamerules]` in its `server.toml` |
 
 The quiet mod's AFK part hooks into Essential Commands (`PlayerData.setAfk`). If an Essential
 Commands update changes that, the AFK messages come back (no crash): check after updating it.
 
-The game rule is `show_advancement_messages`. Paper keeps game rules per dimension, so the hub's
-datapack also sets it in `maps:mountains`, its spawn map. Players still see their own advancement
+The game rule is `show_advancement_messages`. Paper keeps game rules per dimension, so limbo's
+datapack also sets it in `maps:mountains`, its spawn map (the hub's too, from when it was Paper). Players still see their own advancement
 pop-up; advancements stay on, since the fpv datapacks use them.
 
 To change the quiet mod (JDK 25): edit [`mods/quiet`](../mods/quiet/), raise `mod_version` in its
@@ -383,8 +383,8 @@ own). `/tp` is a proxy command so that helpers' and mods' game clients offer it 
 sends commands its server lists for it). `/tp` with anything else (coordinates, a selector) goes on to
 the server as `/teleport`, which only staff have there.
 Each server keeps its own inventory of a player, so `/invsee` shows the one on the server they're
-on: EssentialsX `/invsee` on the hub, [InvView](https://modrinth.com/mod/invview) `/view inv` on
-fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories
+on: EssentialsX `/invsee` on limbo, [InvView](https://modrinth.com/mod/invview) `/view inv` on
+the hub, fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories
 of players with `invview.protected`, which admins have through `*`. Vanished players can't be found
 by anyone who can't see them.
 
@@ -443,7 +443,7 @@ when someone vanishes or shows themselves again.
 
 Going into `/v` posts your usual leave message ("<name> left") and coming out your usual join message,
 so nobody can tell (NetworkJoinMessages' own `/njoinspoof leave` and `join`, run for you). While
-vanished on hub, a boss bar says so (fpv and plots show the Vanish mod's own).
+vanished on limbo, a boss bar says so (the Fabric servers show the Vanish mod's own).
 `/vanish <anything>` (like `/vanish check`) goes to the server's own vanish command.
 
 `/v auto on` (or `/vanish auto on`): you always arrive on the network vanished, without a join
@@ -454,8 +454,8 @@ back), and kept in the proxy's `plugins/vanish/auto.properties`.
 | Part | Does |
 |---|---|
 | [`mods/vanish`](../mods/vanish/) (proxy) | `/v`, `/vanish`; keeps who is vanished; TAB tab list (and `[V]` for staff), server list, blocks chat; tells Carbon and staff; fake leave/join messages; hub boss bar |
-| [Vanish](https://modrinth.com/mod/vanish) (fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
-| EssentialsX `/vanish` (hub) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
+| [Vanish](https://modrinth.com/mod/vanish) (hub, fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
+| EssentialsX `/vanish` (limbo) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
 | our Carbon build | leaves vanished players out of `/msg` and its suggestions |
 
 `/v` toggles on the proxy and is sent on to the server you're on as its own `/vanish on|off`.
@@ -594,6 +594,7 @@ snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 | Console | [`mc-console`](../deploy/files/mc-console) `<name>` |
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
-| Hub spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
-| Hub portals | [`/portal create`](https://advancedportals.sekwah.com) in game, then `systemctl restart mc@hub`: AdvancedPortals 2.8.0 only sets up portals fully when loading them, and a new one throws an error when it refuses a player |
+| Hub spawn | the coordinates in `servers/hub/files/world/datapacks/hubspawn` (players are sent there on every arrival) and `files/config/melius-commands/commands/spawn.json` (`/spawn`) |
+| Hub portals | `portal.<name>` in the hub's `[config."config/tweaks.properties"]` (mods/tweaks): a box of blocks and the server it sends to; nether portal blocks inside it don't lead to the nether. Read on start |
+| Limbo spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
 | fpv spawn | `/execute in maps:lobby run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#lobby)) |

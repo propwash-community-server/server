@@ -1,0 +1,1 @@
+{"id": "spawn", "executes": [{"command": "execute in maps:mountains run tp @s -121.47 -31 73.51 -134.5 0.6", "op_level": 2, "silent": true}]}

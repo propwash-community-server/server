@@ -90,6 +90,8 @@ COLORS = {
     "light_purple": "d", "yellow": "e", "white": "f",
 }
 DECORATIONS = {"bold": "l", "italic": "o", "underlined": "n", "strikethrough": "m", "obfuscated": "k"}
+# Links in tellraw texts: <click:open_url:'https://...'>text</click>, <hover:show_text:'...'>text</hover>.
+LINK = re.compile(r"<click:open_url:'([^']*)'>|</click>|<hover:show_text:'([^']*)'>|</hover>")
 
 
 def palette_tags(text):
@@ -98,22 +100,32 @@ def palette_tags(text):
 
 
 def spans(text):
-    """(text, open tags) pieces of a text, for what doesn't read MiniMessage. Only colors, decorations
-    and <reset> are tags; anything else in <> (like <name> in a command) stays text."""
-    text, stack, out, pos = palette_tags(text), [], [], 0
-    for m in TAG.finditer(text):
-        tag = m[2]
-        if tag not in COLORS and tag not in DECORATIONS and not tag.startswith("#") and tag != "reset":
+    """(text, open tags, link url, hover text) pieces of a text, for what doesn't read MiniMessage. Only
+    colors, decorations, <reset> and links are tags; anything else in <> (like <name> in a command) stays text."""
+    text, stack, out, pos, url, hover = palette_tags(text), [], [], 0, None, None
+    # Links first: </click> and </hover> also look like color tags.
+    for m in re.finditer(LINK.pattern + "|" + TAG.pattern, text):
+        tag = m[4]
+        if tag is not None and tag not in COLORS and tag not in DECORATIONS and not tag.startswith("#") and tag != "reset":
             continue
-        out.append((text[pos:m.start()], list(stack)))
+        out.append((text[pos:m.start()], list(stack), url, hover))
         pos = m.end()
-        if tag == "reset":
+        if tag is None:  # a link tag
+            if m[0] == "</click>":
+                url = None
+            elif m[0] == "</hover>":
+                hover = None
+            elif m[1] is not None:
+                url = m[1]
+            else:
+                hover = m[2]
+        elif tag == "reset":
             stack = []
-        elif not m[1]:
+        elif not m[3]:
             stack.append(tag)
         elif tag in stack:
             del stack[len(stack) - 1 - stack[::-1].index(tag)]
-    return [(t, s) for t, s in out + [(text[pos:], stack)] if t]
+    return [piece for piece in out + [(text[pos:], stack, url, hover)] if piece[0]]
 
 
 def color(tags):
@@ -124,8 +136,10 @@ def color(tags):
 def to_json(text):
     # A text component, for tellraw and title.
     return json.dumps(["", *(
-        {"text": t, **({"color": color(s)} if color(s) else {}), **{d: True for d in s if d in DECORATIONS}}
-        for t, s in spans(text)
+        {"text": t, **({"color": color(s)} if color(s) else {}), **{d: True for d in s if d in DECORATIONS},
+         **({"click_event": {"action": "open_url", "url": url}} if url else {}),
+         **({"hover_event": {"action": "show_text", "value": hover}} if hover else {})}
+        for t, s, url, hover in spans(text)
     )])
 
 
@@ -136,7 +150,7 @@ def to_legacy(text):
         return "&r" + ("" if not c else f"&{c}" if c.startswith("#") else f"&{COLORS[c]}") + "".join(
             f"&{DECORATIONS[d]}" for d in tags if d in DECORATIONS)
 
-    return "".join("\n".join(codes(s) + line if line else "" for line in t.split("\n")) for t, s in spans(text))
+    return "".join("\n".join(codes(s) + line if line else "" for line in t.split("\n")) for t, s, _, _ in spans(text))
 
 
 def permission_commands():

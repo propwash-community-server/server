@@ -1,21 +1,40 @@
-type = "paper"
+type = "fabric"
 port = 25567
 ram = "1536M"
-jar = "paper-26.3-159.jar"
-url = "https://fill-data.papermc.io/v1/objects/2224a0b2b6b096ff4c429ad926e97977213e4f633e90cb3a49b5eeb82f94bab0/paper-26.3-159.jar"
-plugins = [
-    "https://cdn.modrinth.com/data/axTqSWQA/versions/OiYxu4ab/advanced-portals-2.8.0-spigot.jar",
-    "https://cdn.modrinth.com/data/1u6JkXh5/versions/J1eeOh6C/worldedit-bukkit-7.4.6-beta-02.jar",
-    "https://cdn.modrinth.com/data/hXiIvTyT/versions/nY6VN1XH/EssentialsX-2.22.0.jar",
-    "https://cdn.modrinth.com/data/sYpvDxGJ/versions/lc5JHiNJ/EssentialsXSpawn-2.22.0.jar",
-    "https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar",
+jar = "fabric-server.jar"
+url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar"
+mods = [
+    "https://cdn.modrinth.com/data/P7dR8mSH/versions/v2j28coa/fabric-api-0.162.0%2B26.3.jar",
+    "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
+    # Clients need Propwash and Just More Parts for the hub too: players without them can't join a
+    # Fabric server with them, and go to limbo (mods/crossserver, docs/servers.md#limbo).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-fabric-26.3-0.5.2.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
+    "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
+    "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
+    "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
+    "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
+    # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
+    "https://cdn.modrinth.com/data/fdZkP5Bb/versions/bpq3ZDRl/vanilla-permissions-0.3.6%2B26.1.2.jar",
     # Chat is handled on the proxy (Carbon); this lets it take over signed chat.
-    "https://cdn.modrinth.com/data/7IbzD4Zm/versions/oEqZsNvv/SignedVelocity-Paper-1.5.0.jar",
+    "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
+    # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
+    # As on fpv and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
+    # Our mods/tweaks, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.10.0-26.3.jar",
+    # /backpack (for now only admins); see plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
+    # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
+    "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
+    # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
+    "https://cdn.modrinth.com/data/jrDKjZP7/versions/uySsk7v8/InvView-1.4.22-26.3%2B.jar",
 ]
 
-# /help, in MiniMessage with palette.toml tags. Essentials shows 9 lines per page, network part included.
+# /help, in MiniMessage with palette.toml tags.
 help = """
 <brand><bold>Hub</bold></brand>: the lobby. Walk through a portal to join a server.
+<accent>/spawn</accent>: back to the hub spawn
 """
 
 # Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
@@ -23,23 +42,29 @@ welcome = """
 <bold><white>Welcome to </white><propwash>Propwash FPV</propwash><white>!</white></bold>
 """
 
-# Players go to the hub spawn (set it in game with /setspawn) every time they arrive.
-[config."plugins/Essentials/config.yml"]
-spawn-on-join = "true"
-# /flyspeed (/speed) goes up to 6 without essentials.speed.bypass, as supporters' propwash.flyspeed.6
-# on fpv and plots (EssentialsX has one limit, not levels).
-max-fly-speed = "0.6"
-delay-motd = "-1"
-notify-no-new-mail = "false"
-# Nested under newbies:, hence the indent. '' = no kit on first join (the default gives stone tools).
-"  kit" = "''"
-# No "joined the game" / "left the game" in chat ('' hides them; none would be vanilla's).
-custom-join-message = "''"
-custom-quit-message = "''"
-# "You are now AFK" only to the player, not to everyone.
-broadcast-afk-message = "false"
-# Players /v made vanished (essentials.silentjoin.vanish, set by mods/vanish) arrive vanished.
-allow-silent-join-quit = "true"
+# Players arrive at the hub spawn every time (files/world/datapacks/hubspawn); /spawn goes there too
+# (files/config/melius-commands/commands/spawn.json). Only the Essential Commands players get through
+# permissions.toml; these are off here: the hub is just the lobby.
+[config."config/EssentialCommands.properties"]
+use_permissions_api = "true"
+enable_spawn = "false"
+enable_home = "false"
+enable_tpa = "false"
+enable_warp = "false"
+enable_back = "false"
+enable_rtp = "false"
+enable_enderchest = "false"
+
+# The portals to fpv and plots (mods/tweaks: a player inside the box goes to that server; the nether
+# portal blocks in them only look the part). "<dimension> <x1> <y1> <z1> <x2> <y2> <z2> <server>".
+[config."config/tweaks.properties"]
+staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
+"portal.fpv" = "maps:mountains -124 -28 54 -121 -18 54 fpv"
+"portal.plots" = "maps:mountains -103 -28 72 -103 -18 75 plots"
+
+# Vanish (/v): no fake "left the game" / "joined the game" when vanishing, like every other join message.
+[config."config/vanish.hocon"]
+send-join-disconnect-message = "false"
 
 # The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
