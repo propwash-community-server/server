@@ -42,8 +42,9 @@ plugins = [
     # /staffwatch; see docs/admin.md#staff-watch): our mods/staffwatch, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffwatch-1.2.0.jar",
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
-    # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.6.0.jar",
+    # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee. Players a server refuses on
+    # joining (no Fabric, other version, missing mods) go to limbo instead (docs/servers.md#limbo).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.7.0.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
@@ -69,3 +70,7 @@ help = """
 # times (timer-broadcast-for-seconds); before a deploy, it reads as a restart, which is what players see.
 [config."plugins/maintenance/language-en.yml"]
 starttimerBroadcast = '"<gray>Server restarting in <gold>%TIME%<gray>."'
+
+# mods/crossserver: the Paper servers (EssentialsX /invsee there; InvView on the Fabric ones).
+[config."plugins/crossserver/config.properties"]
+paper-servers = "limbo"
