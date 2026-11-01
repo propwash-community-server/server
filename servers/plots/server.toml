@@ -170,7 +170,8 @@ resource-pack-sha1 = "4420b613797f58cca0cb2c057d96c47d1c92b5f3"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
-# plot world (files/world/datapacks/plots_spawn), where FabricPlots puts them in creative.
+# plot world (files/world/datapacks/plots_spawn, which also sends anyone found in the overworld
+# there), where FabricPlots puts them in creative.
 [new_world]
 motd = "Propwash Plots"
 level-type = "minecraft\\:flat"
