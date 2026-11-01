@@ -61,6 +61,7 @@ public final class Tweaks implements ModInitializer {
         UseEntityCallback.EVENT.register(early, (player, world, hand, entity, hit) -> mapStand(player, hand, entity));
         StaffWatch.init();
         Portals.init();
+        Aliases.init();
         Race.init();
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
