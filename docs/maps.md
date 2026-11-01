@@ -160,7 +160,7 @@ After Halloween, in this order:
    `minecraft:plains`). A chunk left on the Halloween biome breaks once the datapack is gone.
 2. Remove `halloween-lobby-datapack.zip` from the three servers' `files/world/datapacks/`.
 3. In the three `server.toml` files, swap `resource-pack` and `resource-pack-sha1` back to the
-   regular pack in the comment above them (`propwash-maps-6557a509.zip`, still in the world store).
+   regular pack. Done 2026-11-01: `propwash-maps-4420b613.zip`, the regular pack plus the backpack model.
 4. Deploy, then delete `world/datapacks/halloween-lobby-datapack.zip` on each server (deploys copy
    `files/` but never delete) and restart them.
 
