@@ -54,6 +54,12 @@ at most every 2 seconds. Everyone has it, on the hub, fpv and plots ([`mods/twea
 Propwash keeps the courses in `world/data/propwash_race.json` and writes it when the world is saved,
 so a new course shows up after the next save (every few minutes).
 
+## Short commands
+
+On the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)): `/gm <mode>` (`survival`, `creative`,
+`adventure`, `spectator`, or `0`, `1`, `2`, `3`, `spec`), `/gmc` and `/gms` run `/gamemode`, and `/ci`
+runs `/clear`. Whoever may use `/gamemode` or `/clear` there may use them; nobody else sees them.
+
 ## Limbo
 
 Players who can't join the Fabric servers (no Fabric, another game version, missing or wrong mods)
