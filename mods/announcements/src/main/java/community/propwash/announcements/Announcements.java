@@ -26,10 +26,11 @@ import org.slf4j.Logger;
 /**
  * Every few minutes one message from plugins/announcements/announcements.toml, picked at random by
  * weight (70 and 30: that one 70% of the time on average), goes to the servers listed there: as a chat
- * message or as a boss bar for a few seconds. The file is read again whenever it changes, so edits
- * apply at the next announcement. /announce (propwash.announce) sends one now.
+ * message or as a boss bar for a few seconds, after the file's prefix (e.g. [Propwash]). The file is
+ * read again whenever it changes, so edits apply at the next announcement. /announce (propwash.announce)
+ * sends one now; /announce <message> sends that (MiniMessage) after the prefix, in chat on every server.
  */
-@Plugin(id = "announcements", name = "Announcements", version = "1.0.0",
+@Plugin(id = "announcements", name = "Announcements", version = "1.1.0",
         description = "Occasional announcements on chosen servers")
 public final class Announcements {
     private static final String PERMISSION = "propwash.announce";
@@ -38,7 +39,7 @@ public final class Announcements {
     }
 
     private record Config(long everySeconds, long bossBarSeconds, BossBar.Color bossBarColor,
-                          Map<String, String> servers, List<Message> messages) {
+                          Map<String, String> servers, List<Message> messages, String prefix) {
     }
 
     private final ProxyServer proxy;
@@ -65,7 +66,12 @@ public final class Announcements {
                     @Override
                     public void execute(Invocation invocation) {
                         reload();
-                        announce();
+                        String text = String.join(" ", invocation.arguments()).strip();
+                        if (text.isEmpty()) {
+                            announce();
+                        } else {
+                            announceText(text);
+                        }
                     }
 
                     @Override
@@ -97,7 +103,7 @@ public final class Announcements {
             return;
         }
         Message m = pick(c.messages());
-        Component text = MiniMessage.miniMessage().deserialize(m.text().strip());
+        Component text = MiniMessage.miniMessage().deserialize(c.prefix() + m.text().strip());
         for (Player player : proxy.getAllPlayers()) {
             String server = player.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
             String style = server == null ? null : c.servers().get(server);
@@ -110,6 +116,14 @@ public final class Announcements {
                         .delay(c.bossBarSeconds(), TimeUnit.SECONDS).schedule();
             }
         }
+    }
+
+    /** A message of one's own (/announce <message>): grey like the tips, after the prefix, in chat to everyone on every server. */
+    private synchronized void announceText(String text) {
+        Config c = config;
+        Component message = MiniMessage.miniMessage().deserialize((c == null ? "" : c.prefix()) + "<gray>" + text + "</gray>");
+        proxy.getAllPlayers().forEach(p -> p.sendMessage(message));
+        logger.info("Announced: {}", text);
     }
 
     private static Message pick(List<Message> messages) {
@@ -150,7 +164,7 @@ public final class Announcements {
                     Math.max(10, Math.round(number(toml, "every_minutes", 10) * 60)),
                     Math.max(1, Math.round(number(toml, "bossbar_seconds", 15))),
                     BossBar.Color.NAMES.valueOr(toml.getString("bossbar_color", "blue"), BossBar.Color.BLUE),
-                    servers, messages);
+                    servers, messages, toml.getString("prefix", ""));
             configModified = modified;
             logger.info("{} announcements every {} s on {}", messages.size(), config.everySeconds(), servers);
         } catch (IOException | RuntimeException e) {

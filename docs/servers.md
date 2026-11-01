@@ -28,7 +28,8 @@ servers listed in
 [`servers/velocity/files/plugins/announcements/announcements.toml`](../servers/velocity/files/plugins/announcements/announcements.toml)
 (same tags; links with `<click:open_url:'https://...'>`). The proxy reads it again whenever it changes,
 so an edit on the server applies at the next announcement without a restart; staff can send one now
-with `/announce`. It's our Velocity plugin [`mods/announcements`](../mods/announcements/), rebuilt like
+with `/announce`, or their own message with `/announce <message>` (MiniMessage; to everyone on every
+server, in chat). Every announcement starts with the file's `prefix`, `[Propwash]` in Propwash Yellow. It's our Velocity plugin [`mods/announcements`](../mods/announcements/), rebuilt like
 `mods/staffhelp`.
 
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
