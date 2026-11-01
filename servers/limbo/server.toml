@@ -29,7 +29,11 @@ welcome = """
 <muted>To fly with us you need Minecraft 26.3 with Fabric and the Propwash mods. Everything you need: <click:open_url:'https://propwashfpv.com/'><hover:show_text:'propwashfpv.com'><white><underlined>propwashfpv.com</underlined></white></hover></click>, help on <click:open_url:'https://discord.propwashfpv.com'><hover:show_text:'discord.propwashfpv.com'><white><underlined>Discord</underlined></white></hover></click>.</muted>
 """
 
-# Players go to the spawn (set it in game with /setspawn) every time they arrive.
+# No advancements, so no advancement pop-ups (chat messages are off anyway: files/world/datapacks/quiet).
+disable_advancements = true
+
+# Players go to the spawn every time they arrive: files/plugins/Essentials/spawn.yml, the spot on the
+# mountains map (copied from dev, where it was set with /setspawn; a /setspawn here is undone by a deploy).
 [config."plugins/Essentials/config.yml"]
 spawn-on-join = "true"
 delay-motd = "-1"

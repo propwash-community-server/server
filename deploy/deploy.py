@@ -816,6 +816,12 @@ for name, cfg in backends.items():
 
     changes += config_ops(name, d, cfg)
 
+    # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so
+    # nobody gets advancement pop-ups. From the deploy after the first start, when spigot.yml exists.
+    if cfg.get("disable_advancements") and kind == "paper" and host.get_fact(File, path=f"{d}/spigot.yml"):
+        changes.append(files.line(name=f"{name}: no advancements", path=f"{d}/spigot.yml",
+                                  line=r"^  - minecraft:story/disabled$", replace="  - '*'"))
+
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
     # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level
     # keys of flan_config.json. Flan rewrites the file on every start, so it's compared as data. Also
