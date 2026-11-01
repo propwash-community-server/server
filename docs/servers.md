@@ -46,6 +46,14 @@ plugins that comes from the URL, for the server jar it is `jar`.
 | Update a server jar | change `url` and `jar`, deploy |
 | Add a server | add `servers/<name>/server.toml` with a free port |
 
+## Race courses
+
+`/race` lists the server's Propwash race courses (one a line, clickable), and `/race <course>` (its
+name, or its number for an unnamed one) takes you just in front of its start gate, facing through it,
+at most every 2 seconds. Everyone has it, on the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)).
+Propwash keeps the courses in `world/data/propwash_race.json` and writes it when the world is saved,
+so a new course shows up after the next save (every few minutes).
+
 ## Limbo
 
 Players who can't join the Fabric servers (no Fabric, another game version, missing or wrong mods)
