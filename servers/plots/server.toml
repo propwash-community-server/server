@@ -162,12 +162,10 @@ send-join-disconnect-message = "false"
 # The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
-# Halloween 2026: the maps pack plus Halloween (witch's broom frames, spooky sounds), the same maps
-# assets; docs/maps.md#halloween. After Halloween, back to the regular maps pack (still in the world store):
-# resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-4420b613.zip'
-# resource-pack-sha1 = "4420b613797f58cca0cb2c057d96c47d1c92b5f3"
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-halloween-855e1980.zip'
-resource-pack-sha1 = "855e198010019577ff7a6dabd8fd93f3af86ee0f"
+# The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
+# Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-4420b613.zip'
+resource-pack-sha1 = "4420b613797f58cca0cb2c057d96c47d1c92b5f3"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
