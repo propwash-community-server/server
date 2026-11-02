@@ -169,9 +169,18 @@ def permission_commands():
 # of commands (e.g. a Litematica paste) froze the hub until the watchdog stopped it. Paper keeps 20.
 FABRIC_JVM_FLAGS = "-Dio.github._4drian3d.signedvelocity.timeout=1000"
 
+# Every server, to see why one ran out of memory (docs/admin.md#frozen-server): its garbage collection
+# in logs/gc.log (5 files of 10 MB at most), and a heap dump in /home/mc/diagnostics when memory
+# actually runs out (as big as its RAM; delete it once looked at).
+DIAGNOSTICS = "/home/mc/diagnostics"
+DIAGNOSTIC_JVM_FLAGS = (
+    "-Xlog:gc*:file=logs/gc.log:time,uptime,level,tags:filecount=5,filesize=10M"
+    f" -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath={DIAGNOSTICS}"
+)
+
 
 def start_script(path, jar, ram, args="", jvm_flags=""):
-    jvm = f" {jvm_flags}" if jvm_flags else ""
+    jvm = f" {DIAGNOSTIC_JVM_FLAGS}" + (f" {jvm_flags}" if jvm_flags else "")
     script = (
         "#!/bin/sh\n"
         "# Managed by pyinfra - edit servers/<name>/server.toml instead.\n"
@@ -559,7 +568,8 @@ def service(name, changes):
 
 apt.packages(
     name="Install Java and tools",
-    packages=["openjdk-25-jre-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server",
+    # The JDK rather than the JRE for jcmd (mc-diagnose).
+    packages=["openjdk-25-jdk-headless", "tmux", "ufw", "curl", "python3-yaml", "restic", "mariadb-server",
               "git", "sqlite3"],
     update=True,
     cache_time=3600,
@@ -580,10 +590,11 @@ if not LOCAL:
 
 for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer", "propwash-bot@.service"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
-for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension"]:
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension", "mc-diagnose"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
+files.directory(name="diagnostics folder", path=DIAGNOSTICS, **OWNER)
 
 # MariaDB for LuckPerms and LibertyBans (one user, `minecraft`); listens on 127.0.0.1 only
 # (Ubuntu default). Plain idempotent SQL, because pyinfra's mysql facts can't run before MariaDB is installed.

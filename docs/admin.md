@@ -587,11 +587,30 @@ snapshot. It keeps 7 daily, 4 weekly and 6 monthly snapshots.
 | Restore a world | [`mc-restore`](../deploy/files/mc-restore) `<server> [snapshot]` (the old world is kept as `world.before-restore-<time>`) |
 | Restore permissions + bans | `set -a; . /etc/mc-backup.env; restic restore latest --target / --include /var/backups/mariadb.sql && mysql < /var/backups/mariadb.sql` |
 
+## Frozen server
+
+A server that stops answering (players time out, `mc-rcon` gets no reply) while `systemctl status
+mc@<name>` still says running has usually run out of memory: Java then spends all its time trying to
+free some (`top -H` shows its `GC Thread`s at full CPU). Before restarting it:
+
+1. `mc-diagnose <name>`: its threads, what fills its memory (class histogram) and its memory use, in
+   `/home/mc/diagnostics/<name>-<time>/` (a few MB, under a minute). `--heap` adds a full heap dump
+   (as big as its RAM).
+2. `systemctl restart mc@<name>`; if it's still stopping after a minute (it can't process `stop`),
+   `systemctl kill -s KILL mc@<name>; systemctl start mc@<name>` ("Failed to send signal SIGKILL to
+   auxiliary processes" is harmless: the server is stopped anyway). Everything since the last save (a few
+   minutes) is lost; broken glass still comes back (`world/data/regen.dat`).
+
+Every server also logs its garbage collection to `logs/gc.log` (how full its memory got, and when),
+and writes a heap dump to `/home/mc/diagnostics/` if memory actually runs out. Heap dumps are big:
+delete them once looked at.
+
 ## On the VPS
 
 | Task | How |
 |---|---|
 | Console | [`mc-console`](../deploy/files/mc-console) `<name>` |
+| Frozen server | [`mc-diagnose`](../deploy/files/mc-diagnose) `<name>`, then restart it ([Frozen server](#frozen-server)) |
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | the coordinates in `servers/hub/files/world/datapacks/hubspawn` (players are sent there on every arrival) and `files/config/melius-commands/commands/spawn.json` (`/spawn`) |
