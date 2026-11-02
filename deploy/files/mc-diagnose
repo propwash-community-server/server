@@ -1,0 +1,33 @@
+#!/bin/sh
+# What a frozen or slow server is doing, before restarting it: mc-diagnose <server>
+# Writes its threads, what fills its memory and its memory use to /home/mc/diagnostics/<server>-<time>/
+# (a few MB); with --heap also a full heap dump (as big as the server's RAM, slow on a full heap).
+if [ -z "$1" ]; then
+    echo "usage: mc-diagnose <server> [--heap]"
+    ls /home/mc/servers
+    exit 1
+fi
+if [ "$(id -un)" != "mc" ]; then
+    exec sudo -u mc "$0" "$@"
+fi
+pid=""
+for p in $(pgrep -u mc java); do
+    [ "$(readlink "/proc/$p/cwd")" = "/home/mc/servers/$1" ] && pid=$p
+done
+if [ -z "$pid" ]; then
+    echo "$1 isn't running"
+    exit 1
+fi
+out=/home/mc/diagnostics/$1-$(date +%Y%m%d-%H%M%S)
+mkdir -p "$out"
+top -b -n 1 -H -p "$pid" | head -30 > "$out/top.txt"
+timeout 60 jcmd "$pid" Thread.print > "$out/threads.txt" 2>&1
+timeout 60 jcmd "$pid" GC.heap_info > "$out/heap.txt" 2>&1
+timeout 120 jcmd "$pid" GC.class_histogram > "$out/histogram.txt" 2>&1
+if [ "$2" = "--heap" ]; then
+    timeout 600 jcmd "$pid" GC.heap_dump "$out/heap.hprof" > /dev/null 2>&1
+fi
+echo "$out:"
+ls -lh "$out"
+echo "Most memory (histogram):"
+sed -n 4,13p "$out/histogram.txt"
