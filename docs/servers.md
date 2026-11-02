@@ -54,6 +54,12 @@ at most every 2 seconds. Everyone has it, on the hub, fpv and plots ([`mods/twea
 Propwash keeps the courses in `world/data/propwash_race.json` and writes it when the world is saved,
 so a new course shows up after the next save (every few minutes).
 
+If in front of the gate is inside blocks, `/race` lands you higher up (up to 6 blocks), else at the gate
+itself. Where that's still wrong, senior builders, mods and staff (`propwash.race.setstart`) stand where
+players should land, face the way they should look, and run `/race setstart <course>`; `/race clearstart
+<course>` goes back to the gate. These spots are kept per server in `world/data/propwash_race_starts.json`
+(by course number), so they stay through deploys.
+
 ## Short commands
 
 On the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)): `/gm <mode>` (`survival`, `creative`,

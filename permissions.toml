@@ -163,6 +163,8 @@ permissions = [
     "minecraft.command.execute server=fpv",
     "minecraft.command.teleport server=fpv",
     "minecraft.command.tp server=fpv",
+    # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
+    "propwash.race.setstart",
 ]
 
 # Helpers: everything supporters have, plus these. /help shows them all (mods/staffhelp,
@@ -239,6 +241,8 @@ permissions = [
     "fabricplots.admin server=plots",
     # /plot feature: featured plots, listed first in /plot list (our FabricPlots build).
     "fabricplots.feature server=plots",
+    # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
+    "propwash.race.setstart",
     # /flan bypass: build on fpv maps (Flan's claims), as senior builders can.
     "flan.command.bypass.claim server=fpv",
     # /gamemode on the hub (Vanilla Permissions; their own, without the selector permissions).

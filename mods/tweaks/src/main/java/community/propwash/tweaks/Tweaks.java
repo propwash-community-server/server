@@ -257,7 +257,7 @@ public final class Tweaks implements ModInitializer {
         return 0;
     }
 
-    private static boolean permitted(CommandSourceStack source, String permission) {
+    static boolean permitted(CommandSourceStack source, String permission) {
         if (permissionCheck == null) {
             return source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
         }
