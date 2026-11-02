@@ -35,6 +35,11 @@ import net.minecraft.world.level.storage.LevelResource;
  * an unnamed one) takes you just in front of its start gate, facing through it, at most every 2 seconds. Propwash keeps the
  * courses in world/data/propwash_race.json and writes it when the world is saved, so a brand-new course
  * shows up after the next save (every few minutes); its API has no courses yet.
+ *
+ * Where in front of the gate isn't always free, so /race lands you higher until it is; and whoever has
+ * propwash.race.setstart can pin a course's landing spot where they stand with /race setstart <course>
+ * (/race clearstart <course> undoes it). Those spots are kept in world/data/propwash_race_starts.json,
+ * by course number.
  */
 final class Race {
     /** Blocks in front of the start gate where you land. */
@@ -42,6 +47,13 @@ final class Race {
     /** Time between two teleports of one player (clicking through the list). */
     private static final long COOLDOWN_MS = 2000;
     private static final java.util.Map<java.util.UUID, Long> lastRace = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final String SETSTART = "propwash.race.setstart";
+    /** How far up /race looks for room to land when in front of the gate is inside blocks. */
+    private static final int MAX_LIFT = 6;
+
+    /** A landing spot pinned with /race setstart. */
+    private record Start(String dimension, double x, double y, double z, float yaw, float pitch) {
+    }
 
     private record Course(int id, String name, String owner, String dimension, double x, double y, double z, float yaw) {
         /** What you type: the name, or the number when it has none. */
@@ -65,14 +77,99 @@ final class Race {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("race")
                         .executes(c -> list(c.getSource()))
-                        .then(Commands.argument("course", StringArgumentType.greedyString())
-                                .suggests((c, b) -> {
-                                    String typed = b.getRemaining().toLowerCase(Locale.ROOT);
-                                    courses(c.getSource().getServer()).stream().map(Course::key)
-                                            .filter(k -> k.toLowerCase(Locale.ROOT).startsWith(typed)).forEach(b::suggest);
-                                    return b.buildFuture();
-                                })
-                                .executes(c -> go(c.getSource(), StringArgumentType.getString(c, "course"))))));
+                        .then(Commands.literal("setstart").requires(s -> Tweaks.permitted(s, SETSTART))
+                                .then(courseArgument().executes(c -> setStart(c.getSource(), StringArgumentType.getString(c, "course"), true))))
+                        .then(Commands.literal("clearstart").requires(s -> Tweaks.permitted(s, SETSTART))
+                                .then(courseArgument().executes(c -> setStart(c.getSource(), StringArgumentType.getString(c, "course"), false))))
+                        .then(courseArgument().executes(c -> go(c.getSource(), StringArgumentType.getString(c, "course"))))));
+    }
+
+    private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> courseArgument() {
+        return Commands.argument("course", StringArgumentType.greedyString())
+                .suggests((c, b) -> {
+                    String typed = b.getRemaining().toLowerCase(Locale.ROOT);
+                    courses(c.getSource().getServer()).stream().map(Course::key)
+                            .filter(k -> k.toLowerCase(Locale.ROOT).startsWith(typed)).forEach(b::suggest);
+                    return b.buildFuture();
+                });
+    }
+
+    private static Course find(MinecraftServer server, String typed) {
+        String want = typed.strip();
+        return courses(server).stream()
+                .filter(c -> c.key().equalsIgnoreCase(want) || c.name().equalsIgnoreCase(want) || String.valueOf(c.id()).equals(want))
+                .findFirst().orElse(null);
+    }
+
+    private static Path startsFile(MinecraftServer server) {
+        return server.getWorldPath(LevelResource.ROOT).resolve("data/propwash_race_starts.json");
+    }
+
+    private static JsonObject starts(MinecraftServer server) {
+        Path file = startsFile(server);
+        if (!Files.exists(file)) {
+            return new JsonObject();
+        }
+        try (Reader reader = Files.newBufferedReader(file)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+        } catch (IOException | RuntimeException e) {
+            return new JsonObject();
+        }
+    }
+
+    private static Start start(MinecraftServer server, Course course) {
+        JsonElement e = starts(server).get(String.valueOf(course.id()));
+        if (e == null || !e.isJsonObject()) {
+            return null;
+        }
+        JsonObject o = e.getAsJsonObject();
+        try {
+            return new Start(o.get("dimension").getAsString(), o.get("x").getAsDouble(), o.get("y").getAsDouble(),
+                    o.get("z").getAsDouble(), o.get("yaw").getAsFloat(), o.get("pitch").getAsFloat());
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
+    /** /race setstart <course>: land there where you stand; /race clearstart <course>: in front of the gate again. */
+    private static int setStart(CommandSourceStack source, String typed, boolean set) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        Course course = find(source.getServer(), typed);
+        if (course == null) {
+            source.sendFailure(Component.literal("There's no race course called " + typed.strip() + " here. /race lists them."));
+            return 0;
+        }
+        JsonObject all = starts(source.getServer());
+        String id = String.valueOf(course.id());
+        if (set) {
+            JsonObject o = new JsonObject();
+            o.addProperty("dimension", player.level().dimension().identifier().toString());
+            o.addProperty("x", player.getX());
+            o.addProperty("y", player.getY());
+            o.addProperty("z", player.getZ());
+            o.addProperty("yaw", player.getYRot());
+            o.addProperty("pitch", player.getXRot());
+            o.addProperty("setBy", player.getGameProfile().name());
+            all.add(id, o);
+        } else if (all.remove(id) == null) {
+            source.sendFailure(Component.literal(course.title() + " has no start spot set; /race goes in front of its gate."));
+            return 0;
+        }
+        try {
+            Path file = startsFile(source.getServer());
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(all));
+        } catch (IOException e) {
+            source.sendFailure(Component.literal("Couldn't save the start spot: " + e.getMessage()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(set
+                ? "/race " + course.key() + " now lands here, facing this way."
+                : "/race " + course.key() + " goes in front of its start gate again.").withStyle(ChatFormatting.GRAY), true);
+        return 1;
     }
 
     private static List<Course> courses(MinecraftServer server) {
@@ -106,6 +203,12 @@ final class Race {
         courses.sort(Comparator.comparing((Course c) -> c.name().isBlank())
                 .thenComparing(c -> c.name().toLowerCase(Locale.ROOT)).thenComparingInt(Course::id));
         return courses;
+    }
+
+    /** Whether the player (standing) fits at x y z without being inside blocks. */
+    private static boolean fits(ServerLevel level, ServerPlayer player, double x, double y, double z) {
+        net.minecraft.world.phys.AABB box = player.getType().getDimensions().makeBoundingBox(x, y, z);
+        return level.noCollision(player, box);
     }
 
     private static String text(JsonObject o, String key) {
@@ -145,23 +248,38 @@ final class Race {
             source.sendFailure(Component.literal("Wait a moment before the next /race."));
             return 0;
         }
-        String want = typed.strip();
-        Course course = courses(source.getServer()).stream()
-                .filter(c -> c.key().equalsIgnoreCase(want) || c.name().equalsIgnoreCase(want) || String.valueOf(c.id()).equals(want))
-                .findFirst().orElse(null);
+        Course course = find(source.getServer(), typed);
         if (course == null) {
-            source.sendFailure(Component.literal("There's no race course called " + want + " here. /race lists them."));
+            source.sendFailure(Component.literal("There's no race course called " + typed.strip() + " here. /race lists them."));
             return 0;
         }
-        ServerLevel level = source.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, Identifier.parse(course.dimension())));
+        Start start = start(source.getServer(), course);
+        ServerLevel level = source.getServer().getLevel(ResourceKey.create(Registries.DIMENSION,
+                Identifier.parse(start != null ? start.dimension() : course.dimension())));
         if (level == null) {
             source.sendFailure(Component.literal("That course is in a world that isn't loaded."));
             return 0;
         }
-        // In front of the gate (against the way it faces), looking through it.
-        double yaw = Math.toRadians(course.yaw());
-        double x = course.x() + Math.sin(yaw) * BEFORE_GATE, z = course.z() - Math.cos(yaw) * BEFORE_GATE;
-        player.teleportTo(level, x, course.y(), z, Set.of(), course.yaw(), 0, true);
+        if (start != null) {
+            player.teleportTo(level, start.x(), start.y(), start.z(), Set.of(), start.yaw(), start.pitch(), true);
+        } else {
+            // In front of the gate (against the way it faces), looking through it; higher up if that's
+            // inside blocks, or the gate itself if there's no room above either.
+            double yaw = Math.toRadians(course.yaw());
+            double x = course.x() + Math.sin(yaw) * BEFORE_GATE, z = course.z() - Math.cos(yaw) * BEFORE_GATE;
+            double y = course.y();
+            int lift = 0;
+            while (lift <= MAX_LIFT && !fits(level, player, x, course.y() + lift, z)) {
+                lift++;
+            }
+            if (lift <= MAX_LIFT) {
+                y = course.y() + lift;
+            } else {
+                x = course.x();
+                z = course.z();
+            }
+            player.teleportTo(level, x, y, z, Set.of(), course.yaw(), 0, true);
+        }
         lastRace.put(player.getUUID(), now);
         source.sendSuccess(() -> Component.literal("At the start of " + course.label() + ". Good luck!").withStyle(ChatFormatting.GRAY), false);
         return 1;
