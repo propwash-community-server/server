@@ -45,6 +45,8 @@ plugins = [
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee. Players a server refuses on
     # joining (no Fabric, other version, missing mods) go to limbo instead (docs/servers.md#limbo).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.7.0.jar",
+    # Simple Voice Chat's proxy: players' voice on one public UDP port, passed on to the server they're on.
+    "https://cdn.modrinth.com/data/9eGKb6K1/versions/Ue35nhwF/voicechat-velocity-2.6.26.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
@@ -74,3 +76,7 @@ starttimerBroadcast = '"<gray>Server restarting in <gold>%TIME%<gray>."'
 # mods/crossserver: the Paper servers (EssentialsX /invsee there; InvView on the Fabric ones).
 [config."plugins/crossserver/config.properties"]
 paper-servers = "limbo"
+
+# Simple Voice Chat's proxy: the one voice port players connect to (UDP, opened in deploy.py's firewall).
+[config."plugins/voicechat/voicechat-proxy.properties"]
+port = "24454"

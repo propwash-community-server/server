@@ -579,8 +579,9 @@ server.user(name="mc user", user=MC, home=f"/home/{MC}", shell="/bin/bash")
 
 if not LOCAL:
     server.shell(
-        name="Firewall: SSH + Velocity only",
-        commands=["ufw allow 22/tcp", "ufw allow 25565/tcp", "ufw --force enable"],
+        name="Firewall: SSH, Velocity and voice chat only",
+        # 24454/udp: Simple Voice Chat on the proxy (servers/velocity/server.toml).
+        commands=["ufw allow 22/tcp", "ufw allow 25565/tcp", "ufw allow 24454/udp", "ufw --force enable"],
     )
 
     # Additive for now: switch to delete_keys=True once every current key is in access/.

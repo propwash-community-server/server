@@ -79,6 +79,23 @@ built on dev and put in place by hand before the first deploy (the deploy never 
 `limbo/limbo-world-2026-11-01.tar.gz` in the world store; it also has the hub's `mountains`
 dimension, a datapack in the world itself.
 
+## Voice chat
+
+Proximity voice chat on the hub, fpv and plots: [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat),
+optional for players (without the mod they just don't hear or speak; nobody goes to limbo for it). Players
+press V for its settings and groups. Its voice goes over UDP, not through the proxy's Minecraft
+connection: Simple Voice Chat's Velocity plugin takes it on one public port, `24454/udp` (opened in
+`deploy.py`'s firewall; a cloud firewall in front of the VPS needs it too), and passes it on to the
+server the player is on. Each server's own voice port is on 127.0.0.1, its Minecraft port - 1000
+(`[config."config/voicechat/voicechat-server.properties"]`); a new server with the mod needs one too.
+Players are heard 150 blocks away (`max_voice_distance` there; whispering, `whisper_distance`).
+
+Who hears whom always goes by bodies, also while flying. The voice chat mod plays voices around the
+camera, which in FPV is on the drone, so [`mods/voicebody`](../mods/voicebody/) (built and uploaded like
+`mods/regen`) moves every voice a pilot in FPV hears by the body-to-camera offset: the players next to
+their body still sound next to them. `enabled = "false"` in `[config."config/voicebody.properties"]` turns
+it off on that server.
+
 ## Colors
 
 Texts the repo writes (chat formats, the tab list, rank prefixes, the MOTD, map titles, `/map`,
