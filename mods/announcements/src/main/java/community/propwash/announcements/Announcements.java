@@ -4,6 +4,8 @@ import com.google.inject.Inject;
 import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
@@ -16,6 +18,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.bossbar.BossBar;
@@ -29,17 +34,27 @@ import org.slf4j.Logger;
  * message or as a boss bar for a few seconds, after the file's prefix (e.g. [Propwash]). The file is
  * read again whenever it changes, so edits apply at the next announcement. /announce (propwash.announce)
  * sends one now; /announce <message> sends that (MiniMessage) after the prefix, in chat on every server.
+ *
+ * Separately, players who haven't linked their Discord account (no propwash.linked, which the Discord bot
+ * sets on /link) get the file's [link] reminder in chat on its own timer and a boss bar that stays up,
+ * on every server but those the [link] section leaves out; both stop within seconds of linking.
  */
-@Plugin(id = "announcements", name = "Announcements", version = "1.1.0",
+@Plugin(id = "announcements", name = "Announcements", version = "1.2.0",
         description = "Occasional announcements on chosen servers")
 public final class Announcements {
     private static final String PERMISSION = "propwash.announce";
+    private static final String LINKED = "propwash.linked";
 
     private record Message(String text, double weight) {
     }
 
     private record Config(long everySeconds, long bossBarSeconds, BossBar.Color bossBarColor,
-                          Map<String, String> servers, List<Message> messages, String prefix) {
+                          Map<String, String> servers, List<Message> messages, String prefix, Link link) {
+    }
+
+    /** The [link] section; text or bossBar null = that part is off. */
+    private record Link(long everySeconds, String text, String bossBar, BossBar.Color bossBarColor,
+                        Set<String> notOn) {
     }
 
     private final ProxyServer proxy;
@@ -49,6 +64,11 @@ public final class Announcements {
     private long configModified = -1;
     private ScheduledTask task;
     private long scheduledEvery;
+    private ScheduledTask linkTask;
+    private long scheduledLinkEvery;
+    // One link boss bar shared by everyone who sees it (its text and color follow the file).
+    private final BossBar linkBar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+    private final Set<UUID> seeingLinkBar = ConcurrentHashMap.newKeySet();
 
     @Inject
     public Announcements(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
@@ -61,6 +81,8 @@ public final class Announcements {
     public void onInitialize(ProxyInitializeEvent event) {
         reload();
         schedule();
+        // Every few seconds, so the bar goes soon after linking (LuckPerms passes the bot's change on).
+        proxy.getScheduler().buildTask(this, this::updateLinkBars).repeat(5, TimeUnit.SECONDS).schedule();
         proxy.getCommandManager().register(proxy.getCommandManager().metaBuilder("announce").plugin(this).build(),
                 new SimpleCommand() {
                     @Override
@@ -81,9 +103,33 @@ public final class Announcements {
                 });
     }
 
-    /** (Re)starts the timer, so a changed every_minutes applies from now on. */
+    @Subscribe
+    public void onServerConnected(ServerPostConnectEvent event) {
+        updateLinkBar(event.getPlayer());
+    }
+
+    @Subscribe
+    public void onDisconnect(DisconnectEvent event) {
+        seeingLinkBar.remove(event.getPlayer().getUniqueId());
+    }
+
+    /** (Re)starts the timers, so a changed every_minutes applies from now on. */
     private void schedule() {
-        if (config == null || config.everySeconds() == scheduledEvery) {
+        if (config == null) {
+            return;
+        }
+        if (config.link().everySeconds() != scheduledLinkEvery) {
+            if (linkTask != null) {
+                linkTask.cancel();
+            }
+            scheduledLinkEvery = config.link().everySeconds();
+            linkTask = proxy.getScheduler().buildTask(this, () -> {
+                reload();
+                schedule();
+                remindToLink();
+            }).delay(scheduledLinkEvery, TimeUnit.SECONDS).repeat(scheduledLinkEvery, TimeUnit.SECONDS).schedule();
+        }
+        if (config.everySeconds() == scheduledEvery) {
             return;
         }
         if (task != null) {
@@ -115,6 +161,41 @@ public final class Announcements {
                 proxy.getScheduler().buildTask(this, () -> player.hideBossBar(bar))
                         .delay(c.bossBarSeconds(), TimeUnit.SECONDS).schedule();
             }
+        }
+    }
+
+    /** Whether the [link] reminder is for this player now: not linked, and on a server it covers. */
+    private boolean needsLink(Player player, Link link) {
+        String server = player.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
+        return server != null && !link.notOn().contains(server) && !player.hasPermission(LINKED);
+    }
+
+    private synchronized void remindToLink() {
+        Config c = config;
+        if (c == null || c.link().text() == null) {
+            return;
+        }
+        Component text = MiniMessage.miniMessage().deserialize(c.prefix() + c.link().text().strip());
+        for (Player player : proxy.getAllPlayers()) {
+            if (needsLink(player, c.link())) {
+                player.sendMessage(text);
+            }
+        }
+    }
+
+    private void updateLinkBars() {
+        reload();
+        proxy.getAllPlayers().forEach(this::updateLinkBar);
+    }
+
+    /** Shows or hides the link boss bar for the player, as needsLink says. */
+    private void updateLinkBar(Player player) {
+        Config c = config;
+        boolean show = c != null && c.link().bossBar() != null && needsLink(player, c.link());
+        if (show && seeingLinkBar.add(player.getUniqueId())) {
+            player.showBossBar(linkBar);
+        } else if (!show && seeingLinkBar.remove(player.getUniqueId())) {
+            player.hideBossBar(linkBar);
         }
     }
 
@@ -160,11 +241,21 @@ public final class Announcements {
                     servers.put(e.getKey(), String.valueOf(e.getValue()));
                 }
             }
+            Toml l = toml.getTable("link");
+            Link link = l == null ? new Link(600, null, null, BossBar.Color.YELLOW, Set.of()) : new Link(
+                    Math.max(10, Math.round(number(l, "every_minutes", 10) * 60)),
+                    l.getString("text"), l.getString("bossbar"),
+                    BossBar.Color.NAMES.valueOr(l.getString("bossbar_color", "yellow"), BossBar.Color.YELLOW),
+                    Set.copyOf(l.<String>getList("not_on", List.of())));
+            if (link.bossBar() != null) {
+                linkBar.name(MiniMessage.miniMessage().deserialize(link.bossBar().strip()));
+                linkBar.color(link.bossBarColor());
+            }
             config = new Config(
                     Math.max(10, Math.round(number(toml, "every_minutes", 10) * 60)),
                     Math.max(1, Math.round(number(toml, "bossbar_seconds", 15))),
                     BossBar.Color.NAMES.valueOr(toml.getString("bossbar_color", "blue"), BossBar.Color.BLUE),
-                    servers, messages, toml.getString("prefix", ""));
+                    servers, messages, toml.getString("prefix", ""), link);
             configModified = modified;
             logger.info("{} announcements every {} s on {}", messages.size(), config.everySeconds(), servers);
         } catch (IOException | RuntimeException e) {

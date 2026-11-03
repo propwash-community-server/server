@@ -31,6 +31,9 @@ so an edit on the server applies at the next announcement without a restart; sta
 with `/announce`, or their own message with `/announce <message>` (MiniMessage; to everyone on every
 server, in chat). Every announcement starts with the file's `prefix`, `[Propwash]` in Propwash Yellow. It's our Velocity plugin [`mods/announcements`](../mods/announcements/), rebuilt like
 `mods/staffhelp`.
+The same file's `[link]` section reminds players who haven't linked their Discord account (no
+`propwash.linked`, which the Discord bot sets on `/link`) to `/link`: in chat on its own timer (every 10
+minutes), and with a boss bar that stays up, on every server but limbo. Both stop within seconds of linking.
 
 `[config]` and `[flan]` take effect from the second deploy, once the plugin has created its files;
 a `.properties` file that doesn't exist yet is written with just the `[config]` keys before the first start.
