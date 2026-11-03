@@ -493,7 +493,8 @@ The deploy checks out `BOT_COMMIT` in [`deploy.py`](../deploy/deploy.py): to upd
 it and deploy. The bot's channels, roles and bridge servers are in that repo's `src/config.js`.
 
 The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the world store under
-`mods/`) is on fpv and plots. Each server gets its key from `BRIDGE_KEY_<SERVER>` in
+`mods/`) is on fpv and plots; the hub has its link-only build (just `/link`, from the bot repo's
+`hub-link` branch). Each server gets its key from `BRIDGE_KEY_<SERVER>` in
 `bot.env.sops` as `PROPWASH_BRIDGE_API_KEY`; a server added to the bot's config needs a key there too.
 
 Supporters come from [Ko-fi](https://ko-fi.com/propwashfpv): Ko-fi sends every payment to the bot API's
