@@ -128,8 +128,12 @@ lag-alert-ms = "1000"
 limit-alert-count = "5"
 
 # WorldEdit itself: //sphere, //cyl, //fill and the like at most this radius, for everyone here.
+# One WorldEdit command changes at most 1,000,000 blocks unless you raise it for yourself with
+# //limit <blocks> (//limit -1: none, admins only); a huge //set loaded ~50,000 chunks and froze a
+# server (docs/admin.md#frozen-server).
 [config."config/worldedit/worldedit.properties"]
 max-radius = "40"
+default-max-changed-blocks = "1000000"
 
 [config."config/fabricplots.properties"]
 plot-size = "120"

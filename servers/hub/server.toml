@@ -102,3 +102,9 @@ max_voice_distance = "150"
 # drone, as the voice chat mod does by itself). Read again when the file changes.
 [config."config/voicebody.properties"]
 enabled = "true"
+
+# One WorldEdit command changes at most 1,000,000 blocks unless you raise it for yourself with
+# //limit <blocks> (//limit -1: none, admins only); a huge //set loaded ~50,000 chunks and froze a
+# server (docs/admin.md#frozen-server).
+[config."config/worldedit/worldedit.properties"]
+default-max-changed-blocks = "1000000"
