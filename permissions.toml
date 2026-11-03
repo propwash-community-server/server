@@ -131,6 +131,15 @@ permissions = [
     "fabricplots.limit.4 server=plots",
 ]
 
+# Content creators: everything supporters have (more may come). Above supporter, so a creator who
+# donates keeps [Creator]; below the builder ranks.
+[groups.creator]
+permissions = [
+    "weight.60",
+    '"prefix.60.<creator>[Creator]</creator> "',
+    "group.supporter",
+]
+
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
 [groups.junior-builder]
 permissions = [

@@ -37,7 +37,7 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 ## Permissions
 
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
-(`default`, `supporter`, `junior-builder`, `senior-builder`, `helper`, `mod`, `staff`, `admin`). Each entry is passed to
+(`default`, `supporter`, `creator`, `junior-builder`, `senior-builder`, `helper`, `mod`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
 [contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
@@ -74,6 +74,10 @@ lpv user <name> parent add senior-builder
 on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6), and `/enderchest`
 (`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
+
+`creator` (blue `[Creator]`, between supporters and builders) is for content creators: everything
+`supporter` has (it includes it), nothing else yet. Not in the staff watch.
+`lpv user <name> parent add creator`.
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
 it) and besides: staff chat, `/flyspeed` up to 10, `/tp <player>` on any
@@ -552,7 +556,7 @@ report ends those sessions at the player's last event.
 ## Staff watch
 
 The proxy keeps a record of what staff do: [`mods/staffwatch`](../mods/staffwatch/). Watched is
-everyone with a group other than `default` and `supporter`, or a permission set on them directly
+everyone with a group other than `default`, `supporter` and `creator`, or a permission set on them directly
 (LuckPerms); it's checked again on every event, so a new builder or staff member is watched from
 then on. For them it records every command they type (whether it works or not, with the server they
 were on), their joins, server switches and leaves. Private messages keep who they're to but not what
