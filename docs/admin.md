@@ -606,6 +606,11 @@ free some (`top -H` shows its `GC Thread`s at full CPU). Before restarting it:
    auxiliary processes" is harmless: the server is stopped anyway). Everything since the last save (a few
    minutes) is lost; broken glass still comes back (`world/data/regen.dat`).
 
+WorldEdit commands change at most 1,000,000 blocks each on the hub, fpv and plots
+(`default-max-changed-blocks`), because one huge `//set` loads every chunk it touches and can fill a
+server's memory; `//limit <blocks>` raises it for yourself until you leave (`//limit -1`, no limit, needs
+`worldedit.limit.unrestricted`: admins).
+
 Every server also logs its garbage collection to `logs/gc.log` (how full its memory got, and when),
 and writes a heap dump to `/home/mc/diagnostics/` if memory actually runs out. Heap dumps are big:
 delete them once looked at.
