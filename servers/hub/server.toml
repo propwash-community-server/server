@@ -34,6 +34,9 @@ mods = [
     # In FPV the voice chat mod hears from the drone's camera; this keeps hearing by the body
     # ([config."config/voicebody.properties"] below). Our mods/voicebody, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/voicebody-1.0.0-26.3.jar",
+    # /link for the Discord bot: the link-only build of the bridge mod (branch hub-link of the bot's repo);
+    # its key is BRIDGE_KEY_HUB (see docs/admin.md#discord-bot).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-hub-26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
