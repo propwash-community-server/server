@@ -76,7 +76,7 @@ on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-
 (`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
-`creator` (blue `[Creator]`, between supporters and builders) is for content creators: everything
+`creator` (light purple `[Creator]`, between supporters and builders) is for content creators: everything
 `supporter` has (it includes it), nothing else yet. Not in the staff watch.
 `lpv user <name> parent add creator`.
 
