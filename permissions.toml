@@ -131,14 +131,23 @@ permissions = [
     "fabricplots.limit.4 server=plots",
 ]
 
-# Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder.
+# Content creators: everything supporters have (more may come). Above supporter, so a creator who
+# donates keeps [Creator]; below the builder ranks.
+[groups.creator]
+permissions = [
+    "weight.60",
+    '"prefix.60.<creator>[Creator]</creator> "',
+    "group.supporter",
+]
+
+# Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder,
+# and both have everything supporters have (staff too, through senior-builder).
 [groups.junior-builder]
 permissions = [
     # Role shown in the tab list; the highest weight wins and sorts first.
     "weight.90",
     '"prefix.90.<builder>[Builder]</builder> "',
-    # /fly on the hub (Essential Commands).
-    "essentialcommands.fly.self server=hub",
+    "group.supporter",
     # Plots: ten plots (the highest fabricplots.limit.<n> wins).
     "fabricplots.limit.10 server=plots",
     # WorldEdit on plots with mods/plotedit's staff limits (80,000 blocks), like mods: still only on

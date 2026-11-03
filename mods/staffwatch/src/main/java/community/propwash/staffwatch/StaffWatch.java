@@ -62,13 +62,13 @@ import org.slf4j.Logger;
  * block broken or placed (or bucket poured) in /plot admin mode. /staffwatch [player] [page] shows it
  * all, newest first (propwash.staffwatch).
  */
-@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.2.0",
+@Plugin(id = "staffwatch", name = "StaffWatch", version = "1.3.0",
         description = "Records staff commands, joins and leaves; /staffwatch shows them",
         dependencies = {@Dependency(id = "luckperms")})
 public final class StaffWatch {
     private static final String PERMISSION = "propwash.staffwatch";
     /** Groups everyone has: only these don't make a player watched. */
-    private static final Set<String> ORDINARY = Set.of("default", "supporter");
+    private static final Set<String> ORDINARY = Set.of("default", "supporter", "creator");
     private static final int PAGE = 12;
     /** Private messages to a player (Carbon's whisper and its aliases, EssentialsX's): "msg Steve …". */
     private static final Set<String> TO_PLAYER = Set.of("whisper", "w", "message", "msg", "m", "tell", "pm",
