@@ -59,11 +59,12 @@ vanilla commands as `minecraft.command.<name>`. [Essential Commands](https://mod
 uses LuckPerms on fpv (`essentialcommands.<command>`, for warps); elsewhere it is configured in its own config.
 Commands without a LuckPerms entry keep their default: open to everyone or op only.
 
-Builders have two ranks, both shown as `[Builder]`. `junior-builder`: `/fly` on the hub, ten plots
-on plots and WorldEdit there up to 80,000 blocks (`propwash.plotedit.staff`, like mods; still only on
+Builders have two ranks, both shown as `[Builder]`. `junior-builder`: everything `supporter` has (it
+includes it), ten plots on plots and WorldEdit there up to 80,000 blocks (`propwash.plotedit.staff`, like mods; still only on
 their own and trusted plots). `senior-builder` has all of that (it includes `junior-builder`) and what map editing needs
 on fpv: WorldEdit, `/flan bypass`, setting and deleting warps, `/time` on a map, and `/tp` and
-`/execute` to reach a map that has no warp yet. Staff include `senior-builder`.
+`/execute` to reach a map that has no warp yet. Staff include `senior-builder`, so they
+have everything `supporter` has too.
 
 ```
 lpv user <name> parent add junior-builder
