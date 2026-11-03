@@ -18,6 +18,18 @@ hub = "chat"
 fpv = "chat"
 plots = "chat"
 
+# Reminder to link Discord, only for players who haven't (no propwash.linked, which the Discord bot sets
+# on /link), apart from the announcements below: in chat every every_minutes (after the prefix), and a
+# boss bar that stays up. Both stop within seconds of linking. Every server gets them but those in
+# not_on (limbo: wrong mods/version, nothing to link from there). Leave text or bossbar out to turn
+# that part off.
+[link]
+every_minutes = 10
+not_on = ["limbo"]
+text = "<muted>Please help us out and run <click:suggest_command:'/link'><hover:show_text:'Click to type /link'><white>/link</white></hover></click> here and in <click:open_url:'https://discord.gg/FtX7Vw89d'><hover:show_text:'discord.gg/FtX7Vw89d'><white><u>Discord</u></white></hover></click> to link your Discord and Minecraft accounts!</muted>"
+bossbar = "Please use <accent>/link</accent> here and in Discord"
+bossbar_color = "yellow"
+
 # Each announcement: one is picked at random each time, by weight. Weights are relative: 70 and 30
 # means the first 70% of the time on average (7 and 3 would be the same). No weight = 1.
 # Text is MiniMessage with the palette.toml colors (<brand>, <muted>, <accent>, ...). Links:
