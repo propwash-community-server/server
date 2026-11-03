@@ -29,6 +29,11 @@ mods = [
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
     "https://cdn.modrinth.com/data/jrDKjZP7/versions/uySsk7v8/InvView-1.4.22-26.3%2B.jar",
+    # Proximity voice chat (Simple Voice Chat), optional for players; voice goes through the proxy (docs/servers.md#voice-chat).
+    "https://cdn.modrinth.com/data/9eGKb6K1/versions/x9jLR94Q/voicechat-fabric-2.6.27%2B26.3.jar",
+    # In FPV the voice chat mod hears from the drone's camera; this keeps hearing by the body
+    # ([config."config/voicebody.properties"] below). Our mods/voicebody, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/voicebody-1.0.0-26.3.jar",
 ]
 
 # /help, in MiniMessage with palette.toml tags.
@@ -85,3 +90,15 @@ difficulty = "peaceful"
 gamemode = "adventure"
 force-gamemode = "true"
 spawn-protection = "0"
+
+# Simple Voice Chat: its own UDP port, the server's port - 1000, only on 127.0.0.1 (it would take every address);
+# players reach it through the proxy's voice port (docs/servers.md#voice-chat).
+[config."config/voicechat/voicechat-server.properties"]
+port = "24567"
+bind_address = "127.0.0.1"
+max_voice_distance = "150"
+
+# mods/voicebody: enabled = "false" turns it off on this server (pilots in FPV then hear around their
+# drone, as the voice chat mod does by itself). Read again when the file changes.
+[config."config/voicebody.properties"]
+enabled = "true"

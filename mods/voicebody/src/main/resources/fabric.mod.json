@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "voicebody",
+  "version": "${version}",
+  "name": "Voice Body",
+  "description": "Simple Voice Chat by the body, also in FPV: a pilot whose camera is on their Propwash drone still hears the players near their body as if they stood there (config/voicebody.properties).",
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["community.propwash.voicebody.VoiceBody"],
+    "voicechat": ["community.propwash.voicebody.VoiceBodyPlugin"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "java": ">=25",
+    "minecraft": "~26.3",
+    "fabric-api": "*",
+    "voicechat": ">=2.6.27",
+    "propwash": "*"
+  }
+}
