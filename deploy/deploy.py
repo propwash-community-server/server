@@ -830,9 +830,13 @@ for name, cfg in backends.items():
 
     # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so
     # nobody gets advancement pop-ups. From the deploy after the first start, when spigot.yml exists.
+    # The pattern also matches the already-replaced line: pyinfra's own "replacement already there?"
+    # check greps for the unescaped "'*'" (a regex quantifier), never finds it and appends another
+    # "  - '*'" at the end of the file on every deploy, which breaks the YAML and Paper won't start.
     if cfg.get("disable_advancements") and kind == "paper" and host.get_fact(File, path=f"{d}/spigot.yml"):
         changes.append(files.line(name=f"{name}: no advancements", path=f"{d}/spigot.yml",
-                                  line=r"^  - minecraft:story/disabled$", replace="  - '*'"))
+                                  line=r"^  - (minecraft:story/disabled|'\*')$", replace="  - '*'",
+                                  extended_regex=True))
 
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
     # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level
