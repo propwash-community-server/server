@@ -15,7 +15,6 @@
     "java": ">=25",
     "minecraft": "~26.3",
     "fabric-api": "*",
-    "voicechat": ">=2.6.27",
-    "propwash": "*"
+    "voicechat": ">=2.6.27"
   }
 }
