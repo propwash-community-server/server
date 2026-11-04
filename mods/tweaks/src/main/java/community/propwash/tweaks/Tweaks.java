@@ -44,6 +44,8 @@ import net.minecraft.world.phys.Vec3;
  * Staff watch: with staffwatch-folder in config/tweaks.properties (the proxy's plugins/staffwatch,
  * mods/staffwatch), every block a player breaks or places (buckets too) in the plot world while in
  * FabricPlots' /plot admin mode is added to plots-YYYY-MM.jsonl there, with whose plot it was.
+ *
+ * Flying a drone counts as being active for the AFK checks: see DroneActivity.
  */
 public final class Tweaks implements ModInitializer {
     private static final long COOLDOWN_MS = 5000;
@@ -63,6 +65,7 @@ public final class Tweaks implements ModInitializer {
         Portals.init();
         Aliases.init();
         Race.init();
+        DroneActivity.init();
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 {

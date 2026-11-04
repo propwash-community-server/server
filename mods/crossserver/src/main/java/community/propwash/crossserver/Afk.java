@@ -20,8 +20,9 @@ import org.slf4j.Logger;
 
 /**
  * /afk for everyone, the same on every server: toggles [AFK] after the name in the tab list (TAB
- * placeholder %propwash-afk%), without a chat message. It ends when you move (the proxy can't see
- * movement, so every few seconds it asks the server over rcon where each AFK player is), run /afk
+ * placeholder %propwash-afk%), without a chat message. It ends when you move or fly your drone (the
+ * proxy can't see either, so every few seconds it asks the server over rcon where each AFK player is
+ * and their score in propwash.drone, which mods/tweaks raises while their drone moves), run /afk
  * again or leave. Anyone who runs a command naming an AFK player (/msg, /tp, /tpa, ...) is told so,
  * unless they can't see that player (vanished); the command still runs.
  */
@@ -31,14 +32,20 @@ final class Afk {
     /** Farther than this (blocks) from where they were counts as moving. */
     private static final double MOVED = 0.3;
     private static final Pattern POS = Pattern.compile("\\[(-?[\\d.E-]+)d, (-?[\\d.E-]+)d, (-?[\\d.E-]+)d]");
+    /** mods/tweaks' DroneActivity: goes up while the player's drone moves. */
+    private static final String DRONE_OBJECTIVE = "propwash.drone";
+    private static final Pattern SCORE = Pattern.compile(" has (-?\\d+) \\[");
 
     /** Runs a console command on a server (by name) and returns its answer. */
     interface Console {
         String run(String server, String command) throws IOException;
     }
 
-    /** Where an AFK player was last seen: their server, and the position there (null: not known yet). */
-    private record Seen(String server, double[] pos) {
+    /**
+     * Where an AFK player was last seen: their server, the position there (null: not known yet) and
+     * their drone score there (null: none, e.g. never flown there, or a server without drones).
+     */
+    private record Seen(String server, double[] pos, Integer drone) {
     }
 
     private final ProxyServer proxy;
@@ -77,7 +84,7 @@ final class Afk {
         if (afk.remove(player.getUniqueId()) != null) {
             back(player);
         } else {
-            afk.put(player.getUniqueId(), new Seen(null, null));
+            afk.put(player.getUniqueId(), new Seen(null, null, null));
             player.sendMessage(Component.text("You're AFK until you move or /afk again.", NamedTextColor.GRAY));
         }
     }
@@ -95,8 +102,10 @@ final class Afk {
                 continue;
             }
             double[] pos;
+            Integer drone;
             try {
                 pos = position(console.run(server, "data get entity " + player.getUsername() + " Pos"));
+                drone = score(console.run(server, "scoreboard players get " + player.getUsername() + " " + DRONE_OBJECTIVE));
             } catch (IOException e) {
                 logger.warn("AFK: can't ask {} where {} is", server, player.getUsername(), e);
                 continue;
@@ -108,11 +117,12 @@ final class Afk {
             if (seen == null) {
                 continue; // they ended it meanwhile
             }
-            if (server.equals(seen.server()) && seen.pos() != null && distance(seen.pos(), pos) > MOVED) {
+            boolean flew = drone != null && !drone.equals(seen.drone());
+            if (server.equals(seen.server()) && seen.pos() != null && (distance(seen.pos(), pos) > MOVED || flew)) {
                 afk.remove(id);
                 back(player);
             } else if (!server.equals(seen.server()) || seen.pos() == null) {
-                afk.replace(id, seen, new Seen(server, pos));
+                afk.replace(id, seen, new Seen(server, pos, drone));
             }
         }
     }
@@ -124,6 +134,12 @@ final class Afk {
             return null;
         }
         return new double[] {Double.parseDouble(m.group(1)), Double.parseDouble(m.group(2)), Double.parseDouble(m.group(3))};
+    }
+
+    /** The score in "<name> has 12 [propwash.drone]", or null (no score, or no such objective). */
+    private static Integer score(String answer) {
+        Matcher m = SCORE.matcher(answer == null ? "" : answer);
+        return m.find() ? Integer.valueOf(m.group(1)) : null;
     }
 
     private static double distance(double[] a, double[] b) {

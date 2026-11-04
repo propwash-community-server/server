@@ -6,12 +6,28 @@ plugins {
 version = "${project.mod_version}+${project.minecraft_version}"
 base.archivesName = 'tweaks'
 
+// Propwash isn't in a Maven repository: the jar the servers run, downloaded once.
+def propwashJar = layout.buildDirectory.file("deps/" + project.propwash_url.tokenize('/').last())
+tasks.register('propwashJar') {
+    outputs.file(propwashJar)
+    doLast {
+        def f = propwashJar.get().asFile
+        if (!f.exists()) {
+            f.parentFile.mkdirs()
+            new URI(project.propwash_url).toURL().withInputStream { input -> f.withOutputStream { it << input } }
+        }
+    }
+}
+tasks.named('compileJava') { dependsOn 'propwashJar' }
+
 dependencies {
     // Minecraft 26.x ships with Mojang's names, so no mappings.
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     // For /mydrone (command registration); the servers run the same Fabric API.
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // DroneActivity (who pilots which drone); only used when Propwash is loaded.
+    compileOnly files(propwashJar)
 }
 
 tasks.withType(JavaCompile).configureEach {

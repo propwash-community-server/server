@@ -46,7 +46,7 @@ import org.slf4j.Logger;
  * kept here and set over rcon on each server the player arrives on. /vote: see Vote. Sounds with the
  * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk. Players a server refuses on joining go to limbo: see Limbo.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.7.1",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.8.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true), @Dependency(id = "maintenance", optional = true),
                 @Dependency(id = "tab", optional = true)})

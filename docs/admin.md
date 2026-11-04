@@ -422,6 +422,12 @@ vanished players). Part of `mods/crossserver`, on the proxy: it can't see moveme
 it asks the player's server over rcon where each AFK player is. It isn't in `/help`. The automatic AFK after 15 minutes (Essential Commands, EssentialsX) is separate and doesn't
 show in the tab list.
 
+Flying a drone counts as moving for both: a pilot's body stands still, so [`mods/tweaks`](../mods/tweaks/)
+(DroneActivity) checks every second whether a player's Propwash drone moved more than half a block.
+If it did, Essential Commands' 15 minutes start again (and its AFK ends), and the player's score
+in the dummy objective `propwash.drone` goes up by one; `/afk` ends when the proxy sees that
+score change. A drone hovering in place doesn't count.
+
 ## Backpack
 
 Admins for now (`propwash.backpack`, which only `*` gives) wear a backpack with `/backpack` (again to take it off) on fpv and
