@@ -48,7 +48,7 @@ mods = [
     "https://cdn.modrinth.com/data/9eGKb6K1/versions/x9jLR94Q/voicechat-fabric-2.6.27%2B26.3.jar",
     # In FPV the voice chat mod hears from the drone's camera; this keeps hearing by the body
     # ([config."config/voicebody.properties"] below). Our mods/voicebody, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/voicebody-1.0.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/voicebody-1.0.1-26.3.jar",
 ]
 
 # Seconds between two /rtp (any of /rtp, /rtp <map>, /map rtp, the rtp mannequin) for each player;

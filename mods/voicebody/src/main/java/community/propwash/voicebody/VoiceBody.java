@@ -34,6 +34,10 @@ public final class VoiceBody implements ModInitializer {
     record Spot(UUID id, ServerLevel level, Vec3 body, Vec3 camera) {
     }
 
+    // Propwash is on every server with this mod, but isn't in fabric.mod.json: Propwash's join check
+    // treats every mod that names it there (depends, recommends or suggests) as an add-on players must
+    // install too, even a server-only one like this. Without Propwash nobody flies, so voices stay put.
+    private static final boolean PROPWASH = FabricLoader.getInstance().isModLoaded("propwash");
     private static volatile Map<UUID, Spot> spots = Map.of();
     private static volatile boolean enabled = true;
     private static long configModified = -1;
@@ -60,14 +64,20 @@ public final class VoiceBody implements ModInitializer {
         Map<UUID, Spot> now = new HashMap<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             ServerLevel level = player.level();
-            boolean fpv = DronePiloting.viewOf(player.getUUID()).map(view -> view.mode() == PilotMode.FPV).orElse(false);
-            Vec3 camera = !fpv ? null : DronePiloting.pilotedBy(player.getUUID())
-                    .filter(d -> d.isAlive() && d.level() == level)
-                    .map(QuadcopterEntity::position)
-                    .orElse(null);
+            Vec3 camera = PROPWASH ? camera(player, level) : null;
             now.put(player.getUUID(), new Spot(player.getUUID(), level, player.position(), camera));
         }
         spots = now;
+    }
+
+    // Where the player's camera is while they fly their drone in FPV, else null. Only called with
+    // Propwash loaded (its classes are only looked up here).
+    private static Vec3 camera(ServerPlayer player, ServerLevel level) {
+        boolean fpv = DronePiloting.viewOf(player.getUUID()).map(view -> view.mode() == PilotMode.FPV).orElse(false);
+        return !fpv ? null : DronePiloting.pilotedBy(player.getUUID())
+                .filter(d -> d.isAlive() && d.level() == level)
+                .map(QuadcopterEntity::position)
+                .orElse(null);
     }
 
     private static void readConfig() {

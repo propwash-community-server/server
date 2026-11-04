@@ -74,9 +74,9 @@ runs `/clear`. Whoever may use `/gamemode` or `/clear` there may use them; nobod
 Players who can't join the Fabric servers (no Fabric, another game version, missing or wrong mods)
 go to `limbo` instead of being disconnected: when a server refuses a player while they join (also
 their first join into the network), [`mods/crossserver`](../mods/crossserver/) sends them to limbo and
-tells them why, with links to [propwashfpv.com](https://propwashfpv.com/) and
-[Discord](https://discord.propwashfpv.com). A player refused while already on limbo just gets the
-message. Limbo is Paper with [ViaVersion](https://modrinth.com/plugin/viaversion) and ViaBackwards,
+tells them why, just below limbo's welcome (`welcome` in `servers/limbo/server.toml`), which has
+the links to [propwashfpv.com](https://propwashfpv.com/) and [Discord](https://discord.propwashfpv.com).
+A player refused while already on limbo just gets the message. Limbo is Paper with [ViaVersion](https://modrinth.com/plugin/viaversion) and ViaBackwards,
 so other game versions get in, and EssentialsX; staff go there with `/server limbo`. Its world was
 built on dev and put in place by hand before the first deploy (the deploy never changes worlds), from
 `limbo/limbo-world-2026-11-01.tar.gz` in the world store; it also has the hub's `mountains`
