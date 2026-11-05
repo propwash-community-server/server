@@ -137,6 +137,13 @@ updating Vanish, check that un-vanishing still shows you right away.
 nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
 at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
 
+`/dronetp` (everyone, also `mods/tweaks`) takes the player to their own drone (a player has one,
+`pw_owner_<name>`) on any map of that server, if it's not flying (also when it's in an unloaded chunk: tweaks remembers where each drone was when its chunk unloaded). Staff
+(`propwash.dronetp.others`) can add a player's name to go to theirs. `/kill drone <player>`
+(`propwash.dronekill`, staff) removes that player's drone, also mid-flight (one in an unloaded chunk as soon as that loads), and tells them; it lives in
+vanilla's `/kill`, which tweaks opens to `propwash.dronekill` for that subcommand only (plain `/kill` and
+`/kill <targets>` keep needing op or `minecraft.command.kill`).
+
 Drones go with their owner (also `mods/tweaks`): when a player leaves fpv or plots (logs off or
 switches server), their drones (`pw_owner_<name>`) are removed from every loaded map there, and a
 drone in a chunk that loads later is removed if its owner isn't on that server. Drones without an

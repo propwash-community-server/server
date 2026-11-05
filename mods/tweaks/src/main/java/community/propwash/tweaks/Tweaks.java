@@ -66,10 +66,13 @@ public final class Tweaks implements ModInitializer {
         Aliases.init();
         Race.init();
         DroneActivity.init();
+        DroneTp.init();
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 {
                     dispatcher.register(Commands.literal("mydrone").executes(context -> myDrone(context.getSource())));
+                    DroneTp.register(dispatcher);
+                    KillDrone.register(dispatcher);
                     dispatcher.register(Commands.literal("debugstick").executes(context -> debugStick(context.getSource())));
                     dispatcher.register(Commands.literal("flyspeed").requires(source -> maxFlySpeed(source) > 0)
                             .executes(context -> flySpeed(context.getSource(), 1))
@@ -111,7 +114,7 @@ public final class Tweaks implements ModInitializer {
         });
     }
 
-    private static final String OWNER_TAG = "pw_owner_";
+    static final String OWNER_TAG = "pw_owner_";
     private static final String MAP_TAG = "propwash.map.";
     private static final Map<UUID, Long> lastStand = new ConcurrentHashMap<>();
 
@@ -154,7 +157,7 @@ public final class Tweaks implements ModInitializer {
         }
     }
 
-    private static boolean isDrone(Entity entity) {
+    static boolean isDrone(Entity entity) {
         return "propwash:drone".equals(EntityType.getKey(entity.getType()).toString());
     }
 

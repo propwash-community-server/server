@@ -27,11 +27,11 @@ mods = [
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # Dropped items are deleted (except for propwash.exempt); vanishing and un-vanishing show at once;
-    # /mydrone brings your own drone to you; your drones go when you leave; the debug stick works in the plot world (/debugstick);
+    # /mydrone brings your own drone to you; /dronetp takes you to it (staff: anyone's, and /kill drone <player>); your drones go when you leave; the debug stick works in the plot world (/debugstick);
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.15.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.17.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
@@ -67,6 +67,7 @@ help = """
 <accent>/spawn</accent>: back to the lobby, where the mannequins take you to the maps
 <accent>/warp list</accent>, <accent>/warp tp <name></accent>: spots on the maps
 <accent>/mydrone</accent>: bring your drone on this map to you
+<accent>/dronetp</accent>: go to your drone
 <accent>/clear</accent>: empty your inventory
 <accent>/kit create <name></accent>, <accent>/kit <name></accent>, <accent>/kit edit <name></accent>: your own kits (also on plots)
 Nobody can build here; builders edit maps after <accent>/flan bypass</accent>.
