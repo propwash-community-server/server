@@ -81,6 +81,10 @@ so other game versions get in, and EssentialsX; staff go there with `/server lim
 built on dev and put in place by hand before the first deploy (the deploy never changes worlds), from
 `limbo/limbo-world-2026-11-01.tar.gz` in the world store; it also has the hub's `mountains`
 dimension, a datapack in the world itself.
+WorldEdit schematics for limbo are in `servers/limbo/files/plugins/WorldEdit/schematics/` (the
+deploy copies them; pasting is by hand): `limbo_net.schem`, a drone net built on dev, pasted with
+`//schem load limbo_net` and `//paste -o` (back where it was copied). Limbo offers no resource pack,
+so players there see its nets as oxidized copper bars.
 
 ## Voice chat
 
