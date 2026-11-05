@@ -77,8 +77,10 @@ on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 `creator` (light purple `[Creator]`, between supporters and builders) is for content creators: everything
-`supporter` has (it includes it), nothing else yet. Not in the staff watch.
-`lpv user <name> parent add creator`.
+`supporter` has (it includes it), nothing else yet. Not in the staff watch. Given automatically: the
+Discord bot gives it to the `/link`ed account of everyone with the Creator role on Discord, and takes it
+back when the role goes (see [Discord bot](#discord-bot)). By hand, for someone without the role:
+`lpv user <name> parent add creator` (the bot never takes back a group it didn't give).
 
 `helper` (dark green `[Helper]`, between builders and mods) has everything `supporter` has (it includes
 it) and besides: staff chat, `/flyspeed` up to 10, `/tp <player>` on any
@@ -521,6 +523,10 @@ Two Discord roles, and only one of them is the bot's:
 |---|---|---|---|
 | Ko-fi supporter | the bot only, from supporter time | until the time is up | the `supporter` group in game (`/link`ed account) |
 | Ko-fi donor | Ko-fi (Settings > Discord, "Roles for supporters"), on any payment | for good (Ko-fi never takes it back) | nothing, it's a thank-you |
+
+The Creator role (given by staff on Discord) works like "Ko-fi supporter" in game: it brings the
+`creator` group for the `/link`ed account, which goes when the role goes, on `/unlink`, or when they link
+another account. More such roles go in `roleRanks` in the bot's `src/config.js`.
 
 Ko-fi must not give "Ko-fi supporter": the bot only takes the role back from people it has supporter
 time for, so one Ko-fi gave it to (for a donation under 5 EUR or in another currency) would keep it, and the
