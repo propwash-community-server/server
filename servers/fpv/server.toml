@@ -84,6 +84,8 @@ spawn_phantoms = false
 spawn_wandering_traders = false
 spawn_wardens = false
 spawner_blocks_work = false
+# Vines don't grow: they had covered mosslorn's flying paths (restored from its original 2026-11-05).
+spread_vines = false
 # Fast drones smash glass and glass panes (Propwash's block tag propwash:drone_breakable); mods/regen
 # puts them back and decides on which maps (config/regen.properties).
 "propwash:drones_break_blocks" = true
