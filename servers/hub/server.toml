@@ -12,6 +12,8 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
+    # drone_net / waxed_drone_net as WorldEdit block names (the maps pack's drone nets); our mods/blockaliases, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/blockaliases-1.0.0-26.3.jar",
     "https://cdn.modrinth.com/data/6VdDUivB/versions/KANmt7ie/essential_commands-0.42.0-mc26.3.jar",
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/DzQPkkXY/LuckPerms-Fabric-5.5.85.jar",
     # Permission nodes for vanilla commands (minecraft.command.<name>), granted through LuckPerms.
@@ -79,8 +81,8 @@ send-join-disconnect-message = "false"
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-4420b613.zip'
-resource-pack-sha1 = "4420b613797f58cca0cb2c057d96c47d1c92b5f3"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-06573e10.zip'
+resource-pack-sha1 = "06573e10626030bf1dd1a0e46acacbcd0adad981"
 require-resource-pack = "false"
 
 # Only written when the server is first created.

@@ -131,9 +131,21 @@ Never run `/function drift:build` or `/function arena:build` on a server: beside
 they move the world spawn and change game rules (`arena:build` also turns on a respawn teleport).
 
 To update: put the new datapack zip in place, upload the new resource pack under a new name and change
-the URL and SHA-1 in the three `server.toml` files, deploy, then run `/function drift:reset` or
+the URL and SHA-1 in the three `server.toml` files (hub, fpv, plots), deploy, then run `/function drift:reset` or
 `/function arena:reset` once on the map (it respawns the vehicles). A map itself only changes with
 `uv run upload` and `uv run apply fpv <name>`.
+
+### Drone nets
+
+Oxidized copper bars (waxed or not) are **drone nets**: the same pack (`propwash-maps-06573e10.zip`,
+from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only) and makes them look like
+a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are
+hidden by overriding the `oxidized_copper_bars_*` block models). It is only looks: the block, its
+hitbox and its id stay vanilla, so no datapack is needed, and players without the pack see ordinary
+oxidized copper bars. In creative, search "drone net". In WorldEdit (hub, fpv, plots)
+`drone_net` and `waxed_drone_net` work as block names, with states, in patterns and masks
+([`mods/blockaliases`](../mods/blockaliases/)), e.g. `//set drone_net`. Use the waxed ones where the net must not be
+scraped back with an axe.
 
 ## Halloween
 
