@@ -125,6 +125,8 @@ permissions = [
     "propwash.flyspeed.6",
     # /enderchest, /ec, /echest on fpv and plots (mods/tweaks).
     "propwash.enderchest",
+    # /pet: every pet, baby animals and Propwash drones, on the hub, fpv and plots (mods/pets).
+    "propwash.pets.all",
     # /fly and /flyspeed in /help, after "On every server" (mods/staffhelp, files/plugins/staffhelp/supporter.txt).
     "propwash.help.supporter",
     # Four plots instead of two (the highest fabricplots.limit.<n> wins: builders keep their 10).

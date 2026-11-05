@@ -36,6 +36,9 @@ mods = [
     # /backpack: a backpack on your back (propwash.backpack; for now only admins have it), with your drone on it
     # (/backpack drone); its model is in the maps resource pack. Our mods/backpack, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
+    # /pet: a cosmetic pet, a baby animal or a Propwash drone (supporters: propwash.pets.all), on every
+    # server that has it (docs/admin.md#pets). Our mods/pets, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/pets-1.3.0-26.3.jar",
     # Server status, race records and /link for the Discord bot; its key is BRIDGE_KEY_FPV (see docs/admin.md#discord-bot).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.

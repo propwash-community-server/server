@@ -443,6 +443,23 @@ missing-model cube. Its item, model, size and position, and the drone's, are in 
 spectator or dead. On or off is LuckPerms meta (`propwash-backpack`), so it follows players to every
 server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
 
+## Pets
+
+`/pet` lists the pets a player may have and `/pet <name>` picks one (`/pet off` puts it away), on the
+hub, fpv and plots: a baby vanilla animal that walks just behind you, or one of Propwash's preset drones
+hovering at your shoulder. Supporters have them all (`propwash.pets.all`); `propwash.pets.animals`,
+`propwash.pets.drones` or `propwash.pets.<name>` give some. Our Fabric mod [`mods/pets`](../mods/pets/):
+ordinary entities the server moves every tick, so nothing is needed on the client. They can't be hurt,
+used or pushed, aren't saved with the world, and hide while vanished, in spectator or dead. Standing
+still, the pet circles you (`/pet orbit off` stops that); animals now and then make their own sound,
+quietly (`/pet sound off` mutes your pet). The choices are LuckPerms meta (`propwash-pet`,
+`propwash-pet-orbit`, `propwash-pet-sound`), so they follow players to every server.
+
+`/pet code <share code>` (`propwash.pets.code`, which only `*` gives for now) makes a Propwash share
+code's drone your pet, `custom` in `/pet`. It needs Propwash 0.6 (on 0.5.2 it says so, and drone props
+don't spin). Codes are too long for LuckPerms meta, so each is a file, `/home/mc/pets/<uuid>.txt`,
+shared by every server.
+
 ## Vanish
 
 `/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and
