@@ -201,6 +201,9 @@ permissions = [
     # The helper part of /help (mods/staffhelp, files/plugins/staffhelp/helper.txt), in place of the
     # supporter one.
     "propwash.help.helper",
+    # /dronetp <player>: to a player's drone; /kill drone <player>: remove it (mods/tweaks).
+    "propwash.dronetp.others",
+    "propwash.dronekill",
 ]
 
 # Moderators: everything supporters have, plus these and nothing else. /help shows them all
@@ -258,6 +261,9 @@ permissions = [
     "minecraft.command.gamemode server=hub",
     # The mod part of /help (mods/staffhelp).
     "propwash.help.mod",
+    # /dronetp <player>: to a player's drone; /kill drone <player>: remove it (mods/tweaks).
+    "propwash.dronetp.others",
+    "propwash.dronekill",
 ]
 
 [groups.staff]
@@ -317,6 +323,9 @@ permissions = [
     "fabricplots.reload server=plots",
     # WorldEdit on plots without mods/plotedit's limits (staff have worldedit.* already).
     "propwash.plotedit.bypass server=plots",
+    # /dronetp <player>: to a player's drone; /kill drone <player>: remove it (mods/tweaks).
+    "propwash.dronetp.others",
+    "propwash.dronekill",
 ]
 
 [groups.admin]
