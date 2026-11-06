@@ -125,9 +125,10 @@ projectiles, their boat items and every boat within 16 blocks of them, and lets 
 works on every server: `mods/crossserver` remembers it and sets the `propwash.exempt` tag on each
 server the player arrives on (over rcon), so a `/tag` set by hand doesn't last.
 
-A dropped item (Q, out of the inventory, from the creative menu) is deleted instead of landing on
-the ground, except for `propwash.exempt` players: on the hub, fpv and plots by our Fabric mod
-[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`), on limbo by the `nodrop` datapack.
+A dropped item (Q, out of the inventory, from the creative menu) doesn't land on the ground, except
+for `propwash.exempt` players: on the hub, fpv and plots our Fabric mod
+[`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`) puts it back into the inventory (what
+doesn't fit is deleted), on limbo the `nodrop` datapack deletes it.
 `mods/tweaks` also makes vanishing and
 un-vanishing show at once: the Vanish mod left that to vanilla, which only re-checks who sees whom
 when someone moves into another 16-block section. That part hooks into Vanish by name; after
