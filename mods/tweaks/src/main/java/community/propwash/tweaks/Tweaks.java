@@ -66,6 +66,7 @@ public final class Tweaks implements ModInitializer {
         Aliases.init();
         Race.init();
         DroneActivity.init();
+        RecordingBar.init();
         DroneTp.init();
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> stopWorldEditTimer());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->

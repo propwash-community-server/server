@@ -7,7 +7,9 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -23,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -38,9 +41,12 @@ import org.slf4j.Logger;
  * Separately, players who haven't linked their Discord account (no propwash.linked, which the Discord bot
  * sets on /link) get the file's [link] reminder in chat on its own timer and a boss bar that stays up,
  * on every server but those the [link] section leaves out; both stop within seconds of linking.
+ *
+ * Players in recording mode (mods/crossserver's /record) get none of it.
  */
-@Plugin(id = "announcements", name = "Announcements", version = "1.2.0",
-        description = "Occasional announcements on chosen servers")
+@Plugin(id = "announcements", name = "Announcements", version = "1.3.0",
+        description = "Occasional announcements on chosen servers",
+        dependencies = {@Dependency(id = "crossserver", optional = true)})
 public final class Announcements {
     private static final String PERMISSION = "propwash.announce";
     private static final String LINKED = "propwash.linked";
@@ -151,6 +157,9 @@ public final class Announcements {
         Message m = pick(c.messages());
         Component text = MiniMessage.miniMessage().deserialize(c.prefix() + m.text().strip());
         for (Player player : proxy.getAllPlayers()) {
+            if (recording(player)) {
+                continue;
+            }
             String server = player.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
             String style = server == null ? null : c.servers().get(server);
             if ("chat".equals(style)) {
@@ -167,7 +176,16 @@ public final class Announcements {
     /** Whether the [link] reminder is for this player now: not linked, and on a server it covers. */
     private boolean needsLink(Player player, Link link) {
         String server = player.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
-        return server != null && !link.notOn().contains(server) && !player.hasPermission(LINKED);
+        return server != null && !link.notOn().contains(server) && !player.hasPermission(LINKED) && !recording(player);
+    }
+
+    /** Whether the player is in recording mode: mods/crossserver is a Predicate of players for that. */
+    @SuppressWarnings("unchecked")
+    private boolean recording(Player player) {
+        return proxy.getPluginManager().getPlugin("crossserver").flatMap(PluginContainer::getInstance)
+                .filter(Predicate.class::isInstance)
+                .map(plugin -> ((Predicate<Player>) plugin).test(player))
+                .orElse(false);
     }
 
     private synchronized void remindToLink() {
@@ -203,7 +221,7 @@ public final class Announcements {
     private synchronized void announceText(String text) {
         Config c = config;
         Component message = MiniMessage.miniMessage().deserialize((c == null ? "" : c.prefix()) + "<gray>" + text + "</gray>");
-        proxy.getAllPlayers().forEach(p -> p.sendMessage(message));
+        proxy.getAllPlayers().stream().filter(p -> !recording(p)).forEach(p -> p.sendMessage(message));
         logger.info("Announced: {}", text);
     }
 
