@@ -24,7 +24,7 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # As on fpv and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.17.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.18.0-26.3.jar",
     # /backpack (for now only admins); see plots.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
