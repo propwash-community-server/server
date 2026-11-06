@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -25,7 +26,7 @@ import org.slf4j.Logger;
  * answers with /vote yes or /vote no (clickable); it ends after 60 seconds or with /vote end, and
  * everyone gets the result. One vote at a time, one answer per player (changeable). The question is
  * shown as plain text, so it can't carry formatting or click actions. A chime sounds with the question
- * and with the result.
+ * and with the result. Players in recording mode (Recording) get neither.
  */
 final class Vote {
     private static final String ADMIN = "propwash.vote";
@@ -38,16 +39,18 @@ final class Vote {
     private final ProxyServer proxy;
     private final Object plugin;
     private final Logger logger;
+    private final Predicate<Player> hears;
 
     private String question;
     private Instant endsAt;
     private ScheduledTask timer;
     private final Map<UUID, Boolean> answers = new ConcurrentHashMap<>();
 
-    Vote(ProxyServer proxy, Object plugin, Logger logger) {
+    Vote(ProxyServer proxy, Object plugin, Logger logger, Predicate<Player> hears) {
         this.proxy = proxy;
         this.plugin = plugin;
         this.logger = logger;
+        this.hears = hears;
     }
 
     void register() {
@@ -161,7 +164,7 @@ final class Vote {
 
     private void broadcast(Component message, Sound sound) {
         Component line = PREFIX.append(message);
-        proxy.getAllPlayers().forEach(p -> {
+        proxy.getAllPlayers().stream().filter(hears).forEach(p -> {
             p.sendMessage(line);
             // Velocity can only play a sound at the player themselves.
             p.playSound(sound, Sound.Emitter.self());

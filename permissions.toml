@@ -131,13 +131,15 @@ permissions = [
     "fabricplots.limit.4 server=plots",
 ]
 
-# Content creators: everything supporters have (more may come). Above supporter, so a creator who
+# Content creators: everything supporters have, and /record. Above supporter, so a creator who
 # donates keeps [Creator]; below the builder ranks.
 [groups.creator]
 permissions = [
     "weight.60",
     '"prefix.60.<creator>[Creator]</creator> "',
     "group.supporter",
+    # /record: recording mode, no chat from others and the server address on top (mods/crossserver).
+    "propwash.record",
 ]
 
 # Builders come in two ranks with the same [Builder] tag; senior-builder includes junior-builder,
@@ -184,6 +186,9 @@ permissions = [
     "weight.120",
     '"prefix.120.<helper>[Helper]</helper> "',
     "group.supporter",
+    # /record, like creators, and being told when someone is recording (mods/crossserver).
+    "propwash.record",
+    "propwash.record.see",
     # Staff chat channel (/staff, /sc, or start a message with #).
     "carbon.channel.staff",
     "carbon.channel.staff.see",
@@ -213,6 +218,9 @@ permissions = [
     "weight.150",
     '"prefix.150.<mod>[Mod]</mod> "',
     "group.supporter",
+    # /record, like creators, and being told when someone is recording (mods/crossserver).
+    "propwash.record",
+    "propwash.record.see",
     # Staff chat channel (/staff, /sc, or start a message with #).
     "carbon.channel.staff",
     "carbon.channel.staff.see",
@@ -271,6 +279,9 @@ permissions = [
     "weight.200",
     '"prefix.200.<staff>[Staff]</staff> "',
     "group.senior-builder",
+    # /record, like creators, and being told when someone is recording (mods/crossserver).
+    "propwash.record",
+    "propwash.record.see",
     "minecraft.command.gamemode",
     "minecraft.command.teleport",
     "minecraft.command.tp",

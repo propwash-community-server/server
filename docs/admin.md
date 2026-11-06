@@ -77,7 +77,7 @@ on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 `creator` (light purple `[Creator]`, between supporters and builders) is for content creators: everything
-`supporter` has (it includes it), nothing else yet. Not in the staff watch. Given automatically: the
+`supporter` has (it includes it), and [recording mode](#recording-mode). Not in the staff watch. Given automatically: the
 Discord bot gives it to the `/link`ed account of everyone with the Creator role on Discord, and takes it
 back when the role goes (see [Discord bot](#discord-bot)). By hand, for someone without the role:
 `lpv user <name> parent add creator` (the bot never takes back a group it didn't give).
@@ -437,6 +437,26 @@ Flying a drone counts as moving for both: a pilot's body stands still, so [`mods
 If it did, Essential Commands' 15 minutes start again (and its AFK ends), and the player's score
 in the dummy objective `propwash.drone` goes up by one; `/afk` ends when the proxy sees that
 score change. A drone hovering in place doesn't count.
+
+## Recording mode
+
+Creators, helpers, mods, staff and admins (`propwash.record`) can `/record` for videos and streams: until
+they `/record` again (through leaving and restarts), they get no chat from anyone else (any Carbon
+channel), no private messages, no join and leave messages, no announcements, votes or link reminders,
+and no `/tpa` requests. Nobody else can tell, so nobody is drawn to bother them: a `/msg`, `/r` or `/tpa`
+to them looks sent as usual but never arrives. Their own chat and the answers to their own commands
+still show, and a boss bar at the top shows the address to join (`recording-bar` in the velocity
+`server.toml`), except while they fly their drone, so it stays out of the drone camera's picture. Helpers, mods, staff and admins
+(`propwash.record.see`) who run a command naming them (`/msg`, `/tpa`, `/tp`, `/invsee`, ...) are told
+they're recording instead; their `/tp`, `/invsee` and the like still run. Messages from a server itself
+(such as its welcome text) still come.
+
+Part of [`mods/crossserver`](../mods/crossserver/) (Recording): it leaves them out of Carbon's
+recipients, runs NetworkJoinMessages' `/njointoggle all off|on <player>` for them, and the
+announcements plugin asks it who is recording. The boss bar is the server's own `propwash:recording`:
+crossserver tags recording players `propwash.recording` and makes the bar over rcon on each arrival, and
+[`mods/tweaks`](../mods/tweaks/) (RecordingBar) shows it every tick to those tagged who aren't flying. Who has
+it on is in the proxy's `plugins/crossserver/recording`.
 
 ## Backpack
 

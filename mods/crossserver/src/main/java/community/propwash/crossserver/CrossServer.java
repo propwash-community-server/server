@@ -44,18 +44,23 @@ import org.slf4j.Logger;
  * (the vanish plugin) can't be found by those who can't see them (propwash.vanish.see). Admin /exempt
  * (propwash.exempt) toggles the propwash.exempt tag (boats, projectiles, dropping items) on every server:
  * kept here and set over rcon on each server the player arrives on. /vote: see Vote. Sounds with the
- * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk. Players a server refuses on joining go to limbo: see Limbo.
+ * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk. /record: see Recording. Players a server refuses on joining go to limbo: see Limbo.
+ *
+ * As a Predicate of players, for the announcements plugin: whether they're in recording mode.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.8.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.9.1",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true), @Dependency(id = "maintenance", optional = true),
-                @Dependency(id = "tab", optional = true)})
-public final class CrossServer {
+                @Dependency(id = "tab", optional = true),
+                @Dependency(id = "carbonchat", optional = true), @Dependency(id = "networkjoinmessages", optional = true)})
+public final class CrossServer implements Predicate<Player> {
     private static final String TPA = "propwash.tpa";
     private static final String TP = "propwash.tp";
     private static final String INVSEE = "propwash.invsee";
     private static final String SEE_VANISHED = "propwash.vanish.see";
     private static final String EXEMPT = "propwash.exempt";
+    private static final String RECORDING_BAR = "<white><bold>Propwash</bold></white> <#FFBB00><bold>FPV</bold></#FFBB00>"
+            + " <gray>mc.propwashfpv.com</gray>";
     private static final Duration EXPIRY = Duration.ofMinutes(2);
     // After arriving on a server: the hub sends arrivals to spawn first.
     private static final long ARRIVAL_DELAY_MS = 1000;
@@ -74,6 +79,7 @@ public final class CrossServer {
     // Who has /exempt on, kept across restarts: one UUID per line.
     private final Path exemptFile;
     private final Set<UUID> exempt = ConcurrentHashMap.newKeySet();
+    private final Recording recording;
 
     @Inject
     public CrossServer(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) throws IOException {
@@ -87,6 +93,13 @@ public final class CrossServer {
         if (Files.exists(exemptFile)) {
             Files.readAllLines(exemptFile).stream().filter(l -> !l.isBlank()).map(UUID::fromString).forEach(exempt::add);
         }
+        this.recording = new Recording(proxy, this, logger, dataDirectory, config.getProperty("recording-bar", RECORDING_BAR),
+                (server, command) -> Rcon.run(port(server), password(), command), this::visible);
+    }
+
+    @Override
+    public boolean test(Player player) {
+        return recording.isRecording(player.getUniqueId());
     }
 
     @Subscribe
@@ -97,7 +110,8 @@ public final class CrossServer {
         register("tpdeny", TPA, (player, args) -> answer(player, args, false), false);
         register("invsee", INVSEE, this::invsee, true);
         registerTp();
-        new Vote(proxy, this, logger).register();
+        new Vote(proxy, this, logger, recording::hears).register();
+        recording.register();
         new MaintenanceSounds(proxy, this, logger).register();
         new Limbo(proxy, this, logger).register();
         new Afk(proxy, this, logger, (server, command) -> Rcon.run(port(server), password(), command), this::visible).register();
@@ -213,6 +227,13 @@ public final class CrossServer {
             return;
         }
         Player target = to.get();
+        // Never reaches a recording player: staff get Recording's note, anyone else sees it as sent.
+        if (recording.isRecording(target.getUniqueId())) {
+            if (!from.hasPermission(Recording.SEE)) {
+                from.sendMessage(Component.text("Request sent to " + target.getUsername() + ".", NamedTextColor.GRAY));
+            }
+            return;
+        }
         requests.computeIfAbsent(target.getUniqueId(), k -> new LinkedHashMap<>())
                 .put(from.getUniqueId(), new Request(from.getUniqueId(), here, Instant.now()));
         String name = from.getUsername();
