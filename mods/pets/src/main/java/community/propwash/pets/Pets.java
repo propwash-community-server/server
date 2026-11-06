@@ -70,6 +70,8 @@ public final class Pets implements ModInitializer {
     /** LuckPerms meta "off" when the player muted their pet (/pet sound off); absent: on. */
     private static final String SOUND_META = "propwash-pet-sound";
     private static final String TAG = "propwash.pet";
+    /** On drone pets, followed by the owner's UUID: how the Trails mod finds whose trail to draw. */
+    private static final String DRONE_OWNER_TAG = "propwash.pet.drone.";
     private static final String TEAM = "propwash_pets";
     /** The pet name of a player's own share-code drone, and who may make one. */
     private static final String CUSTOM = "custom";
@@ -507,6 +509,10 @@ public final class Pets implements ModInitializer {
             return null;
         }
         pet.addTag(TAG);
+        if (kind.drone() != null) {
+            // The Trails mod draws the owner's drone trail behind a drone pet, found by this tag.
+            pet.addTag(DRONE_OWNER_TAG + player.getUUID());
+        }
         Vec3 at = target(player, pet, kind);
         pet.snapTo(at.x, at.y, at.z, player.getYRot(), 0);
         pets.put(player.getUUID(), pet); // before adding, so ENTITY_LOAD knows it

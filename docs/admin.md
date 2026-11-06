@@ -454,6 +454,8 @@ used or pushed, aren't saved with the world, and hide while vanished, in spectat
 still, the pet circles you (`/pet orbit off` stops that); animals now and then make their own sound,
 quietly (`/pet sound off` mutes your pet). The choices are LuckPerms meta (`propwash-pet`,
 `propwash-pet-orbit`, `propwash-pet-sound`), so they follow players to every server.
+A drone pet leaves its owner's drone trail behind it where the trails mod runs (`/trail pet off`
+stops that); the pets mod tags each drone pet `propwash.pet.drone.<owner uuid>` for it.
 
 `/pet code <share code>` (`propwash.pets.code`, which only `*` gives for now) makes a Propwash share
 code's drone your pet, `custom` in `/pet`. It needs Propwash 0.6 (on 0.5.2 it says so, and drone props
