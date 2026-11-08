@@ -490,10 +490,12 @@ def map_ops(name, d, server_maps, rtp_cooldown):
 def welcome_ops(name, d, text):
     # A datapack, the same on Paper and Fabric: welcome text to players new to the server, and to
     # those back after leaving it (the leave_game stat also counts switching servers on the proxy).
+    # The second line only for players already welcomed: a player whose player data is gone but whose
+    # leave_game score is still in the world's scoreboard would otherwise get the message twice.
     pack = f"{d}/world/datapacks/welcome"
     message = to_json(text)
     tick = (f"tellraw @a[tag=!welcomed] {message}\n"
-            f"tellraw @a[scores={{welcome.left=1..}}] {message}\n"
+            f"tellraw @a[tag=welcomed,scores={{welcome.left=1..}}] {message}\n"
             "tag @a add welcomed\n"
             "scoreboard players reset @a[scores={welcome.left=1..}] welcome.left\n")
     pack_files = {
