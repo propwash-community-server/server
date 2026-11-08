@@ -615,10 +615,15 @@ systemd.service(name="backup timer", service="mc-backup.timer", running=True, en
 
 # --- Discord bot -----------------------------------------------------------
 
-# The bot/ folder of github.com/Itsj5j6j7/pw-server at this commit; change it to update the bot.
+# The bot/ folder of github.com/Itsj5j6j7/pw-server, at the head of its main branch on every deploy.
+# BOT_COMMIT=<sha> in the environment deploys that commit instead (to go back to an earlier one).
 # Its own settings (channels, roles, bridge servers) are in that repo's src/config.js.
 BOT_REPO = "https://github.com/Itsj5j6j7/pw-server.git"
-BOT_COMMIT = "cfd7b29fd059944ec189d484879de87f48f0ee56"
+BOT_COMMIT = os.environ.get("BOT_COMMIT") or subprocess.run(
+    ["git", "ls-remote", "--exit-code", BOT_REPO, "refs/heads/main"], capture_output=True, text=True, check=True,
+).stdout.split()[0]
+if not re.fullmatch(r"[0-9a-f]{40}", BOT_COMMIT):
+    raise SystemExit(f"BOT_COMMIT must be a full 40-character commit hash, not {BOT_COMMIT!r}")
 BOT_DIR = "/home/bot/pw-server"
 PNPM = "9.15.9"
 
@@ -644,7 +649,10 @@ server.user(name="bot user", user="bot", home="/home/bot", shell="/usr/sbin/nolo
 server.shell(name="pnpm", commands=[f'export PATH={NODE_BIN}:$PATH; [ "$(pnpm -v 2>/dev/null)" = {PNPM} ] || npm install -g pnpm@{PNPM}'])
 
 bot_changes = []
-if host.get_fact(GitHead, path=BOT_DIR) != BOT_COMMIT:
+bot_head = host.get_fact(GitHead, path=BOT_DIR)
+if bot_head != BOT_COMMIT:
+    print(f"{host.name}: bot {(bot_head or 'none')[:7]} -> {BOT_COMMIT[:7]}"
+          + (f", changes: https://github.com/Itsj5j6j7/pw-server/compare/{bot_head}...{BOT_COMMIT}" if bot_head else ""))
     # A checkout in place keeps the untracked .env, bridge.db and database.yml.
     bot_changes.append(server.shell(name="bot: checkout", commands=[
         f"runuser -u bot -- sh -c '[ -d {BOT_DIR}/.git ] || {{ git init -q {BOT_DIR} && git -C {BOT_DIR} remote add origin {BOT_REPO}; }}'",
