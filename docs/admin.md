@@ -525,8 +525,12 @@ units of [`propwash-bot@.service`](../deploy/files/propwash-bot@.service), as th
 API on `127.0.0.1:3006` the bridge mod reports to). They share `bridge.db` there (records, `/link`
 accounts), which the nightly backup includes. The local stack runs only the API.
 
-The deploy checks out `BOT_COMMIT` in [`deploy.py`](../deploy/deploy.py): to update the bot, change
-it and deploy. The bot's channels, roles and bridge servers are in that repo's `src/config.js`.
+Every deploy checks out the head of the bot repo's `main` branch (see [`deploy.py`](../deploy/deploy.py)),
+so any deploy updates the bot; when that's a new commit, the deploy prints it with a link to the
+changes and restarts both units. To deploy another commit instead (to go back to one that worked), set
+`BOT_COMMIT` to its full hash for that deploy, e.g. in PowerShell
+`$env:BOT_COMMIT = "<sha>"; & C:\Users\skiel\Desktop\deploy-prod.cmd`, then `Remove-Item Env:BOT_COMMIT`.
+The bot's channels, roles and bridge servers are in that repo's `src/config.js`.
 
 The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the world store under
 `mods/`) is on fpv and plots; the hub has its link-only build (just `/link`, from the bot repo's
