@@ -44,11 +44,11 @@ import org.slf4j.Logger;
  * (the vanish plugin) can't be found by those who can't see them (propwash.vanish.see). Admin /exempt
  * (propwash.exempt) toggles the propwash.exempt tag (boats, projectiles, dropping items) on every server:
  * kept here and set over rcon on each server the player arrives on. /vote: see Vote. Sounds with the
- * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk. /record: see Recording. Players a server refuses on joining go to limbo: see Limbo.
+ * Maintenance plugin's messages: see MaintenanceSounds. /afk: see Afk. /record: see Recording. /ping: see Ping. Players a server refuses on joining go to limbo: see Limbo.
  *
  * As a Predicate of players, for the announcements plugin: whether they're in recording mode.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.9.1",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.10.0",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true), @Dependency(id = "maintenance", optional = true),
                 @Dependency(id = "tab", optional = true),
@@ -114,6 +114,7 @@ public final class CrossServer implements Predicate<Player> {
         recording.register();
         new MaintenanceSounds(proxy, this, logger).register();
         new Limbo(proxy, this, logger).register();
+        new Ping(proxy, this, this::visible).register();
         new Afk(proxy, this, logger, (server, command) -> Rcon.run(port(server), password(), command), this::visible).register();
         proxy.getCommandManager().register(proxy.getCommandManager().metaBuilder("exempt").plugin(this).build(),
                 new SimpleCommand() {

@@ -44,7 +44,7 @@ plugins = [
     # /tpa, /tpahere, /tpaccept, /tpdeny, staff /tp and /invsee across servers: our mods/crossserver,
     # built and uploaded by hand; see docs/admin.md#teleporting-and-invsee. Players a server refuses on
     # joining (no Fabric, other version, missing mods) go to limbo instead (docs/servers.md#limbo).
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.9.1.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.10.0.jar",
     # Simple Voice Chat's proxy: players' voice on one public UDP port, passed on to the server they're on.
     "https://cdn.modrinth.com/data/9eGKb6K1/versions/Ue35nhwF/voicechat-velocity-2.6.26.jar",
 ]
