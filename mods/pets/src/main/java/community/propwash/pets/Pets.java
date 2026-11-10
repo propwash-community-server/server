@@ -94,8 +94,9 @@ public final class Pets implements ModInitializer {
             "donkey", "fox", "goat", "happy_ghast", "horse", "llama", "mooshroom", "mule", "ocelot", "panda", "parrot", "pig",
             "polar_bear", "rabbit", "sheep", "sniffer", "strider", "turtle", "wolf");
     private static final float DRONE_SCALE = 0.6f;
-    /** Baby camels and llamas are still big: shrunk with the scale attribute (1 = a normal baby). */
-    private static final Map<EntityType<?>, Double> SCALES = Map.of(EntityTypes.CAMEL, 0.7, EntityTypes.LLAMA, 0.7);
+    /** Baby camels, llamas, horses, donkeys and sniffers are still big: shrunk with the scale attribute (1 = a normal baby). */
+    private static final Map<EntityType<?>, Double> SCALES = Map.of(EntityTypes.CAMEL, 0.7, EntityTypes.LLAMA, 0.7,
+            EntityTypes.HORSE, 0.7, EntityTypes.DONKEY, 0.7, EntityTypes.SNIFFER, 0.7);
     /** Rabbit pets hop (the vanilla hop, entity event 1) instead of sitting: a hop this many ticks long, */
     private static final int HOP_TICKS = 11;
     /** this high (blocks) at the top, and when the owner stands still, one hop about every this many ticks. */
@@ -159,8 +160,14 @@ public final class Pets implements ModInitializer {
     private final Map<UUID, DroneMotion> motion = new HashMap<>();
 
     /** What a pet name stands for: a baby of this entity type, or a full drone (a Propwash preset's drone item). */
-    private record Kind(EntityType<?> baby, ItemStack drone) {
+    private record Kind(EntityType<?> baby, ItemStack drone, boolean rolls) {
+        Kind(EntityType<?> baby, ItemStack drone) {
+            this(baby, drone, true);
+        }
     }
+
+    /** Camera drones (the Camera Drones add-on's presets) fly smooth: they lean into turns but never roll. */
+    private static final java.util.Set<String> NO_ROLLS = java.util.Set.of("cine", "tour", "compact");
 
     private final Map<String, Kind> kinds = new LinkedHashMap<>();
     /** Each online player's chosen pet name (absent: none). */
@@ -325,7 +332,7 @@ public final class Pets implements ModInitializer {
                 if (!drone.isEmpty()) {
                     drone.set(net.minecraft.core.component.DataComponents.CUSTOM_MODEL_DATA,
                             new net.minecraft.world.item.component.CustomModelData(List.of(), List.of(), List.of("blur"), List.of()));
-                    drones.put(id.getPath(), new Kind(null, drone));
+                    drones.put(id.getPath(), new Kind(null, drone, !NO_ROLLS.contains(id.getPath())));
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
@@ -876,7 +883,7 @@ public final class Pets implements ModInitializer {
      * Leans the drone into its turns (turned: degrees it turned this tick) and now and then rolls it once
      * round, by its display's rotation, which the client glides to (two ticks per step, as for moving).
      */
-    private void tilt(UUID id, Entity pet, float turned) {
+    private void tilt(UUID id, Entity pet, float turned, boolean rolls) {
         if (SET_TRANSFORMATION == null || SET_DURATION == null || SET_DELAY == null
                 || !(pet instanceof net.minecraft.world.entity.Display display)) {
             return;
@@ -886,7 +893,7 @@ public final class Pets implements ModInitializer {
         double lean = Math.clamp(turned * BANK_PER_DEGREE, -BANK_MAX, BANK_MAX);
         m.bank += (lean - m.bank) * 0.2;
         double roll = 0;
-        if (m.rollStart < 0 && ticks >= m.nextRoll) {
+        if (rolls && m.rollStart < 0 && ticks >= m.nextRoll) {
             m.rollStart = ticks;
             m.rollSign = random.nextBoolean() ? 1 : -1;
         }
@@ -962,7 +969,7 @@ public final class Pets implements ModInitializer {
         double up = kind.baby() == EntityTypes.RABBIT ? hop(player.getUUID(), pet, step) : 0;
         pet.snapTo(at.x, at.y + up, at.z, yaw, 0);
         if (kind.drone() != null) {
-            tilt(player.getUUID(), pet, turned);
+            tilt(player.getUUID(), pet, turned, kind.rolls());
         }
         sound(player, pet, kind, step);
         pet.setYHeadRot(yaw);
