@@ -74,6 +74,9 @@ final class Race {
     }
 
     static void init() {
+        if (Portals.hasCommand("race")) {
+            return; // the hub's /race goes to the race server (Portals)
+        }
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("race")
                         .executes(c -> list(c.getSource()))
