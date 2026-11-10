@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "community.propwash.signs.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "server": ["SignBlockEntityAccessor"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -337,6 +337,8 @@ permissions = [
     # /dronetp <player>: to a player's drone; /kill drone <player>: remove it (mods/tweaks).
     "propwash.dronetp.others",
     "propwash.dronekill",
+    # /sign: colours and click commands on signs (mods/signs).
+    "propwash.sign",
 ]
 
 [groups.admin]
