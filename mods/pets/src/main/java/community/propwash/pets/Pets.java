@@ -41,6 +41,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -61,6 +62,12 @@ import net.minecraft.world.scores.Team;
  *
  * <p>Custom drones (propwash.pets.code, admins for now): /pet code <share code> turns a Propwash share
  * code into your pet, "custom" in /pet afterwards; the code is kept in a shared folder (ShareDrones).
+ *
+ * <p>Display pets (propwash.pets.display, staff): /pet display <name> while looking at a mannequin (or an
+ * armor stand, any non-player living entity) gives it that pet, to show pets off; /pet display off takes
+ * it away. It's kept as an entity tag on the mannequin (propwash.pet.display.<name>, so vanilla /tag does
+ * the same), so it lasts: the pet comes back whenever the mannequin loads, and goes when it unloads. A
+ * mannequin stands still, so its pet circles it the whole time.
  */
 public final class Pets implements ModInitializer {
     private static final String PERMISSION = "propwash.pets.";
@@ -76,12 +83,24 @@ public final class Pets implements ModInitializer {
     /** The pet name of a player's own share-code drone, and who may make one. */
     private static final String CUSTOM = "custom";
     private static final String CODE_PERMISSION = "propwash.pets.code";
+    /** On a mannequin (or any non-player living entity), followed by a pet name: it shows that pet. */
+    private static final String DISPLAY_TAG = "propwash.pet.display.";
+    private static final String DISPLAY_PERMISSION = "propwash.pets.display";
+    /** How far (blocks) /pet display looks for the mannequin you're looking at. */
+    private static final double DISPLAY_REACH = 8;
 
     /** Baby animals: entity ids (only those that are ageable here are offered). */
     private static final List<String> BABIES = List.of("armadillo", "axolotl", "bee", "camel", "cat", "chicken", "cow",
-            "donkey", "fox", "goat", "happy_ghast", "horse", "llama", "mooshroom", "mule", "ocelot", "panda", "pig",
+            "donkey", "fox", "goat", "happy_ghast", "horse", "llama", "mooshroom", "mule", "ocelot", "panda", "parrot", "pig",
             "polar_bear", "rabbit", "sheep", "sniffer", "strider", "turtle", "wolf");
     private static final float DRONE_SCALE = 0.6f;
+    /** Baby camels and llamas are still big: shrunk with the scale attribute (1 = a normal baby). */
+    private static final Map<EntityType<?>, Double> SCALES = Map.of(EntityTypes.CAMEL, 0.7, EntityTypes.LLAMA, 0.7);
+    /** Rabbit pets hop (the vanilla hop, entity event 1) instead of sitting: a hop this many ticks long, */
+    private static final int HOP_TICKS = 11;
+    /** this high (blocks) at the top, and when the owner stands still, one hop about every this many ticks. */
+    private static final double HOP_HEIGHT = 0.3;
+    private static final int HOP_IDLE_EVERY = 40;
     /** Standing still this long (ticks), pets circle: drones around the head, animals around the feet. */
     private static final int ORBIT_AFTER = 40;
     /** Orbit radius (blocks) and speed (radians a tick): drones a lap in about 4 s, animals at a walk. */
@@ -92,6 +111,53 @@ public final class Pets implements ModInitializer {
     /** Animals make their own ambient sound on average every ANIMAL_CHANCE ticks, never within ANIMAL_GAP of the last. */
     private static final int ANIMAL_CHANCE = 400, ANIMAL_GAP = 160;
 
+    /**
+     * A drone pet's own flying, so it doesn't look mechanical: a height that drifts to a new level now and
+     * then, a circle that changes shape every lap (a bit wider or tighter, sometimes an oval, turned any
+     * way), a lean into turns, and now and then a quick roll.
+     */
+    private static final class DroneMotion {
+        /** Blocks above or below the usual height, and where it's heading. */
+        double height, heightTarget;
+        long nextHeight;
+        /** The circle's half-axes (blocks), easing towards their targets, and the oval's direction (radians). */
+        double rx = DRONE_ORBIT, rz = DRONE_ORBIT, rxTarget = DRONE_ORBIT, rzTarget = DRONE_ORBIT, axis;
+        /** The orbit angle this lap started at: a new shape every full turn. */
+        double lapStart = Double.NaN;
+        /** Lean into turns (radians), and a roll: when it started (or -1) and which way. */
+        double bank;
+        long rollStart = -1, nextRoll;
+        int rollSign = 1;
+        /** In front of the owner's face: 1 passing above it, -1 below, 0 not there. */
+        int faceSide;
+        /** The rotation last sent to the client, so unchanged ticks send nothing. */
+        float sentAngle = Float.NaN;
+    }
+
+    /** Height changes every HEIGHT_MIN to HEIGHT_MAX ticks, to between HEIGHT_LOW and HEIGHT_HIGH blocks off the usual. */
+    private static final int HEIGHT_MIN = 60, HEIGHT_MAX = 220;
+    private static final double HEIGHT_LOW = -1.0, HEIGHT_HIGH = 0.5;
+    /** In front of the owner, a drone keeps out of this band round their eyes (blocks below, above). */
+    private static final double FACE_BELOW = 0.35, FACE_ABOVE = 0.4;
+    /** A roll every ROLL_MIN to ROLL_MAX ticks, taking ROLL_TICKS. */
+    private static final int ROLL_MIN = 160, ROLL_MAX = 480, ROLL_TICKS = 14;
+    /** Lean (radians) per degree turned in a tick, and at most. */
+    private static final double BANK_PER_DEGREE = 0.05, BANK_MAX = 0.35;
+    /**
+     * Rolls and leans turn round a line this far (blocks) above the display's origin, which is at the
+     * drone's bottom: so a roll swings it up and over, as a real drone's does, instead of spinning in place.
+     */
+    private static final float ROLL_PIVOT = 0.35f;
+    /** How the drone item is turned in its display: tipped flat (-90 degrees about x), then round (180 about up). */
+    private static final org.joml.Quaternionfc DRONE_BASE = new org.joml.Quaternionf(0, (float) Math.cos(Math.toRadians(-45)),
+            (float) -Math.sin(Math.toRadians(-45)), 0);
+    /** Display's private setters for its rotation and how the client glides to it; null: no rolls or leaning. */
+    private static final java.lang.reflect.Method SET_TRANSFORMATION = displayMethod("setTransformation", com.mojang.math.Transformation.class),
+            SET_DURATION = displayMethod("setTransformationInterpolationDuration", int.class),
+            SET_DELAY = displayMethod("setTransformationInterpolationDelay", int.class);
+
+    private final Map<UUID, DroneMotion> motion = new HashMap<>();
+
     /** What a pet name stands for: a baby of this entity type, or a full drone (a Propwash preset's drone item). */
     private record Kind(EntityType<?> baby, ItemStack drone) {
     }
@@ -100,6 +166,20 @@ public final class Pets implements ModInitializer {
     /** Each online player's chosen pet name (absent: none). */
     private final Map<UUID, String> chosen = new HashMap<>();
     private final Map<UUID, Entity> pets = new HashMap<>();
+    /** Loaded mannequins (and the like) with a display pet tag, by UUID: they own pets too. */
+    private final Map<UUID, LivingEntity> displays = new HashMap<>();
+    /**
+     * Pets out while their owner is vanished, and whose they are: only the owner's client is sent them
+     * (EntityMixin), so a vanished owner still has their pet without it giving them away.
+     */
+    private static final Map<Entity, UUID> PRIVATE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Whether entity may be sent to viewer: false for someone else's pet while its owner is vanished. */
+    public static boolean visibleTo(Entity entity, ServerPlayer viewer) {
+        UUID owner = PRIVATE.get(entity);
+        return owner == null || owner.equals(viewer.getUUID());
+    }
+
     /** Each online player's share-code drone, if they have one (and it decodes here). */
     private final Map<UUID, Kind> custom = new HashMap<>();
     /** Each pet owner's last position and how many ticks they've stood still there. */
@@ -115,6 +195,9 @@ public final class Pets implements ModInitializer {
     private final java.util.Set<UUID> noSound = new java.util.HashSet<>();
     /** Each pet's next allowed sound tick. */
     private final Map<UUID, Long> nextSound = new HashMap<>();
+    /** Rabbit pets: the tick their current hop started, and how high above its path the hop has it now. */
+    private final Map<UUID, Long> hopStart = new HashMap<>();
+    private final Map<UUID, Double> hopY = new HashMap<>();
     /** Mob.getAmbientSound (protected); null if it can't be reached (then animals stay quiet). */
     private static final java.lang.reflect.Method AMBIENT = ambientMethod();
     private MethodHandle isVanished;
@@ -138,6 +221,15 @@ public final class Pets implements ModInitializer {
                                 .executes(c -> choose(c.getSource(), CUSTOM))
                                 .then(Commands.argument("code", StringArgumentType.greedyString())
                                         .executes(c -> setCode(c.getSource(), StringArgumentType.getString(c, "code")))))
+                        .then(Commands.literal("display")
+                                .requires(s -> s.getPlayer() != null && Perms.has(s.getPlayer(), DISPLAY_PERMISSION))
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .suggests((c, b) -> {
+                                            kinds.keySet().forEach(b::suggest);
+                                            b.suggest("off");
+                                            return b.buildFuture();
+                                        })
+                                        .executes(c -> display(c.getSource(), StringArgumentType.getString(c, "name").toLowerCase()))))
                         .then(Commands.literal("orbit")
                                 .then(Commands.literal("on").executes(c -> setOrbit(c.getSource(), true)))
                                 .then(Commands.literal("off").executes(c -> setOrbit(c.getSource(), false))))
@@ -174,24 +266,23 @@ public final class Pets implements ModInitializer {
             }
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            remove(handler.player.getUUID());
+            forget(handler.player.getUUID());
             chosen.remove(handler.player.getUUID());
             custom.remove(handler.player.getUUID());
-            lastPos.remove(handler.player.getUUID());
-            stillTicks.remove(handler.player.getUUID());
-            orbit.remove(handler.player.getUUID());
-            pausedUntil.remove(handler.player.getUUID());
             noOrbit.remove(handler.player.getUUID());
             noSound.remove(handler.player.getUUID());
-            nextSound.remove(handler.player.getUUID());
         });
         ServerTickEvents.END_SERVER_TICK.register(this::tick);
-        // A pet left in the world (a crash, an older chunk): gone as soon as it loads.
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+            // A pet left in the world (a crash, an older chunk): gone as soon as it loads.
             if (entity.entityTags().contains(TAG) && !pets.containsValue(entity)) {
                 entity.discard();
+            } else if (entity instanceof LivingEntity owner && !(entity instanceof ServerPlayer) && displayName(owner) != null) {
+                displays.put(owner.getUUID(), owner);
             }
         });
+        // A mannequin unloaded or killed: tick() sees it's removed and its pet goes too (it comes back
+        // when the mannequin loads again). Not here: discarding the pet mid-unload could hit its chunk.
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) ->
                 entity.entityTags().contains(TAG) ? InteractionResult.FAIL : InteractionResult.PASS);
         AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) ->
@@ -356,6 +447,54 @@ public final class Pets implements ModInitializer {
         return choose(source, CUSTOM);
     }
 
+    /** The display pet name tagged on this entity, or null. */
+    private static String displayName(Entity entity) {
+        for (String tag : entity.entityTags()) {
+            if (tag.startsWith(DISPLAY_TAG)) {
+                return tag.substring(DISPLAY_TAG.length());
+            }
+        }
+        return null;
+    }
+
+    /** /pet display <name>|off: gives the mannequin you're looking at a pet (or takes it away), by its tag. */
+    private int display(CommandSourceStack source, String name) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        boolean off = name.equals("off");
+        if (!off && !kinds.containsKey(name)) {
+            source.sendFailure(Component.literal("There's no pet called " + name + " here."));
+            return 0;
+        }
+        Vec3 eye = player.getEyePosition(), end = eye.add(player.getViewVector(1).scale(DISPLAY_REACH));
+        var hit = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(player, eye, end,
+                player.getBoundingBox().expandTowards(end.subtract(eye)).inflate(1),
+                e -> e instanceof LivingEntity && !(e instanceof net.minecraft.world.entity.player.Player)
+                        && !e.entityTags().contains(TAG), DISPLAY_REACH * DISPLAY_REACH);
+        if (hit == null || !(hit.getEntity() instanceof LivingEntity owner)) {
+            source.sendFailure(Component.literal("Look at a mannequin (or armor stand) within " + (int) DISPLAY_REACH + " blocks."));
+            return 0;
+        }
+        String old = displayName(owner);
+        if (old != null) {
+            owner.removeTag(DISPLAY_TAG + old);
+        }
+        forget(owner.getUUID());
+        if (off) {
+            displays.remove(owner.getUUID());
+        } else {
+            owner.addTag(DISPLAY_TAG + name);
+            displays.put(owner.getUUID(), owner);
+        }
+        String what = owner.getName().getString();
+        source.sendSuccess(() -> Component.literal(off ? (old == null ? what + " had no pet." : what + "'s pet is away.")
+                : what + " now shows " + name.replace('_', ' ') + ". /pet display off (looking at it) takes it away.")
+                .withStyle(ChatFormatting.GRAY), false);
+        return 1;
+    }
+
     /** /pet orbit on|off: whether the pet circles you when you stand still; saved in LuckPerms meta. */
     private int setOrbit(CommandSourceStack source, boolean on) {
         ServerPlayer player = source.getPlayer();
@@ -409,7 +548,7 @@ public final class Pets implements ModInitializer {
      * Propwash's motor sound is synthesized on the client for real drone entities, and its one server-side
      * sound (drone.motor_sample, a 2 s loop replayed) didn't sound good.
      */
-    private void sound(ServerPlayer player, Entity pet, Kind kind, Vec3 step) {
+    private void sound(LivingEntity player, Entity pet, Kind kind, Vec3 step) {
         UUID id = player.getUUID();
         if (noSound.contains(id) || nextSound.getOrDefault(id, 0L) > ticks) {
             return;
@@ -417,7 +556,7 @@ public final class Pets implements ModInitializer {
         if (kind.baby() == null) {
             return;
         }
-        ServerLevel level = player.level();
+        ServerLevel level = level(player);
         var random = java.util.concurrent.ThreadLocalRandom.current();
         if (AMBIENT == null || !(pet instanceof net.minecraft.world.entity.Mob mob) || random.nextInt(ANIMAL_CHANCE) != 0) {
             return;
@@ -439,31 +578,85 @@ public final class Pets implements ModInitializer {
             UUID id = player.getUUID();
             Kind kind = kind(id, chosen.get(id));
             Entity pet = pets.get(id);
-            if (kind == null || hidden(player)) {
+            if (kind == null || gone(player)) {
                 remove(id);
                 continue;
             }
-            if (pet != null && (pet.isRemoved() || pet.level() != player.level())) {
+            boolean vanished = vanished(player);
+            boolean toggled = pet != null && PRIVATE.containsKey(pet) != vanished;
+            if (pet != null && (pet.isRemoved() || pet.level() != player.level() || toggled)) {
+                // Vanished or back: a new pet, so who is sent it starts over (entity tracking only asks once).
                 remove(id);
                 pet = null;
             }
             if (pet == null) {
-                if (ticks % 20 != Math.floorMod(id.hashCode(), 20) || !permitted(player, chosen.get(id))) {
+                if (!toggled && ticks % 20 != Math.floorMod(id.hashCode(), 20) || !permitted(player, chosen.get(id))) {
                     continue; // at most once a second per player, and only while allowed
                 }
-                pet = spawn(player, kind);
+                pet = spawn(player, kind, vanished);
                 if (pet == null) {
                     continue;
                 }
             }
             follow(player, pet, kind);
         }
+        var it = displays.values().iterator();
+        while (it.hasNext()) {
+            LivingEntity owner = it.next();
+            UUID id = owner.getUUID();
+            String name = displayName(owner);
+            Kind kind = kinds.get(name);
+            if (owner.isRemoved() || name == null) {
+                it.remove(); // unloaded, killed, or its tag taken off
+                forget(id);
+                continue;
+            }
+            Entity pet = pets.get(id);
+            if (kind == null || !owner.isAlive()) {
+                remove(id);
+                continue;
+            }
+            if (pet != null && (pet.isRemoved() || pet.level() != owner.level())) {
+                remove(id);
+                pet = null;
+            }
+            if (pet == null) {
+                if (ticks % 20 != Math.floorMod(id.hashCode(), 20)) {
+                    continue;
+                }
+                pet = spawn(owner, kind, false);
+                if (pet == null) {
+                    continue;
+                }
+            }
+            follow(owner, pet, kind);
+        }
     }
 
-    private boolean hidden(ServerPlayer player) {
-        if (player.isSpectator() || !player.isAlive()) {
-            return true;
-        }
+    /** Puts away this owner's pet and drops everything remembered about how it moves. */
+    private void forget(UUID id) {
+        remove(id);
+        lastPos.remove(id);
+        stillTicks.remove(id);
+        orbit.remove(id);
+        pausedUntil.remove(id);
+        nextSound.remove(id);
+        motion.remove(id);
+        hopStart.remove(id);
+        hopY.remove(id);
+    }
+
+    private static ServerLevel level(LivingEntity owner) {
+        return (ServerLevel) owner.level();
+    }
+
+    /** No pet at all: spectating or dead. */
+    private static boolean gone(ServerPlayer player) {
+        return player.isSpectator() || !player.isAlive();
+    }
+
+    /** Vanished (Vanish mod): the pet stays, seen only by its owner. */
+    private boolean vanished(ServerPlayer player) {
         try {
             return isVanished != null && (boolean) isVanished.invokeExact((Entity) player);
         } catch (Throwable e) {
@@ -471,8 +664,8 @@ public final class Pets implements ModInitializer {
         }
     }
 
-    private Entity spawn(ServerPlayer player, Kind kind) {
-        ServerLevel level = player.level();
+    private Entity spawn(LivingEntity player, Kind kind, boolean onlyOwner) {
+        ServerLevel level = level(player);
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("Invulnerable", true);
         tag.putBoolean("Silent", true);
@@ -509,13 +702,23 @@ public final class Pets implements ModInitializer {
             return null;
         }
         pet.addTag(TAG);
+        if (kind.baby() != null && SCALES.containsKey(kind.baby()) && pet instanceof LivingEntity living) {
+            var scale = living.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
+            if (scale != null) {
+                scale.setBaseValue(SCALES.get(kind.baby()));
+            }
+        }
         if (kind.drone() != null) {
             // The Trails mod draws the owner's drone trail behind a drone pet, found by this tag.
             pet.addTag(DRONE_OWNER_TAG + player.getUUID());
         }
         Vec3 at = target(player, pet, kind);
         pet.snapTo(at.x, at.y, at.z, player.getYRot(), 0);
+        motion.remove(player.getUUID()); // a fresh pet starts level, at the usual height
         pets.put(player.getUUID(), pet); // before adding, so ENTITY_LOAD knows it
+        if (onlyOwner) {
+            PRIVATE.put(pet, player.getUUID()); // before adding too: tracking decides who sees it then
+        }
         level.addFreshEntity(pet);
         Scoreboard scoreboard = level.getServer().getScoreboard();
         PlayerTeam team = scoreboard.getPlayerTeam(TEAM);
@@ -538,6 +741,7 @@ public final class Pets implements ModInitializer {
     private void remove(UUID id) {
         Entity pet = pets.remove(id);
         if (pet != null) {
+            PRIVATE.remove(pet);
             Scoreboard scoreboard = pet.level().getServer().getScoreboard();
             PlayerTeam team = scoreboard.getPlayerTeam(TEAM);
             if (team != null && team.getPlayers().contains(pet.getScoreboardName())) {
@@ -552,7 +756,7 @@ public final class Pets implements ModInitializer {
      * shoulder; when the player has stood still a while, going round them (drones at head height, animals
      * on the ground at their feet), starting from where the pet is.
      */
-    private Vec3 target(ServerPlayer player, Entity pet, Kind kind) {
+    private Vec3 target(LivingEntity player, Entity pet, Kind kind) {
         UUID id = player.getUUID();
         Vec3 p = player.position();
         Vec3 last = lastPos.put(id, p);
@@ -577,20 +781,153 @@ public final class Pets implements ModInitializer {
             double angle = !orbit.containsKey(id) ? Math.atan2(pet.getZ() - p.z, pet.getX() - p.x)
                     : orbit.get(id) + (pause > ticks ? 0 : speed);
             orbit.put(id, angle);
-            double r = (drone ? DRONE_ORBIT : ANIMAL_ORBIT) * (1 + 0.12 * Math.sin(angle * 2 + seed) + 0.06 * Math.sin(t * 1.3 + seed * 2));
+            if (drone) {
+                DroneMotion m = motion(id);
+                if (Double.isNaN(m.lapStart) || angle - m.lapStart >= 2 * Math.PI) {
+                    m.lapStart = angle;
+                    newShape(m);
+                }
+                m.rx += (m.rxTarget - m.rx) * 0.03;
+                m.rz += (m.rzTarget - m.rz) * 0.03;
+                double wobble = 1 + 0.06 * Math.sin(t * 1.3 + seed * 2);
+                double ex = Math.cos(angle) * m.rx * wobble, ez = Math.sin(angle) * m.rz * wobble;
+                double ca = Math.cos(m.axis), sa = Math.sin(m.axis);
+                double x = p.x + ex * ca - ez * sa, z = p.z + ex * sa + ez * ca;
+                return new Vec3(x, faceSafe(player, m, x, p.y + 1.9 + bob + height(m), z), z);
+            }
+            double r = ANIMAL_ORBIT * (1 + 0.12 * Math.sin(angle * 2 + seed) + 0.06 * Math.sin(t * 1.3 + seed * 2));
             double x = p.x + Math.cos(angle) * r, z = p.z + Math.sin(angle) * r;
-            double lift = drone ? 0.12 * Math.sin(t * 0.9 + seed * 3) : 0;
-            return drone ? new Vec3(x, p.y + 1.9 + bob + lift, z) : new Vec3(x, ground(player.level(), x, p.y, z), z);
+            return new Vec3(x, ground(level(player), x, p.y, z), z);
         }
         orbit.remove(id);
         double yaw = Math.toRadians(player.yBodyRot);
         double forwardX = -Math.sin(yaw), forwardZ = Math.cos(yaw);
         double rightX = -forwardZ, rightZ = forwardX;
         if (drone) {
-            return new Vec3(p.x + rightX * 0.7 + forwardX * 0.2, p.y + 1.9 + bob, p.z + rightZ * 0.7 + forwardZ * 0.2);
+            // It flies beside the owner (0.7 to the side), so it can go down past their shoulder.
+            double h = height(motion(id));
+            double x = p.x + rightX * 0.7 + forwardX * 0.2, z = p.z + rightZ * 0.7 + forwardZ * 0.2;
+            return new Vec3(x, faceSafe(player, motion(id), x, p.y + 1.9 + bob + h, z), z);
         }
         double x = p.x - forwardX * 1.1 + rightX * 0.6, z = p.z - forwardZ * 1.1 + rightZ * 0.6;
-        return new Vec3(x, ground(player.level(), x, p.y, z), z);
+        return new Vec3(x, ground(level(player), x, p.y, z), z);
+    }
+
+    private DroneMotion motion(UUID id) {
+        return motion.computeIfAbsent(id, k -> {
+            DroneMotion m = new DroneMotion();
+            var random = java.util.concurrent.ThreadLocalRandom.current();
+            m.nextHeight = ticks + random.nextInt(HEIGHT_MIN, HEIGHT_MAX + 1);
+            m.nextRoll = ticks + random.nextInt(ROLL_MIN, ROLL_MAX + 1);
+            return m;
+        });
+    }
+
+    /**
+     * The height y, unless that's in front of the owner's face (where they look, within about 70 degrees):
+     * then above or below it, whichever side it came in nearer, kept until it's out of the way again, and
+     * eased in towards the middle of their view so it swoops round rather than jumps.
+     */
+    private static double faceSafe(LivingEntity player, DroneMotion m, double x, double y, double z) {
+        double dx = x - player.getX(), dz = z - player.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+        double yaw = Math.toRadians(player.getYHeadRot());
+        double front = d < 1e-3 ? 1 : (-Math.sin(yaw) * dx + Math.cos(yaw) * dz) / d;
+        double weight = Math.clamp((front - 0.3) / 0.35, 0, 1);
+        double eye = player.getEyeY(), low = eye - FACE_BELOW, high = eye + FACE_ABOVE;
+        if (weight == 0) {
+            m.faceSide = 0;
+            return y;
+        }
+        if (m.faceSide == 0) {
+            m.faceSide = y >= (low + high) / 2 ? 1 : -1;
+        }
+        double safe = m.faceSide > 0 ? Math.max(y, high) : Math.min(y, low);
+        weight = weight * weight * (3 - 2 * weight);
+        return y + (safe - y) * weight;
+    }
+
+    /** The next lap's shape: a circle a bit wider or tighter than usual, or (one lap in two) an oval, turned any way. */
+    private static void newShape(DroneMotion m) {
+        var random = java.util.concurrent.ThreadLocalRandom.current();
+        double r = DRONE_ORBIT * random.nextDouble(0.8, 1.25);
+        if (random.nextBoolean()) {
+            double stretch = random.nextDouble(1.25, 1.55);
+            m.rxTarget = r * stretch;
+            m.rzTarget = Math.max(0.7, r / stretch);
+            m.axis = random.nextDouble(Math.PI);
+        } else {
+            m.rxTarget = r;
+            m.rzTarget = r;
+        }
+    }
+
+    /** The drone's height off the usual, easing to a new level every few seconds. */
+    private double height(DroneMotion m) {
+        if (ticks >= m.nextHeight) {
+            var random = java.util.concurrent.ThreadLocalRandom.current();
+            m.heightTarget = random.nextDouble(HEIGHT_LOW, HEIGHT_HIGH);
+            m.nextHeight = ticks + random.nextInt(HEIGHT_MIN, HEIGHT_MAX + 1);
+        }
+        m.height += (m.heightTarget - m.height) * 0.04;
+        return m.height;
+    }
+
+    /**
+     * Leans the drone into its turns (turned: degrees it turned this tick) and now and then rolls it once
+     * round, by its display's rotation, which the client glides to (two ticks per step, as for moving).
+     */
+    private void tilt(UUID id, Entity pet, float turned) {
+        if (SET_TRANSFORMATION == null || SET_DURATION == null || SET_DELAY == null
+                || !(pet instanceof net.minecraft.world.entity.Display display)) {
+            return;
+        }
+        DroneMotion m = motion(id);
+        var random = java.util.concurrent.ThreadLocalRandom.current();
+        double lean = Math.clamp(turned * BANK_PER_DEGREE, -BANK_MAX, BANK_MAX);
+        m.bank += (lean - m.bank) * 0.2;
+        double roll = 0;
+        if (m.rollStart < 0 && ticks >= m.nextRoll) {
+            m.rollStart = ticks;
+            m.rollSign = random.nextBoolean() ? 1 : -1;
+        }
+        if (m.rollStart >= 0) {
+            double f = (ticks - m.rollStart) / (double) ROLL_TICKS;
+            if (f >= 1) {
+                m.rollStart = -1;
+                m.nextRoll = ticks + random.nextInt(ROLL_MIN, ROLL_MAX + 1);
+            } else {
+                roll = m.rollSign * 2 * Math.PI * f * f * (3 - 2 * f); // eased in and out
+            }
+        }
+        float angle = (float) (m.bank + roll);
+        if (Math.abs(angle - m.sentAngle) < 0.005) {
+            return;
+        }
+        m.sentAngle = angle;
+        // Round a nose-to-tail line (the display's z axis, the way the pet faces) ROLL_PIVOT above the
+        // origin: turned by angle round that line, the drone ends up pivot - turned(pivot) away.
+        org.joml.Quaternionf turn = new org.joml.Quaternionf().rotateZ(angle);
+        org.joml.Quaternionf left = new org.joml.Quaternionf(turn).mul(DRONE_BASE);
+        org.joml.Vector3f shift = new org.joml.Vector3f(0, ROLL_PIVOT, 0).sub(turn.transform(new org.joml.Vector3f(0, ROLL_PIVOT, 0)));
+        try {
+            SET_DELAY.invoke(display, 0);
+            SET_DURATION.invoke(display, 2);
+            SET_TRANSFORMATION.invoke(display, new com.mojang.math.Transformation(shift, left,
+                    new org.joml.Vector3f(DRONE_SCALE, DRONE_SCALE, DRONE_SCALE), new org.joml.Quaternionf()));
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            // Leave it level.
+        }
+    }
+
+    private static java.lang.reflect.Method displayMethod(String name, Class<?> parameter) {
+        try {
+            java.lang.reflect.Method m = net.minecraft.world.entity.Display.class.getDeclaredMethod(name, parameter);
+            m.setAccessible(true);
+            return m;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            org.slf4j.LoggerFactory.getLogger("pets").info("Drone pets stay level: {}", e.toString());
+            return null;
+        }
     }
 
     /** The top of the ground near y at x, z (a block up to 4 below); y itself if there is none (flying). */
@@ -608,9 +945,10 @@ public final class Pets implements ModInitializer {
         return y;
     }
 
-    private void follow(ServerPlayer player, Entity pet, Kind kind) {
+    private void follow(LivingEntity player, Entity pet, Kind kind) {
         Vec3 to = target(player, pet, kind);
-        Vec3 from = pet.position();
+        // A hopping rabbit is followed from where it would be on its path, below the hop.
+        Vec3 from = pet.position().subtract(0, hopY.getOrDefault(player.getUUID(), 0.0), 0);
         // Close behind: most of the way there each tick, straight there when far (a teleport).
         Vec3 at = from.distanceToSqr(to) > 36 ? to : from.lerp(to, 0.4);
         // Circling, a pet keeps its heading while it pauses; otherwise it faces the way the player does.
@@ -620,12 +958,37 @@ public final class Pets implements ModInitializer {
         if ((kind.baby() != null || orbit.containsKey(player.getUUID())) && step.horizontalDistanceSqr() > 0.0004) {
             yaw = (float) Math.toDegrees(Math.atan2(-step.x, step.z));
         }
-        pet.snapTo(at.x, at.y, at.z, yaw, 0);
+        float turned = net.minecraft.util.Mth.wrapDegrees(yaw - pet.getYRot());
+        double up = kind.baby() == EntityTypes.RABBIT ? hop(player.getUUID(), pet, step) : 0;
+        pet.snapTo(at.x, at.y + up, at.z, yaw, 0);
+        if (kind.drone() != null) {
+            tilt(player.getUUID(), pet, turned);
+        }
         sound(player, pet, kind, step);
         pet.setYHeadRot(yaw);
         pet.setYBodyRot(yaw);
         if (kind.baby() != null && pet instanceof AgeableMob mob && !mob.isBaby()) {
             mob.setAge(-24000);
         }
+    }
+
+    /**
+     * A rabbit pet hops along instead of sitting (a NoAI rabbit never hops by itself): hop after hop
+     * while it moves, now and then while the owner stands still. Each hop plays the vanilla hop
+     * (entity event 1) and lifts it in an arc; returns how high above its path it is this tick.
+     */
+    private double hop(UUID id, Entity pet, Vec3 step) {
+        long start = hopStart.getOrDefault(id, Long.MIN_VALUE / 2);
+        long since = ticks - start;
+        boolean moving = step.horizontalDistanceSqr() > 0.0004;
+        if (since >= HOP_TICKS && (moving || since >= HOP_IDLE_EVERY)) {
+            start = ticks;
+            since = 0;
+            hopStart.put(id, start);
+            ((ServerLevel) pet.level()).broadcastEntityEvent(pet, (byte) 1);
+        }
+        double up = since < HOP_TICKS ? Math.sin(Math.PI * since / HOP_TICKS) * HOP_HEIGHT : 0;
+        hopY.put(id, up);
+        return up;
     }
 }

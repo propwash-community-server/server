@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "community.propwash.pets.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "EntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

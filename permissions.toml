@@ -287,6 +287,8 @@ permissions = [
     "propwash.kits.staff",
     # /announce: send one of the announcements now (mods/announcements).
     "propwash.announce",
+    # /pet display <name>: give a mannequin or armor stand a pet, for pet showcases (mods/pets).
+    "propwash.pets.display",
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the
     # server's own too (EssentialsX via essentials.*, InvView on fpv and plots).
     "propwash.tp",

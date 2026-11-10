@@ -450,7 +450,8 @@ hub, fpv and plots: a baby vanilla animal that walks just behind you, or one of 
 hovering at your shoulder. Supporters have them all (`propwash.pets.all`); `propwash.pets.animals`,
 `propwash.pets.drones` or `propwash.pets.<name>` give some. Our Fabric mod [`mods/pets`](../mods/pets/):
 ordinary entities the server moves every tick, so nothing is needed on the client. They can't be hurt,
-used or pushed, aren't saved with the world, and hide while vanished, in spectator or dead. Standing
+used or pushed, aren't saved with the world, and hide in spectator or dead; while you're vanished only
+you see yours. Rabbits hop along, and camels and llamas are shrunk to 0.7 of a baby's size. Standing
 still, the pet circles you (`/pet orbit off` stops that); animals now and then make their own sound,
 quietly (`/pet sound off` mutes your pet). The choices are LuckPerms meta (`propwash-pet`,
 `propwash-pet-orbit`, `propwash-pet-sound`), so they follow players to every server.
@@ -461,6 +462,11 @@ stops that); the pets mod tags each drone pet `propwash.pet.drone.<owner uuid>` 
 code's drone your pet, `custom` in `/pet`. It needs Propwash 0.6 (on 0.5.2 it says so, and drone props
 don't spin). Codes are too long for LuckPerms meta, so each is a file, `/home/mc/pets/<uuid>.txt`,
 shared by every server.
+
+`/pet display <name>` (`propwash.pets.display`, staff) while looking at a mannequin or armor stand
+(within 8 blocks) gives it that pet, to show pets off in the world; `/pet display off` takes it away.
+It's kept as the tag `propwash.pet.display.<name>` on the mannequin. Presets only, and drone pets on
+mannequins leave no trail.
 
 ## Vanish
 

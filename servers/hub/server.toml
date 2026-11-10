@@ -26,7 +26,7 @@ mods = [
     # /backpack (for now only admins); see plots.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # /pet (supporters); see plots.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/pets-1.4.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/pets-1.8.3-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.

@@ -15,6 +15,7 @@
     "minecraft": "~26.3",
     "fabric-api": "*"
   },
+  "mixins": ["pets.mixins.json"],
   "recommends": {
     "luckperms": "*"
   }
