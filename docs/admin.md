@@ -669,6 +669,7 @@ delete them once looked at.
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | the coordinates in `servers/hub/files/world/datapacks/hubspawn` (players are sent there on every arrival) and `files/config/melius-commands/commands/spawn.json` (`/spawn`) |
+| Hub speed | `servers/hub/files/world/datapacks/hubspeed`: everyone in the hub has Speed IV (no particles), given again if lost; the level is the `3` (amplifier) in its `tick.mcfunction` and `predicate/has_speed.json` |
 | Hub portals | `portal.<name>` in the hub's `[config."config/tweaks.properties"]` (mods/tweaks): a box of blocks and the server it sends to; nether portal blocks inside it don't lead to the nether. Read on start |
 | Limbo spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
 | fpv spawn | `/execute in maps:lobby run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#lobby)) |
