@@ -1,7 +1,7 @@
 """
 Pack a world save as a map and upload it to the world store as <server>/maps/<name>.tar.gz.
 
-  uv run upload <save folder> <name> [--server fpv] [--local]
+  uv run upload <save folder> <name> [--server freestyle] [--local]
 
 --local uploads to the store from local/compose.yaml; otherwise the bucket from secrets/s3.env.sops.
 Only the overworld is taken; the map shows up in game as the dimension maps:<name>.
@@ -31,7 +31,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("save", type=Path)
     parser.add_argument("name")
-    parser.add_argument("--server", default="fpv")
+    parser.add_argument("--server", default="freestyle")
     parser.add_argument("--local", action="store_true")
     args = parser.parse_args()
 

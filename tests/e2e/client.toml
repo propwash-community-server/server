@@ -1,6 +1,6 @@
 # The test client: a Fabric 26.3 client run headless by HeadlessMC, driven by Minescript.
 headlessmc = "https://github.com/headlesshq/headlessmc/releases/download/3.0.0-RC4/headlessmc.jar"
-# Mods from servers/fpv/server.toml that players need too, by file name. Taken from there so the
+# Mods from servers/freestyle/server.toml that players need too, by file name. Taken from there so the
 # client always has the same versions as the server.
 from_fpv = ["fabric-api", "propwash-fabric", "justmoreparts"]
 mods = [

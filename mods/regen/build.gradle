@@ -6,19 +6,24 @@ plugins {
 version = "${project.mod_version}+${project.minecraft_version}"
 base.archivesName = 'regen'
 
-// Propwash isn't in a Maven repository: the jar the servers run, downloaded once.
-def propwashJar = layout.buildDirectory.file("deps/" + project.propwash_url.tokenize('/').last())
-tasks.register('propwashJar') {
-    outputs.file(propwashJar)
-    doLast {
-        def f = propwashJar.get().asFile
-        if (!f.exists()) {
-            f.parentFile.mkdirs()
-            new URI(project.propwash_url).toURL().withInputStream { input -> f.withOutputStream { it << input } }
+// Propwash and Flan aren't in a Maven repository we use: the jars the servers run, downloaded once.
+def depJar(String task, String url) {
+    def jar = layout.buildDirectory.file("deps/" + url.tokenize('/').last())
+    tasks.register(task) {
+        outputs.file(jar)
+        doLast {
+            def f = jar.get().asFile
+            if (!f.exists()) {
+                f.parentFile.mkdirs()
+                new URI(url).toURL().withInputStream { input -> f.withOutputStream { it << input } }
+            }
         }
     }
+    tasks.named('compileJava') { dependsOn task }
+    return jar
 }
-tasks.named('compileJava') { dependsOn 'propwashJar' }
+def propwashJar = depJar('propwashJar', project.propwash_url)
+def flanJar = depJar('flanJar', project.flan_url)
 
 dependencies {
     // Minecraft 26.x ships with Mojang's names, so no mappings.
@@ -26,6 +31,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     compileOnly files(propwashJar)
+    compileOnly files(flanJar)
 }
 
 tasks.withType(JavaCompile).configureEach {

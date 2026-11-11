@@ -1,0 +1,9 @@
+{
+  "type": "flan:item_use",
+  "values": [
+    {
+      "entry": "propwash:drone",
+      "permission": "propwash_flan:drone"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "criteria": {
+    "placed": {
+      "trigger": "minecraft:item_used_on_block",
+      "conditions": {
+        "location": {
+          "type": "minecraft:match_tool",
+          "predicate": {
+            "items": "propwash:drone"
+          }
+        }
+      }
+    }
+  },
+  "rewards": {
+    "function": "propwash_drone_limit:placed"
+  }
+}

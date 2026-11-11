@@ -11,7 +11,7 @@ mods = [
     # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
     # Drones break glass on plots with the drone-glass or drone-glass-members flag, and it comes back after the plot's
-    # /plot glassregen time (our mods/regen; on fpv for the maps too).
+    # /plot glassregen time (our mods/regen; on freestyle and race for the maps too).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/regen-1.2.0-26.3.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
@@ -86,7 +86,7 @@ help = """
 <accent>/mydrone</accent>: bring your drone to you
 <accent>/dronetp</accent>: go to your drone
 <accent>/clear</accent>: empty your inventory
-<accent>/kit create <name></accent>, <accent>/kit <name></accent>, <accent>/kit edit <name></accent>: your own kits (also on fpv)
+<accent>/kit create <name></accent>, <accent>/kit <name></accent>, <accent>/kit edit <name></accent>: your own kits (also on freestyle and race)
 <accent>/plot flag set drone-glass on</accent> (everyone's drones) or <accent>drone-glass-members on</accent> (yours and trusted players'), <accent>/plot glassregen <seconds></accent>: let drones smash the glass on your plot, back after 3 min or your time
 <accent>/debugstick</accent>: change block states (facing, half, waterlogged...) on your plot
 Only you and players you trust can build on your plot.
@@ -94,7 +94,7 @@ Only you and players you trust can build on your plot.
 
 # Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
 welcome = """
-<brand><bold>Plots</bold></brand>: <accent>/plot auto</accent> to get a plot, <accent>/help</accent> for more.
+<propwash><bold>Plots</bold></propwash><muted>: </muted><white>/plot auto</white><muted> to get a plot, </muted><white>/help</white><muted> for more.</muted>
 """
 
 # Set on every start.
@@ -165,7 +165,7 @@ advance-time = "false"
 advance-weather = "false"
 # Anyone may, anywhere in the plot world (other people's plots too): place drones (the item used on a
 # block), use drone workbenches, and fly, hit and pick up drones. Our patch's free-* settings.
-# One drone per player at a time: files/world/datapacks/propwash_drone_limit (the same as fpv).
+# One drone per player at a time: files/world/datapacks/propwash_drone_limit (the same as freestyle and race).
 # Escaped the way FabricPlots writes them back, so deploys don't see a change and restart.
 free-items = 'propwash\:drone'
 free-blocks = 'propwash\:drone_workbench'
@@ -183,7 +183,7 @@ welcome-message = "false"
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
-# The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
+# The maps' resource pack (Drift Arena furniture models), as on freestyle and race; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
@@ -202,7 +202,7 @@ generate-structures = "false"
 
 # mods/kits: /kit cooldown (staff.cooldown: propwash.kits.staff), kits and items per kit
 # (supporter.*: propwash.kits.supporter). Kits are
-# in storage, the same folder on fpv and plots, so they're shared. Read again when the file changes.
+# in storage, the same folder on freestyle, race and plots, so they're shared. Read again when the file changes.
 [config."config/kits.properties"]
 cooldown = "20"
 "staff.cooldown" = "2"

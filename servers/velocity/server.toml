@@ -10,7 +10,7 @@ plugins = [
     "https://cdn.modrinth.com/data/Vebnzrzj/versions/tamnmXad/LuckPerms-Velocity-5.5.71.jar",
     # Network-wide bans, mutes and kicks; data in MariaDB (sql.yml written by the deploy).
     "https://cdn.modrinth.com/data/PgXAUxLZ/versions/TUuNKL02/LibertyBans_Release-1.2.0-M1.jar",
-    # Network-wide TAB list: server (and map on fpv, from TAB-Bridge) and LuckPerms role per player.
+    # Network-wide TAB list: server (and map on freestyle and race, from TAB-Bridge) and LuckPerms role per player.
     "https://cdn.modrinth.com/data/gG7VFbG0/versions/UDraViyI/TAB%20v6.2.0.jar",
     # Scoreboard teams for TAB, which sort the tab list.
     "https://github.com/NEZNAMY/VelocityScoreboardAPI/releases/download/2.1.1/VelocityScoreboardAPIv.2.1.1.jar",
@@ -32,7 +32,7 @@ plugins = [
     # The supporter, helper, mod and staff parts of /help (files/plugins/staffhelp/supporter.txt, helper.txt, mod.txt,
     # help.txt): our mods/staffhelp, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/staffhelp-1.3.0.jar",
-    # Announcements every 15 minutes in chat on hub, fpv and plots
+    # Announcements every 15 minutes in chat on hub, freestyle, race and plots
     # (files/plugins/announcements/announcements.toml): our mods/announcements, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/announcements-1.3.0.jar",
     # Joins, server switches, leaves and players online, for graphs later (plugins/stats/*.jsonl, see
@@ -54,7 +54,7 @@ expansions = [
     "https://github.com/MiniPlaceholders/Player-Expansion/releases/download/2.0.0/Player-Expansion-2.0.0.jar",
 ]
 # Where players land, in order.
-try = ["hub", "fpv"]
+try = ["hub", "freestyle"]
 # Server list icon: files/server-icon.png (64x64 PNG; Velocity reads it on start).
 # Server list MOTD, in MiniMessage with palette.toml tags; the Propwash brand kit's look: white, one yellow word.
 motd = "<white><bold>Propwash</bold></white> <propwash><bold>FPV</bold></propwash> <muted>Community Server</muted>"

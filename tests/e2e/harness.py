@@ -92,7 +92,7 @@ class Server:
         return self.rcon(f"execute {condition}").startswith("Test passed")
 
 
-HUB, FPV, PLOTS = Server("hub"), Server("fpv"), Server("plots")
+HUB, FPV, PLOTS = Server("hub"), Server("freestyle"), Server("plots")
 
 
 def luckperms(command, server=HUB):
@@ -107,9 +107,9 @@ def luckperms(command, server=HUB):
 
 def client_mods():
     client = tomllib.loads((HERE / "client.toml").read_text())
-    fpv = tomllib.loads((ROOT / "servers/fpv/server.toml").read_text())
-    mods = [url for url in fpv["mods"] for name in client["from_fpv"] if unquote(url.rsplit("/", 1)[1]).startswith(name)]
-    assert len(mods) == len(client["from_fpv"]), f"not all of {client['from_fpv']} found in servers/fpv/server.toml"
+    freestyle = tomllib.loads((ROOT / "servers/freestyle/server.toml").read_text())
+    mods = [url for url in freestyle["mods"] for name in client["from_fpv"] if unquote(url.rsplit("/", 1)[1]).startswith(name)]
+    assert len(mods) == len(client["from_fpv"]), f"not all of {client['from_fpv']} found in servers/freestyle/server.toml"
     return client["headlessmc"], mods + client["mods"]
 
 

@@ -1,0 +1,8 @@
+title = "Touchdown"
+author = "FPVGilbert"
+# More than one person: these lines show instead of "by <author>" (one line per role).
+credits = ["Track by FPVGilbert", "Stadium by Greenfield Team"]
+rank = "Beginner"
+# Race's own copy of freestyle's greenfield with FPVGilbert's beginner track (built on dev in 2026-11);
+# its world is race/maps/touchdown.tar.gz in the store.
+border = { x = 400.19, z = 226.53, size = 500 }

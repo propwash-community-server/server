@@ -39,12 +39,12 @@ openssl rand -hex 32 | tr -d '\n' | sops -e --input-type binary --output-type bi
 [`permissions.toml`](../permissions.toml) defines the [LuckPerms](https://luckperms.net) groups
 (`default`, `supporter`, `creator`, `junior-builder`, `senior-builder`, `helper`, `mod`, `staff`, `admin`). Each entry is passed to
 [`lp group <name> permission set`](https://luckperms.net/wiki/Command-Usage), so
-[contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=fpv"` can be used.
+[contexts](https://luckperms.net/wiki/Context) such as `"worldedit.* server=race"` can be used.
 When the file changes, the deploy replaces the listed groups as a whole.
 The `weight.*` and `prefix.*` entries set the role shown next to a player's name in the tab list
 ([TAB](https://modrinth.com/plugin/tab-was-taken), on the proxy, configured in
 [`groups.yml`](../servers/velocity/files/plugins/tab/groups.yml) and
-[`tab.yml.j2`](../servers/velocity/tab.yml.j2)). On fpv it also shows the player's map, which
+[`tab.yml.j2`](../servers/velocity/tab.yml.j2)). On freestyle and race it also shows the player's map, which
 [TAB-Bridge](https://modrinth.com/plugin/tab-bridge) sends from the server.
 
 Group membership is stored in LuckPerms, not in the repo. It can be granted in game, or from the
@@ -56,13 +56,13 @@ mc-rcon hub "lp user <name> parent set admin"
 
 On the Fabric servers, [Vanilla Permissions](https://modrinth.com/mod/vanilla-permissions) exposes
 vanilla commands as `minecraft.command.<name>`. [Essential Commands](https://modrinth.com/mod/essential-commands)
-uses LuckPerms on fpv (`essentialcommands.<command>`, for warps); elsewhere it is configured in its own config.
+uses LuckPerms on freestyle and race (`essentialcommands.<command>`, for warps); elsewhere it is configured in its own config.
 Commands without a LuckPerms entry keep their default: open to everyone or op only.
 
 Builders have two ranks, both shown as `[Builder]`. `junior-builder`: everything `supporter` has (it
 includes it), ten plots on plots and WorldEdit there up to 80,000 blocks (`propwash.plotedit.staff`, like mods; still only on
 their own and trusted plots). `senior-builder` has all of that (it includes `junior-builder`) and what map editing needs
-on fpv: WorldEdit, `/flan bypass`, setting and deleting warps, `/time` on a map, and `/tp` and
+on freestyle and race: WorldEdit, `/flan bypass`, setting and deleting warps, `/time` on a map, and `/tp` and
 `/execute` to reach a map that has no warp yet. Staff include `senior-builder`, so they
 have everything `supporter` has too.
 
@@ -71,9 +71,9 @@ lpv user <name> parent add junior-builder
 lpv user <name> parent add senior-builder
 ```
 
-`supporter` is for Ko-fi donors: the `[Supporter]` tag, `/fly` on the hub and fpv, and `/flyspeed <0-10>`
-on the hub, fpv and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6), and `/enderchest`
-(`/ec`, `/echest`) on fpv and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
+`supporter` is for Ko-fi donors: the `[Supporter]` tag, `/fly` on the hub, freestyle and race, and `/flyspeed <0-10>`
+on the hub, freestyle, race and plots (mods/tweaks: up to the highest `propwash.flyspeed.<1-10>` a player has, supporters 6), and `/enderchest`
+(`/ec`, `/echest`) on freestyle, race and plots (mods/tweaks, `propwash.enderchest`), and 4 plots; below the builder ranks (a
 builder who donates still shows `[Builder]`). By hand: `lpv user <name> parent add supporter`.
 
 `creator` (light purple `[Creator]`, between supporters and builders) is for content creators: everything
@@ -96,7 +96,7 @@ vanished players), WorldEdit on plots with plotedit's staff limits (80,000 block
 may build (`propwash.plotedit.staff`, not the bypass), and `/up` there, `/plot admin`
 (`fabricplots.admin`: in it they may build, and WorldEdit, on any plot and the roads; it also lets
 them change any plot's settings and flags and go onto plots they're denied from, like staff; not
-`/plot setowner` or `/plot reload`), `/flan bypass` on fpv (building on the maps by hand; no
+`/plot setowner` or `/plot reload`), `/flan bypass` on freestyle and race (building on the maps by hand; no
 WorldEdit there), and `/gamemode creative` and `survival` on the hub. What they break and place in
 `/plot admin` is in the staff watch.
 Their `/help` part is [`mod.txt`](../servers/velocity/files/plugins/staffhelp/mod.txt) (`/help mod`
@@ -104,11 +104,15 @@ shows only it), in place of the supporter one. `lpv user <name> parent add mod`.
 
 ## Protection
 
-[Flan](https://modrinth.com/mod/flan) runs on fpv: `[flan] deny` in its
-`server.toml` stops everyone from breaking, placing or using anything, on every map. Builders and
-staff run `/flan bypass` to edit and run it again to turn it off.
+[Flan](https://modrinth.com/mod/flan) runs on freestyle and race: `[flan] deny` in its
+`server.toml` stops everyone from breaking, placing or using anything, in every world: the deploy
+writes the rules for the vanilla worlds and the server's maps, and [`mods/regen`](../mods/regen/)
+gives any other world (made with `/world create`, or added by hand) a copy of the overworld's rules.
+Doors, trapdoors, fence gates, buttons, levers and pressure plates aren't on the list, so anyone can
+use them. Plots and hub don't run Flan. Builders and staff run `/flan bypass` to edit and run it
+again to turn it off.
 
-No boats on any server: the `noboats` datapack (`files/world/datapacks/noboats` of hub, fpv and
+No boats on any server: the `noboats` datapack (`files/world/datapacks/noboats` of hub, freestyle, race and
 plots) removes every boat, chest boat and raft once a second and clears boat items from players.
 Old boats go as soon as their chunk is loaded.
 
@@ -116,7 +120,7 @@ No projectiles on any server either: the `noprojectiles` datapack (same place) r
 tridents, snowballs, eggs, wind charges, ender pearls, thrown potions and bottles o' enchanting
 within a tick of being shot or thrown; the item is used up. Firework rockets are allowed once every
 2 seconds per player (launched by hand or for elytra boosting); others within those 2 seconds, and
-rockets from crossbows or dispensers, are removed the same way. On fpv and plots `mods/tweaks` also
+rockets from crossbows or dispensers, are removed the same way. On freestyle, race and plots `mods/tweaks` also
 puts rockets on a 2-second item cooldown (the grey sweep), so the player's game doesn't try (no short
 boost from a rocket the datapack removes), and says above the hotbar how long is left.
 
@@ -126,7 +130,7 @@ works on every server: `mods/crossserver` remembers it and sets the `propwash.ex
 server the player arrives on (over rcon), so a `/tag` set by hand doesn't last.
 
 A dropped item (Q, out of the inventory, from the creative menu) doesn't land on the ground, except
-for `propwash.exempt` players: on the hub, fpv and plots our Fabric mod
+for `propwash.exempt` players: on the hub, freestyle, race and plots our Fabric mod
 [`mods/tweaks`](../mods/tweaks/) (rebuilt like `mods/quiet`) puts it back into the inventory (what
 doesn't fit is deleted), on limbo the `nodrop` datapack deletes it.
 `mods/tweaks` also makes vanishing and
@@ -134,7 +138,7 @@ un-vanishing show at once: the Vanish mod left that to vanilla, which only re-ch
 when someone moves into another 16-block section. That part hooks into Vanish by name; after
 updating Vanish, check that un-vanishing still shows you right away.
 
-`/mydrone` (everyone, fpv and plots, also `mods/tweaks`) brings the player's own drone to them: the
+`/mydrone` (everyone, freestyle, race and plots, also `mods/tweaks`) brings the player's own drone to them: the
 nearest drone tagged `pw_owner_<their name>` in the map they're in (loaded), not while it's flying,
 at most every 5 seconds. It takes no arguments, so nobody can aim it at someone else's drone.
 
@@ -145,7 +149,7 @@ at most every 5 seconds. It takes no arguments, so nobody can aim it at someone 
 vanilla's `/kill`, which tweaks opens to `propwash.dronekill` for that subcommand only (plain `/kill` and
 `/kill <targets>` keep needing op or `minecraft.command.kill`).
 
-Drones go with their owner (also `mods/tweaks`): when a player leaves fpv or plots (logs off or
+Drones go with their owner (also `mods/tweaks`): when a player leaves freestyle, race or plots (logs off or
 switches server), their drones (`pw_owner_<name>`) are removed from every loaded map there, and a
 drone in a chunk that loads later is removed if its owner isn't on that server. Drones without an
 owner tag are left alone.
@@ -159,7 +163,7 @@ works on plots the player may build on; it changes block states, never the block
 The `plots` server is a creative plot world from [FabricPlots](https://modrinth.com/mod/fabricplots)
 (PlotSquared-style, on Fabric so drones work). Players arrive in the plot world (the datapack in
 `servers/plots/files/`) and are put in creative there. FabricPlots protects plots and roads, so
-plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on fpv).
+plots doesn't run Flan. Placing a drone removes that player's older drone (`propwash_drone_limit`, as on freestyle and race).
 
 `/plot delete` (wipe to flat ground and release) and `/plot clear` (wipe only) need the plot's number, the owner's
 plot N that `/plot info` shows, and it must be the plot the player stands on: `/plot delete` alone
@@ -345,7 +349,7 @@ chat (the server log still has joins, leaves and AFK):
 |---|---|---|
 | hub | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
 | limbo | EssentialsX `custom-join-message`, `custom-quit-message`, `broadcast-afk-message` | `files/world/datapacks/quiet` |
-| fpv | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
+| freestyle, race | our [`mods/quiet`](../mods/quiet/) | `files/world/datapacks/quiet` |
 | plots | our [`mods/quiet`](../mods/quiet/) | `[gamerules]` in its `server.toml` |
 
 The quiet mod's AFK part hooks into Essential Commands (`PlayerData.setAfk`). If an Essential
@@ -353,11 +357,11 @@ Commands update changes that, the AFK messages come back (no crash): check after
 
 The game rule is `show_advancement_messages`. Paper keeps game rules per dimension, so limbo's
 datapack also sets it in `maps:mountains`, its spawn map (the hub's too, from when it was Paper). Players still see their own advancement
-pop-up; advancements stay on, since the fpv datapacks use them.
+pop-up; advancements stay on, since the freestyle and race datapacks use them.
 
 To change the quiet mod (JDK 25): edit [`mods/quiet`](../mods/quiet/), raise `mod_version` in its
 `gradle.properties`, `./gradlew build` there, upload `build/libs/quiet-<version>+<mc>.jar` to the
-world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in the fpv and plots
+world store as `mods/quiet-<version>-<mc>.jar` (no `+`), and change the URL in the freestyle, race and plots
 `server.toml`.
 
 ## Maintenance
@@ -377,7 +381,7 @@ it too. Its commands need `maintenance.admin` (admins, through `*`).
 | Close it after a while, for a while | `/maintenance scheduletimer <in> <for>` |
 
 After a proxy restart, players join as soon as the proxy is up; while the hub is still starting, they
-land on fpv (the velocity `try` list), and with neither up, they're told to try again later.
+land on freestyle and race (the velocity `try` list), and with neither up, they're told to try again later.
 
 ## Teleporting and invsee
 
@@ -399,7 +403,7 @@ sends commands its server lists for it). `/tp` with anything else (coordinates, 
 the server as `/teleport`, which only staff have there.
 Each server keeps its own inventory of a player, so `/invsee` shows the one on the server they're
 on: EssentialsX `/invsee` on limbo, [InvView](https://modrinth.com/mod/invview) `/view inv` on
-the hub, fpv and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories
+the hub, freestyle, race and plots (also `/view echest <player>` for the ender chest). InvView doesn't open inventories
 of players with `invview.protected`, which admins have through `*`. Vanished players can't be found
 by anyone who can't see them.
 
@@ -412,7 +416,7 @@ cursor (or shift-clicking an item in the inventory) puts a copy there, clicking 
 hand clears it; the player's own items never move. Closing it saves the kit, and `/kit <name>` gives
 copies again, once every 20 s (staff, `propwash.kits.staff`: every 2 s). `/kit edit <name>`, `/kit delete <name>`, `/kit list`.
 Everyone gets 1 kit of up to 3 items; supporters (`propwash.kits.supporter`) 3 of up to 18. Set in
-`[config."config/kits.properties"]` of fpv and plots ([`mods/kits`](../mods/kits/)); kits are saved in
+`[config."config/kits.properties"]` of freestyle, race and plots ([`mods/kits`](../mods/kits/)); kits are saved in
 `/home/mc/kits/<uuid>.dat`, shared by both servers (and backed up with them).
 
 ## Votes
@@ -468,7 +472,7 @@ it on is in the proxy's `plugins/crossserver/recording`.
 
 ## Backpack
 
-Admins for now (`propwash.backpack`, which only `*` gives) wear a backpack with `/backpack` (again to take it off) on fpv and
+Admins for now (`propwash.backpack`, which only `*` gives) wear a backpack with `/backpack` (again to take it off) on freestyle and race and
 plots, and `/backpack drone` puts a copy of the Propwash drone in their hand on the outside of it
 (`/backpack drone off` takes it off). Our Fabric mod [`mods/backpack`](../mods/backpack/): item displays
 that every player's game is told ride the player (in 26.3 nothing can really ride a player), turned
@@ -481,7 +485,7 @@ server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
 
 ## Signs
 
-Staff (`propwash.sign`) edit the sign they look at (the side facing them) with `/sign` on the hub, fpv and
+Staff (`propwash.sign`) edit the sign they look at (the side facing them) with `/sign` on the hub, freestyle, race and
 plots, our Fabric mod [`mods/signs`](../mods/signs/):
 
 - `/sign text <line>|<line>|...` sets the whole sign (lines not given are emptied), `/sign set <1-4> <text>`
@@ -497,7 +501,7 @@ plots, our Fabric mod [`mods/signs`](../mods/signs/):
 ## Pets
 
 `/pet` lists the pets a player may have and `/pet <name>` picks one (`/pet off` puts it away), on the
-hub, fpv and plots: a baby vanilla animal that walks just behind you, or one of Propwash's preset drones
+hub, freestyle, race and plots: a baby vanilla animal that walks just behind you, or one of Propwash's preset drones
 hovering at your shoulder. Each pet is bought on Ko-fi: the Discord bot sets `propwash.pets.<name>` on
 the buyer's linked account (bot README, "Ko-fi shop"). Every pet: admins (`*`, or `propwash.pets.all`)
 and ops; `propwash.pets.animals` / `propwash.pets.drones` give a kind. An owned pet is usable only with
@@ -526,7 +530,7 @@ mannequins leave no trail.
 
 `/trail` lists a player's drone trails and `/trail <name>` picks one (`/trail off`): particles behind
 their flying drone, and behind their drone pet (`/trail pet off`), sent as vanilla particles, so nothing
-is needed on the client. Our trails mod (its own repo, jar in the world store), on the hub, fpv and plots.
+is needed on the client. Our trails mod (its own repo, jar in the world store), on the hub, freestyle, race and plots.
 Trails are presets made by admins in the studio (`/trail edit`, with the mod on the admin's client too),
 kept as meta on the LuckPerms group `trails-presets` (no members, not in permissions.toml, so the deploy
 leaves it alone). `/trail` lists only a player's own:
@@ -584,7 +588,7 @@ back), and kept in the proxy's `plugins/vanish/auto.properties`.
 | Part | Does |
 |---|---|
 | [`mods/vanish`](../mods/vanish/) (proxy) | `/v`, `/vanish`; keeps who is vanished; TAB tab list (and `[V]` for staff), server list, blocks chat; tells Carbon and staff; fake leave/join messages; hub boss bar |
-| [Vanish](https://modrinth.com/mod/vanish) (hub, fpv, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
+| [Vanish](https://modrinth.com/mod/vanish) (hub, freestyle, race, plots) | hides you; switched on by `/v` and on arrival (LuckPerms meta `vanish_on_join`) |
 | EssentialsX `/vanish` (limbo) | hides you; switched on by `/v` and on arrival (`essentials.silentjoin.vanish`, `allow-silent-join-quit`) |
 | our Carbon build | leaves vanished players out of `/msg` and its suggestions |
 
@@ -631,7 +635,7 @@ changes and restarts both units. To deploy another commit instead (to go back to
 The bot's channels, roles and bridge servers are in that repo's `src/config.js`.
 
 The bridge mod (`propwash-bridge`, built by the bot's author and uploaded to the world store under
-`mods/`) is on fpv and plots; the hub has its link-only build (just `/link`, from the bot repo's
+`mods/`) is on freestyle, race and plots; the hub has its link-only build (just `/link`, from the bot repo's
 `hub-link` branch). Each server gets its key from `BRIDGE_KEY_<SERVER>` in
 `bot.env.sops` as `PROPWASH_BRIDGE_API_KEY`; a server added to the bot's config needs a key there too.
 
@@ -749,7 +753,7 @@ free some (`top -H` shows its `GC Thread`s at full CPU). Before restarting it:
    auxiliary processes" is harmless: the server is stopped anyway). Everything since the last save (a few
    minutes) is lost; broken glass still comes back (`world/data/regen.dat`).
 
-WorldEdit commands change at most 1,000,000 blocks each on the hub, fpv and plots
+WorldEdit commands change at most 1,000,000 blocks each on the hub, freestyle, race and plots
 (`default-max-changed-blocks`), because one huge `//set` loads every chunk it touches and can fill a
 server's memory; `//limit <blocks>` raises it for yourself until you leave (`//limit -1`, no limit, needs
 `worldedit.limit.unrestricted`: admins).
@@ -774,4 +778,4 @@ delete them once looked at.
 | Hub server commands | `command.<name> = <server>` in the same file: /<name> sends the player to that server (replaces tweaks' own /race there). Read on start |
 | Island maps | `below.<namespace>.<path> = <y>` in a server's `[config."config/tweaks.properties"]` (mods/tweaks), e.g. `below.worlds.gilbert_pro = -75`: players and drones (flying or not) that go below that Y on that map are put back at its race start (where `/race` lands you). Read on start |
 | Limbo spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
-| fpv spawn | `/execute in maps:lobby run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#lobby)) |
+| freestyle and race spawn | `/execute in maps:lobby run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#lobby)) |

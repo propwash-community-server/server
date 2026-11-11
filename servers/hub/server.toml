@@ -22,7 +22,7 @@ mods = [
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
-    # As on fpv and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
+    # As on freestyle, race and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
     # Our mods/tweaks, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
     # /sign: colours and click commands on signs, for staff (mods/signs).
@@ -75,11 +75,12 @@ enable_back = "false"
 enable_rtp = "false"
 enable_enderchest = "false"
 
-# The portals to fpv and plots (mods/tweaks: a player inside the box goes to that server; the nether
+# The portals to freestyle, race and plots (mods/tweaks: a player inside the box goes to that server; the nether
 # portal blocks in them only look the part). "<dimension> <x1> <y1> <z1> <x2> <y2> <z2> <server>".
 [config."config/tweaks.properties"]
 staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
-"portal.fpv" = "maps:mountains -124 -28 54 -121 -18 54 fpv"
+"portal.freestyle" = "maps:mountains -124 -28 54 -121 -18 54 freestyle"
+"portal.race" = "maps:mountains -123 -28 92 -120 -18 92 race"
 "portal.plots" = "maps:mountains -103 -28 72 -103 -18 75 plots"
 # /race, /freestyle, /plots on the hub send you to that server ("command.<name>" = "<server>", mods/tweaks).
 # Ships with the 0.6.0 release, together with the race and freestyle servers.
@@ -91,7 +92,7 @@ staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
-# The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
+# The maps' resource pack (Drift Arena furniture models), as on freestyle and race; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).

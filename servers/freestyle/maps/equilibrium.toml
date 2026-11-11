@@ -1,0 +1,7 @@
+title = "Equilibrium"
+author = "SHO"
+# More than one person: these lines show instead of "by <author>" (one line per role).
+credits = ["Uncrashed map by SHO", "Adapted by pincil"]
+border = { x = 217.5, z = 217.13, size = 820 }
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [63, 365], z = [50, 370] }

@@ -1,10 +1,12 @@
 # Maps
 
-Maps live on `fpv`. Each map is a dimension `maps:<name>`, listed in
-[`servers/fpv/maps/<name>.toml`](../servers/fpv/maps/) with its title, author and world border. The
-map is what's in the server's world: builders edit it there, and it's backed up with the rest of
-the server.
-The bucket is where maps are handed in: `fpv/maps/<name>.tar.gz` is put on a server only when
+Maps live on two servers: `freestyle` (open maps to fly around) and `race` (race tracks), each
+with its own copy of the `lobby` as spawn; `equilibrium` is on both. On a server, each map is a
+dimension `maps:<name>`, listed in `servers/<server>/maps/<name>.toml`
+([freestyle](../servers/freestyle/maps/), [race](../servers/race/maps/)) with its title, author and
+world border. The map is what's in the server's world: builders edit it there, and it's backed up
+with the rest of the server; a map on both servers is two separate copies.
+The bucket is where maps are handed in: `<server>/maps/<name>.tar.gz` is put on a server only when
 it doesn't have the map yet (a new map, or a new server), or when someone applies it. Only the
 overworld terrain is kept; old maps are upgraded as they are explored, so the first visit can be
 slow.
@@ -14,12 +16,12 @@ slow.
 1. Upload the save folder (the one with `level.dat`):
 
    ```
-   uv run upload "<save folder>" flowmap --local
+   uv run upload "<save folder>" flowmap --server race --local
    ```
 
    `--local` uploads to the local store; drop it for the real bucket. Upload to the real bucket
    before the PR below is merged: a deploy that can't find the map's archive fails.
-2. Open a PR with `servers/fpv/maps/<name>.toml`, the title and author shown to players entering
+2. Open a PR with `servers/<server>/maps/<name>.toml`, the title and author shown to players entering
    the map, and its world border (center and size in blocks, a square around the built part):
 
    ```toml
@@ -43,10 +45,11 @@ slow.
    (else anywhere inside the border), not on liquids, fire or void; `rtp_y = { min = ..., max = ... }`
    keeps it between those heights (`max`: the highest block below it, for maps with roofs). After
    10 tries without a spot it's the map's spawn. Each player waits `rtp_cooldown` seconds
-   (fpv's `server.toml`, 15) between two `/rtp`, staff too. A mannequin tagged `propwash.map.rtp` runs
-   `/map rtp`, like the map signposts (see [Lobby](#lobby)).
+   (the server's `server.toml`, 15) between two `/rtp`, staff too. A mannequin tagged `propwash.map.rtp` runs
+   `/map rtp`, like the map signposts (see [Lobby](#lobby)). All this is freestyle's; on race, `/rtp` is a
+   random race instead (see [servers.md](servers.md)), and `rtp`, `rtp_area` and `rtp_y` do nothing there.
 
-   Once it's merged and deployed, fpv restarts with the new dimension, its clock, its race courses
+   Once it's merged and deployed, the server restarts with the new dimension, its clock, its race courses
    and a `/map <name>` entry.
 3. In game, a builder goes to the map and sets its spawn (until then, `/map <name>` does nothing):
 
@@ -59,7 +62,7 @@ slow.
 
 ## Map signposts
 
-Right-clicking an entity tagged `propwash.map.<name>` (an armor stand, a mannequin...) on fpv or plots
+Right-clicking an entity tagged `propwash.map.<name>` (an armor stand, a mannequin...) on freestyle, race or plots
 runs `/map <name>` for that player (`mods/tweaks`; before Flan, which otherwise refuses touching armor
 stands, and only for tagged entities). Staff place one, for example:
 
@@ -71,7 +74,7 @@ or tag an existing one: `/tag @e[type=armor_stand,limit=1,sort=nearest] add prop
 
 ## Lobby
 
-Players new to fpv start at its world spawn, on the `lobby` map (by Rave_X10); returning players come
+Players new to freestyle or race start at its world spawn, on the `lobby` map (by Rave_X10); returning players come
 back where they left, and `/spawn` takes anyone there. In the lobby, mannequins tagged
 `propwash.map.<map>` are signposts to the maps (see Map signposts above); they're part of the map, so
 they came with its upload. Staff set the spawn once, standing on the spot:
@@ -95,7 +98,7 @@ the spawn spot and saved with the map:
 ## Breaking glass
 
 On the maps, fast drones smash glass and glass panes (Propwash's `propwash:drones_break_blocks` game
-rule, in fpv's `[gamerules]`; the blocks are its tag `propwash:drone_breakable`, a 5" breaks a pane
+rule, in freestyle's and race's `[gamerules]`; the blocks are its tag `propwash:drone_breakable`, a 5" breaks a pane
 from about 42 km/h), and [`mods/regen`](../mods/regen/) puts them back. Flan protects the maps, so
 regen lets those drone breaks through, for drones only: players can't break glass by hand. Blocks
 that hold data (decorated pots) don't break.
@@ -103,7 +106,7 @@ that hold data (decorated pots) don't break.
 Broken blocks come back after 3 minutes, one by one with their sound, only into an empty spot and
 not into a player or drone; before the server stops, all of them come back, and the list is saved in
 `world/data/regen.dat` in case of a crash. In `[config."config/regen.properties"]` in
-`servers/fpv/server.toml` (read again when it changes, no restart):
+each map server's `server.toml` (read again when it changes, no restart):
 
 | Setting | Does |
 |---|---|
@@ -126,22 +129,30 @@ Two maps by LardTom with animated vehicles for drones to chase, each run by its 
 
 | Map | Vehicles | Datapack | Operators |
 |---|---|---|---|
-| `driftpark`, "Drift Arena" | two drift cars, placeable furniture | `driftpark-datapack.zip` (hub, fpv, plots, so furniture works anywhere) | `/function drift:help` |
-| `motoarena`, "Moto Arena" | bikes and a buggy | `arena-datapack.zip` (fpv) | `/function arena:help` |
+| `driftpark`, "Drift Arena" | two drift cars, placeable furniture | `driftpark-datapack.zip` (hub, freestyle, race, plots, so furniture works anywhere) | `/function drift:help` |
+| `motoarena`, "Moto Arena" | bikes and a buggy | `arena-datapack.zip` (freestyle) | `/function arena:help` |
 
 The datapacks are in `files/world/datapacks/` of those servers. Their models and sounds are in one
 resource pack for both, in the world store (`fpv/resourcepacks/propwash-maps-<sha1>.zip`), as the
-hub's, fpv's and plots' `resource-pack`, offered on joining (not required). Without it the vehicles
+hub's, freestyle's, race's and plots' `resource-pack`, offered on joining (not required). Without it the vehicles
 and furniture are invisible. Rotating and picking up Drift Arena furniture takes a stick named
-`Drift Tool` (Flan's inspection tool on fpv is a wooden hoe, so they don't clash).
+`Drift Tool` (Flan's inspection tool on freestyle and race is a wooden hoe, so they don't clash).
 
 Never run `/function drift:build` or `/function arena:build` on a server: besides rebuilding the map,
 they move the world spawn and change game rules (`arena:build` also turns on a respawn teleport).
 
 To update: put the new datapack zip in place, upload the new resource pack under a new name and change
-the URL and SHA-1 in the three `server.toml` files (hub, fpv, plots), deploy, then run `/function drift:reset` or
+the URL and SHA-1 in the four `server.toml` files (hub, freestyle, race, plots), deploy, then run `/function drift:reset` or
 `/function arena:reset` once on the map (it respawns the vehicles). A map itself only changes with
-`uv run upload` and `uv run apply fpv <name>`.
+`uv run upload` and `uv run apply freestyle <name>`.
+
+### Drone nets
+
+Oxidized copper bars (waxed or not) are **drone nets**: the same pack
+(`propwash-maps-1aa06938.zip`, from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only)
+and makes them look like a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are hidden). It is only looks: the block, its hitbox and its id stay vanilla, so
+no datapack is needed, and players without the pack see ordinary oxidized copper bars. In creative,
+search "drone net". Use the waxed ones on maps where the net must not be scraped back with an axe.
 
 ### Drone nets
 
@@ -150,7 +161,7 @@ from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only) and
 a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are
 hidden by overriding the `oxidized_copper_bars_*` block models). It is only looks: the block, its
 hitbox and its id stay vanilla, so no datapack is needed, and players without the pack see ordinary
-oxidized copper bars. In creative, search "drone net". In WorldEdit (hub, fpv, plots)
+oxidized copper bars. In creative, search "drone net". In WorldEdit (hub, freestyle, race, plots)
 `drone_net` and `waxed_drone_net` work as block names, with states, in patterns and masks
 ([`mods/blockaliases`](../mods/blockaliases/)), e.g. `//set drone_net`. Use the waxed ones where the net must not be
 scraped back with an axe.
@@ -188,7 +199,7 @@ After Halloween, in this order:
 ## In game
 
 Spawns and spots are [Essential Commands](https://modrinth.com/mod/essential-commands) warps stored
-in the `fpv` world: `<map>` is the map's spawn, `<map>_<spot>` a spot on it (e.g. `mosslorn_waterfall`).
+in each map server's world: `<map>` is the map's spawn, `<map>_<spot>` a spot on it (e.g. `mosslorn_waterfall`).
 Each map also has its own clock, paused at noon by default.
 
 | Task | Command |
@@ -205,11 +216,11 @@ can edit them.
 ## Updating and removing
 
 Deploys never touch a map the server already has. To replace one with a new save, upload it again
-under the same name and apply it (`--local` for the local stack; fpv restarts):
+under the same name and apply it (`--local` for the local stack; the server restarts):
 
 ```
-uv run upload "<save folder>" flowmap
-uv run apply fpv flowmap
+uv run upload "<save folder>" flowmap --server race
+uv run apply race flowmap
 ```
 
 In-game changes to the map are lost and its race courses (with lap times) are replaced; its warps

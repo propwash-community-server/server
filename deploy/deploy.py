@@ -78,7 +78,7 @@ def service_env(name, stop_cmd):
         "LUCKPERMS_DATA_USERNAME=minecraft\n"
         f"LUCKPERMS_DATA_PASSWORD={mariadb_password}\n"
     )
-    # The bridge mod's key for this server (BRIDGE_KEY_FPV for fpv); the key is how the bot's API knows the server.
+    # The bridge mod's key for this server (BRIDGE_KEY_RACE for race); the key is how the bot's API knows the server.
     if f"BRIDGE_KEY_{name.upper()}" in bot_keys:
         env += f"PROPWASH_BRIDGE_API_KEY={bot_keys[f'BRIDGE_KEY_{name.upper()}']}\n"
     return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
@@ -408,7 +408,7 @@ def rtp_bounds(m):
         lo, hi = sorted(area.get(axis, edge[axis]))
         lo, hi = int(max(lo, edge[axis][0])), int(min(hi, edge[axis][1]))  # a border centre may be x.5
         if lo >= hi:
-            raise SystemExit(f"servers/fpv/maps/{m['name']}.toml: rtp_area {axis} is outside the border")
+            raise SystemExit(f"maps/{m['name']}.toml: rtp_area {axis} is outside the border")
         out[axis] = (lo, hi)
     return out
 
@@ -504,7 +504,7 @@ def rtp_command(server_maps):
     }, indent=2)
 
 
-def map_ops(name, d, server_maps, rtp_cooldown):
+def map_ops(name, d, server_maps, rtp_cooldown, with_map_command=True):
     store = host.data.get("world_store")
     if not store:
         raise SystemExit(f"{host.name} has no world_store but servers/{name}/maps/ lists maps")
@@ -520,16 +520,22 @@ def map_ops(name, d, server_maps, rtp_cooldown):
                          dest=f"{pack}/data/minecraft/tags/function/tick.json", **OWNER))
     ops.append(files.put(name=f"{name}: maps tick function", src=StringIO(map_tick_function(server_maps)),
                          dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
-    ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
-                         dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
-    ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
-                         dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
-    ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
-                         dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
-    for m in rtp_pool(server_maps):
-        for rel, text in rtp_functions(m).items():
-            ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
-                                 dest=f"{pack}/data/maps/function/{rel}", **OWNER))
+    if with_map_command:
+        # Not where mods/tweaks makes /map the same as /race (map = "race" in its tweaks.properties).
+        ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
+                             dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
+        ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
+                             dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
+        ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
+                             dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
+        for m in rtp_pool(server_maps):
+            for rel, text in rtp_functions(m).items():
+                ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
+                                     dest=f"{pack}/data/maps/function/{rel}", **OWNER))
+    else:
+        # There mods/tweaks' /rtp (and /map rtp) is a random race, not a random spot: no Melius /rtp to clash with it.
+        ops.append(files.file(name=f"{name}: no Melius /rtp", path=f"{d}/config/melius-commands/commands/rtp.json",
+                              present=False))
     for m in server_maps:
         for rel, data in map_pack_files(m).items():
             ops.append(files.put(
@@ -787,6 +793,22 @@ if bot_keys.get("TUNNEL_TOKEN") and not LOCAL:
                     daemon_reload=True, _if=any_changed(*tunnel_changes))
     systemd.service(name="cloudflared: running", service="cloudflared", running=True, enabled=True, daemon_reload=True)
 
+def tab_world_names():
+    """The tab list's map after the server name, by the world TAB-Bridge reports (world_<name>):
+    {world: (on race, elsewhere)}. Race shows a track's /race name (its title; for worlds:* the
+    title.worlds.<id> line in race's tweaks.properties, else race's [tab] names), freestyle the world name."""
+    race_tweaks = configs.get("race", {}).get("config", {}).get("config/tweaks.properties", {})
+    race_names = {m["name"]: m.get("title", m["name"]) for m in maps.get("race", [])}
+    race_names |= {k.removeprefix("title.worlds."): v for k, v in race_tweaks.items() if k.startswith("title.worlds.")}
+    race_names |= configs.get("race", {}).get("tab", {}).get("names", {})
+    other = {m["name"] for server, server_maps in maps.items() if server != "race" for m in server_maps}
+    names = {}
+    for world in sorted(set(race_names) | other):
+        names[world] = (race_names.get(world, world) if world in race_names else None,
+                        world if world in other else None)
+    return names
+
+
 # --- Velocity (first: Paper backends read its forwarding.secret) ------------
 
 v = f"{SERVERS}/velocity"
@@ -816,7 +838,7 @@ changes = [
         name="velocity: TAB config.yml",
         src=str(ROOT / "servers/velocity/tab.yml.j2"),
         dest=f"{v}/plugins/tab/config.yml",
-        maps=maps.get("fpv", []),
+        tab_worlds=tab_world_names(),
         **OWNER,
     ),
     *config_ops("velocity", v, velocity),
@@ -874,7 +896,8 @@ for name, cfg in backends.items():
         changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
     changes += extra_files(name, d)
     if maps.get(name):
-        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15))
+        tweaks = cfg.get("config", {}).get("config/tweaks.properties", {})
+        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15), with_map_command=tweaks.get("map") != "race")
 
     # /help: the server's help, then the network-wide one from the velocity server.toml.
     if cfg.get("help"):
@@ -912,6 +935,14 @@ for name, cfg in backends.items():
         tweaks = {**ranks, **cfg.get("config", {}).get("config/tweaks.properties", {})}
         cfg = {**cfg, "config": {**cfg.get("config", {}), "config/tweaks.properties": tweaks}}
     changes += config_ops(name, d, cfg)
+    # [propwash]: top-level keys of Propwash's config/propwash/server.json (written on first start, so this
+    # applies from the next deploy), e.g. worldCourses = false. Edited line by line, so a key must already be
+    # in the file and not be its last one (each line ends in a comma).
+    server_json = f"{d}/config/propwash/server.json"
+    if cfg.get("propwash") and host.get_fact(File, path=server_json):
+        for key, value in cfg["propwash"].items():
+            changes.append(files.line(name=f"{name}: propwash {key}", path=server_json,
+                                      line=rf'^\s*"{key}":.*', replace=f'  "{key}": {json.dumps(value)},'))
 
     # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so
     # nobody gets advancement pop-ups. From the deploy after the first start, when spigot.yml exists.
@@ -924,7 +955,9 @@ for name, cfg in backends.items():
                                   extended_regex=True))
 
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
-    # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level
+    # /flan bypass (explicit dimensions, since Flan saves "*" back expanded, and "*" only reaches the
+    # worlds loaded when Flan first reads it). Worlds not listed here (/world create, maps added by hand)
+    # get the overworld's rules from mods/regen (FlanAllWorldsMixin). Other keys are top-level
     # keys of flan_config.json. Flan rewrites the file on every start, so it's compared as data. Also
     # only from the next deploy after the first start.
     flan_config = f"{d}/config/flan/flan_config.json"
