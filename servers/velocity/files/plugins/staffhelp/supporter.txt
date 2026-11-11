@@ -1,2 +1,3 @@
 <accent>/fly</accent>: fly (on plots you always can) <supporter>(Supporter)</supporter>
 <accent>/flyspeed <1-6></accent>: how fast you fly, 1 is normal <supporter>(Supporter)</supporter>
+<accent>/pet</accent>: a pet that follows you; <accent>/pet off</accent>, <accent>/pet orbit off</accent>, <accent>/pet sound off</accent> <supporter>(Supporter)</supporter>
