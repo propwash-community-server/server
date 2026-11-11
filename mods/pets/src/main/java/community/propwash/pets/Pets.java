@@ -29,6 +29,7 @@ import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
@@ -51,7 +52,7 @@ import net.minecraft.world.scores.Team;
 
 /**
  * Cosmetic pets: /pet <name> picks one, /pet off puts it away, /pet lists the ones you may have:
- * propwash.pets.all (every pet; supporters), propwash.pets.animals, propwash.pets.drones, or one pet
+ * propwash.pets.all (every pet; admins, and ops), propwash.pets.animals, propwash.pets.drones, or one pet
  * at a time with propwash.pets.<name> (propwash.pets.fox). A pet is a baby vanilla animal that walks
  * just behind you, or one of Propwash's preset drones, complete, hovering at your shoulder (an item
  * display; only where Propwash is installed). Nothing on the
@@ -86,6 +87,9 @@ public final class Pets implements ModInitializer {
     /** On a mannequin (or any non-player living entity), followed by a pet name: it shows that pet. */
     private static final String DISPLAY_TAG = "propwash.pet.display.";
     private static final String DISPLAY_PERMISSION = "propwash.pets.display";
+    /** Using the pets a player owns (bought on Ko-fi): supporters (permissions.toml). Without it they're grey in /pet. */
+    private static final String USE_PERMISSION = "propwash.pets.use";
+    private static final String KOFI = "ko-fi.com/propwashfpv";
     /** How far (blocks) /pet display looks for the mannequin you're looking at. */
     private static final double DISPLAY_REACH = 8;
 
@@ -94,9 +98,9 @@ public final class Pets implements ModInitializer {
             "donkey", "fox", "goat", "happy_ghast", "horse", "llama", "mooshroom", "mule", "ocelot", "panda", "parrot", "pig",
             "polar_bear", "rabbit", "sheep", "sniffer", "strider", "turtle", "wolf");
     private static final float DRONE_SCALE = 0.6f;
-    /** Baby camels, llamas, horses, donkeys and sniffers are still big: shrunk with the scale attribute (1 = a normal baby). */
+    /** Baby camels, llamas, horses, donkeys, mules and sniffers are still big: shrunk with the scale attribute (1 = a normal baby). */
     private static final Map<EntityType<?>, Double> SCALES = Map.of(EntityTypes.CAMEL, 0.7, EntityTypes.LLAMA, 0.7,
-            EntityTypes.HORSE, 0.7, EntityTypes.DONKEY, 0.7, EntityTypes.SNIFFER, 0.7);
+            EntityTypes.HORSE, 0.7, EntityTypes.DONKEY, 0.7, EntityTypes.MULE, 0.7, EntityTypes.SNIFFER, 0.7);
     /** Rabbit pets hop (the vanilla hop, entity event 1) instead of sitting: a hop this many ticks long, */
     private static final int HOP_TICKS = 11;
     /** this high (blocks) at the top, and when the owner stands still, one hop about every this many ticks. */
@@ -341,8 +345,23 @@ public final class Pets implements ModInitializer {
         return drones;
     }
 
-    /** May the player have this pet: propwash.pets.all, .animals or .drones, or .<name> (no LuckPerms: ops). */
+    /** Every pet, always: ops (level 2, even with LuckPerms) and propwash.pets.all (admins). */
+    private static boolean everything(ServerPlayer player) {
+        return player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)
+                || Perms.has(player, PERMISSION + "all");
+    }
+
+    /** Owned and usable now: everything(), or owned with propwash.pets.use (an active supporter rank). */
+    private boolean usable(ServerPlayer player, String name) {
+        return permitted(player, name) && (CUSTOM.equals(name) || everything(player) || Perms.has(player, USE_PERMISSION));
+    }
+
+    /** Is this pet the player's (listed in /pet): ops (level 2, even with LuckPerms), propwash.pets.all (admins), .animals or .drones, or .<name> (bought on Ko-fi). */
     private boolean permitted(ServerPlayer player, String name) {
+        if (!CUSTOM.equals(name) && kinds.containsKey(name)
+                && player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) {
+            return true;
+        }
         if (CUSTOM.equals(name)) {
             return custom.containsKey(player.getUUID()) && Perms.has(player, CODE_PERMISSION);
         }
@@ -376,7 +395,7 @@ public final class Pets implements ModInitializer {
         }
         List<String> names = new ArrayList<>(available(player));
         if (names.isEmpty()) {
-            source.sendFailure(Component.literal("Pets are a supporter perk: ko-fi.com/propwashfpv"));
+            source.sendFailure(Component.literal("You have no pets yet. They're on Ko-fi, for supporters: " + KOFI));
             return 0;
         }
         String mine = chosen.get(player.getUUID());
@@ -388,9 +407,11 @@ public final class Pets implements ModInitializer {
                 line.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
             }
             first = false;
+            boolean ok = name.equals("off") || usable(player, name);
             line.append(Component.literal(name.replace('_', ' '))
-                    .withStyle(name.equals(mine) ? ChatFormatting.GOLD : ChatFormatting.YELLOW)
-                    .withStyle(s -> s.withClickEvent(new ClickEvent.RunCommand("/pet " + name))));
+                    .withStyle(!ok ? ChatFormatting.DARK_GRAY : name.equals(mine) ? ChatFormatting.GOLD : ChatFormatting.YELLOW)
+                    .withStyle(s -> ok ? s.withClickEvent(new ClickEvent.RunCommand("/pet " + name))
+                            : s.withHoverEvent(new HoverEvent.ShowText(Component.literal("Yours, usable while you're a supporter: " + KOFI)))));
         }
         source.sendSuccess(() -> line, false);
         return 1;
@@ -410,8 +431,12 @@ public final class Pets implements ModInitializer {
         }
         if (!off && !permitted(player, name)) {
             source.sendFailure(Component.literal(available(player).isEmpty()
-                    ? "Pets are a supporter perk: ko-fi.com/propwashfpv"
-                    : "You can't have that pet. /pet lists yours."));
+                    ? "You have no pets yet. They're on Ko-fi, for supporters: " + KOFI
+                    : "That pet isn't yours. /pet lists yours."));
+            return 0;
+        }
+        if (!off && !usable(player, name)) {
+            source.sendFailure(Component.literal("Your " + name.replace('_', ' ') + " pet needs an active supporter rank: " + KOFI));
             return 0;
         }
         UUID id = player.getUUID();
@@ -591,13 +616,18 @@ public final class Pets implements ModInitializer {
             }
             boolean vanished = vanished(player);
             boolean toggled = pet != null && PRIVATE.containsKey(pet) != vanished;
+            // Supporter rank gone: the pet goes away (and comes back with the rank: the choice is kept).
+            if (pet != null && ticks % 100 == Math.floorMod(id.hashCode(), 100) && !usable(player, chosen.get(id))) {
+                remove(id);
+                continue;
+            }
             if (pet != null && (pet.isRemoved() || pet.level() != player.level() || toggled)) {
                 // Vanished or back: a new pet, so who is sent it starts over (entity tracking only asks once).
                 remove(id);
                 pet = null;
             }
             if (pet == null) {
-                if (!toggled && ticks % 20 != Math.floorMod(id.hashCode(), 20) || !permitted(player, chosen.get(id))) {
+                if (!toggled && ticks % 20 != Math.floorMod(id.hashCode(), 20) || !usable(player, chosen.get(id))) {
                     continue; // at most once a second per player, and only while allowed
                 }
                 pet = spawn(player, kind, vanished);
