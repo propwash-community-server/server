@@ -24,7 +24,7 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # As on fpv and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.20.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.22.0-26.3.jar",
     # /backpack (for now only admins); see plots.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
@@ -71,6 +71,11 @@ enable_enderchest = "false"
 staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
 "portal.fpv" = "maps:mountains -124 -28 54 -121 -18 54 fpv"
 "portal.plots" = "maps:mountains -103 -28 72 -103 -18 75 plots"
+# /race, /freestyle, /plots on the hub send you to that server ("command.<name>" = "<server>", mods/tweaks).
+# Ships with the 0.6.0 release, together with the race and freestyle servers.
+"command.race" = "race"
+"command.freestyle" = "freestyle"
+"command.plots" = "plots"
 
 # Vanish (/v): no fake "left the game" / "joined the game" when vanishing, like every other join message.
 [config."config/vanish.hocon"]
