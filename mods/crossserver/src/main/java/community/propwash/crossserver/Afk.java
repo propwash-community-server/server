@@ -73,11 +73,20 @@ final class Afk {
                 });
         proxy.getEventManager().register(plugin, this);
         proxy.getScheduler().buildTask(plugin, this::checkMoved).repeat(CHECK_SECONDS, TimeUnit.SECONDS).schedule();
-        // TAB asks on its own every half second.
+        // TAB asks on its own every half second. /btab reload forgets the placeholder, so it's added again
+        // after every load.
         if (proxy.getPluginManager().isLoaded("tab")) {
-            me.neznamy.tab.api.TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder(PLACEHOLDER, 500,
-                    p -> afk.containsKey(p.getUniqueId()) ? " <gray>[AFK]</gray>" : "");
+            registerPlaceholder();
+            var events = me.neznamy.tab.api.TabAPI.getInstance().getEventBus();
+            if (events != null) {
+                events.register(me.neznamy.tab.api.event.plugin.TabLoadEvent.class, e -> registerPlaceholder());
+            }
         }
+    }
+
+    private void registerPlaceholder() {
+        me.neznamy.tab.api.TabAPI.getInstance().getPlaceholderManager().registerPlayerPlaceholder(PLACEHOLDER, 500,
+                p -> afk.containsKey(p.getUniqueId()) ? " <gray>[AFK]</gray>" : "");
     }
 
     private void toggle(Player player) {

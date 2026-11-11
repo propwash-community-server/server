@@ -22,11 +22,15 @@ scoreboard-teams:
   can-see-friendly-invisibles: false
   disable-condition: ""
 
+# Everyone's ping as the number in the tab list, seen only by staff (propwash.ping.others).
 playerlist-objective:
-  enabled: false
-  title: TAB
-  value: ""
+  enabled: true
+  title: Ping
+  value: "%ping%"
+  # What 1.20.3+ clients show in place of the number.
+  fancy-value: "<gray>%ping% ms</gray>"
   render-type: INTEGER
+  disable-condition: "%condition:ping-viewer%=no"
 
 belowname-objective:
   enabled: false
@@ -89,6 +93,11 @@ conditions:
       - "%vanished%=true"
     true: " <gray>[V]</gray>"
     false: ""
+  ping-viewer:
+    conditions:
+      - "permission:propwash.ping.others"
+    true: "yes"
+    false: "no"
 
 assign-groups-by-permissions: false
 primary-group-finding-list:

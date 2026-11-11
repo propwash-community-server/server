@@ -438,6 +438,14 @@ If it did, Essential Commands' 15 minutes start again (and its AFK ends), and th
 in the dummy objective `propwash.drone` goes up by one; `/afk` ends when the proxy sees that
 score change. A drone hovering in place doesn't count.
 
+## Ping
+
+Everyone can `/ping` for their own ping to the proxy (green under 80 ms, yellow under 150, red above).
+Helpers, mods, staff and admins (`propwash.ping.others`) can `/ping <player>` for anyone they can see,
+with the server they're on, and see everyone's ping as the number after each name in the tab list
+(TAB's player list objective, which only they get). Part of `mods/crossserver`; the console can
+`/ping <player>` too.
+
 ## Recording mode
 
 Creators, helpers, mods, staff and admins (`propwash.record`) can `/record` for videos and streams: until

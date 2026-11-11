@@ -197,6 +197,8 @@ permissions = [
     "propwash.flyspeed.10",
     # /tp <player> on any server (mods/crossserver).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     # /maintenance on|off, and staying on while it's on (it kicks everyone without the bypass).
     "maintenance.command",
     "maintenance.toggle",
@@ -243,6 +245,8 @@ permissions = [
     "libertybans.list.history",
     # /tp <player> on any server (mods/crossserver).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     # /spy: see private messages and other servers' local chat (Carbon).
     "carbon.spy",
     # /v and /v auto (mods/vanish), and seeing vanished players like staff do.
@@ -305,6 +309,8 @@ permissions = [
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the
     # server's own too (EssentialsX via essentials.*, InvView on fpv and plots).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     "propwash.invsee",
     "invview.command.root",
     "invview.command.inv",
