@@ -669,6 +669,7 @@ delete them once looked at.
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | the coordinates in `servers/hub/files/world/datapacks/hubspawn` (players are sent there on every arrival) and `files/config/melius-commands/commands/spawn.json` (`/spawn`) |
+| Hub item frames | `servers/hub/files/world/datapacks/hubframes`: item frames that hold an item are made `Fixed` (the item can't be rotated or taken out; only creative players can break the frame). To edit them, `/tag @s add hubframes.edit` unlocks the frames within 8 blocks of you; `/tag @s remove hubframes.edit` when done |
 | Hub portals | `portal.<name>` in the hub's `[config."config/tweaks.properties"]` (mods/tweaks): a box of blocks and the server it sends to; nether portal blocks inside it don't lead to the nether. Read on start |
 | Limbo spawn | [`/setspawn`](https://essentialsx.net) in game; players are sent there on join |
 | fpv spawn | `/execute in maps:lobby run setworldspawn ~ ~ ~` in game; new players start there (see [Maps](maps.md#lobby)) |
