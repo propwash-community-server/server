@@ -447,8 +447,11 @@ server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
 
 `/pet` lists the pets a player may have and `/pet <name>` picks one (`/pet off` puts it away), on the
 hub, fpv and plots: a baby vanilla animal that walks just behind you, or one of Propwash's preset drones
-hovering at your shoulder. Supporters have them all (`propwash.pets.all`); `propwash.pets.animals`,
-`propwash.pets.drones` or `propwash.pets.<name>` give some. Our Fabric mod [`mods/pets`](../mods/pets/):
+hovering at your shoulder. Each pet is bought on Ko-fi: the Discord bot sets `propwash.pets.<name>` on
+the buyer's linked account (bot README, "Ko-fi shop"). Every pet: admins (`*`, or `propwash.pets.all`)
+and ops; `propwash.pets.animals` / `propwash.pets.drones` give a kind. An owned pet is usable only with
+`propwash.pets.use` (supporters): without it `/pet` shows it grey and an out pet goes away until the rank
+is back. `/pet` lists only a player's own pets. Our Fabric mod [`mods/pets`](../mods/pets/):
 ordinary entities the server moves every tick, so nothing is needed on the client. They can't be hurt,
 used or pushed, aren't saved with the world, and hide in spectator or dead; while you're vanished only
 you see yours. Rabbits hop along, and camels and llamas are shrunk to 0.7 of a baby's size. Standing
@@ -467,6 +470,44 @@ shared by every server.
 (within 8 blocks) gives it that pet, to show pets off in the world; `/pet display off` takes it away.
 It's kept as the tag `propwash.pet.display.<name>` on the mannequin. Presets only, and drone pets on
 mannequins leave no trail.
+
+## Drone trails
+
+`/trail` lists a player's drone trails and `/trail <name>` picks one (`/trail off`): particles behind
+their flying drone, and behind their drone pet (`/trail pet off`), sent as vanilla particles, so nothing
+is needed on the client. Our trails mod (its own repo, jar in the world store), on the hub, fpv and plots.
+Trails are presets made by admins in the studio (`/trail edit`, with the mod on the admin's client too),
+kept as meta on the LuckPerms group `trails-presets` (no members, not in permissions.toml, so the deploy
+leaves it alone). `/trail` lists only a player's own:
+
+| Who | How | Permission |
+|---|---|---|
+| Ko-fi buyers | the Discord bot, for a shop order ([Ko-fi shop](#ko-fi-shop)) | `propwash.trails.preset.<name>` on the player |
+| Supporters | a streak of months in a row: supporter1 from the start, supporter2 in the 2nd month, supporter3 in the 4th, supporter4 in the 6th (`trails-streak-<n>` groups); kept once reached | the same, set by the mod |
+| Admins, ops | everything | `*` / `propwash.trails.all` |
+
+Owned trails are usable with `propwash.trails.use` (supporters); without it they show grey. The streak is
+LuckPerms meta `propwash-supporter-since`, set by the mod while `supporter` is a player's own parent.
+Don't rename or delete a sold preset: buyers own it by name.
+
+## Ko-fi shop
+
+Pets and trails are sold as [Ko-fi](https://ko-fi.com/propwashfpv/shop) shop items. Ko-fi sends each order
+to the bot's `/kofi` webhook (the same one as donations; shop orders are never supporter time); the bot
+gives each item's permission to the buyer's `/link`ed Minecraft account over RCON (`propwash.pets.<name>`,
+`propwash.trails.preset.<name>`), posts it in the supporter log channel and DMs the buyer. Orders it
+can't give yet (not linked, no Discord on Ko-fi, unknown item) wait and are posted for staff. Items are
+keyed by the end of the Ko-fi link (`ko-fi.com/s/<code>`): the bot's `src/shop-items.js` plus
+`/shop add` on Discord. Staff: `/shop items|add|remove|pending|assign|give|cancel|info`.
+
+Selling a new pet or trail:
+
+1. In game: a pet exists already if `/pet` lists it for admins; a trail needs a preset (`/trail edit`,
+   save it with a short name).
+2. On Ko-fi: add the shop item (say it needs an active supporter role and a linked account) and copy its
+   link.
+3. On Discord: `/shop add link:<link> type:pet name:<pet>` (or `type:trail name:<preset>`). Live at once.
+4. Test with `/shop give user:@you link:<link>`. Optionally add the line to the bot's `src/shop-items.js`.
 
 ## Vanish
 

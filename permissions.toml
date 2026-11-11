@@ -107,6 +107,9 @@ permissions = [
     "worldedit.replacenear server=plots",
     "worldedit.snow server=plots",
     "worldedit.thaw server=plots",
+    # No drone trails here (mods/trails): each one comes from a supporter streak (trails-streak-<n>
+    # below) or Ko-fi (the Discord bot sets propwash.trails.preset.<name> on the buyer). Every trail:
+    # admins ("*") and ops only. /trail lists only a player's own.
 ]
 
 # Ko-fi donors (given by the Discord bot, with the "Ko-fi supporter" Discord role). Below the builder
@@ -125,13 +128,35 @@ permissions = [
     "propwash.flyspeed.6",
     # /enderchest, /ec, /echest on fpv and plots (mods/tweaks).
     "propwash.enderchest",
-    # /pet: every pet, baby animals and Propwash drones, on the hub, fpv and plots (mods/pets).
-    "propwash.pets.all",
+    # Drone trails (mods/trails): using the ones they own (bought on Ko-fi, or kept from a supporter
+    # streak, trails-streak-<n> below). Without it /trail shows them grey.
+    "propwash.trails.use",
+    # Pets (mods/pets): using the pets they own, each bought on Ko-fi (the Discord bot sets
+    # propwash.pets.<name> on the buyer). Without it /pet shows them grey. Every pet: admins ("*") and ops only.
+    "propwash.pets.use",
     # /fly and /flyspeed in /help, after "On every server" (mods/staffhelp, files/plugins/staffhelp/supporter.txt).
     "propwash.help.supporter",
     # Four plots instead of two (the highest fabricplots.limit.<n> wins: builders keep their 10).
     "fabricplots.limit.4 server=plots",
 ]
+
+# Supporter trails (mods/trails): the mod looks into trails-streak-<n> for a player who has been a
+# supporter n whole months in a row (LuckPerms meta propwash-supporter-since, which the mod sets when
+# the supporter group comes and clears when it goes); nobody is made a member. Each gives one built-in
+# preset as it is (propwash.trails.preset.<name>): supporter1 in the first month, supporter2 in the
+# second, supporter3 in the fourth, supporter4 in the sixth. Once reached the mod sets it on the player,
+# so it stays theirs after the streak ends (usable whenever they're a supporter: propwash.trails.use).
+[groups.trails-streak-0]
+permissions = ["propwash.trails.preset.supporter1"]
+
+[groups.trails-streak-1]
+permissions = ["propwash.trails.preset.supporter2"]
+
+[groups.trails-streak-3]
+permissions = ["propwash.trails.preset.supporter3"]
+
+[groups.trails-streak-5]
+permissions = ["propwash.trails.preset.supporter4"]
 
 # Content creators: everything supporters have (more may come). Above supporter, so a creator who
 # donates keeps [Creator]; below the builder ranks.
