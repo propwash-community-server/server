@@ -27,6 +27,9 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
     # /sign: colours and click commands on signs, for staff (mods/signs).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
+    # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends
+    # their tab entries and bodies shortly after (mods/seeplayers). Our mod, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/seeplayers-1.0.0-26.3.jar",
     # /backpack (for now only admins); see plots.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # /pet (Ko-fi pets, for supporters); see plots.

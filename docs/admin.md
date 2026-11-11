@@ -606,6 +606,15 @@ To change `mods/vanish` (JDK 25): edit it, raise the version in `gradle.properti
 `./gradlew build` there, upload `build/libs/vanish-<version>.jar` to the world store as
 `mods/vanish-<version>.jar`, and change the URL in the velocity `server.toml`.
 
+### Invisible players
+
+Clients sometimes lose another player's tab entry (simultaneous server switches, e.g. the restart kick to
+the hub, or around un-vanish) and then stop drawing that player until they relog. Our Fabric mod
+[`mods/seeplayers`](../mods/seeplayers/), on every Fabric server, re-sends everyone's tab entries and
+re-tracks bodies both ways 2 s and 10 s after each join and 1 s and 5 s after un-vanishing. Nothing on the
+client. To change it: raise `mod_version` in `gradle.properties`, `./gradlew build`, upload
+`build/libs/seeplayers-<version>+26.3.jar` as `mods/seeplayers-<version>-26.3.jar`, change the URLs.
+
 ## Discord bot
 
 The [Propwash bot](https://github.com/Itsj5j6j7/pw-server/tree/main/bot) runs on the VPS as two
