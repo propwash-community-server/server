@@ -479,6 +479,21 @@ missing-model cube. Its item, model, size and position, and the drone's, are in 
 spectator or dead. On or off is LuckPerms meta (`propwash-backpack`), so it follows players to every
 server; the drone on it is kept per server in `config/backpacks/<uuid>.snbt`.
 
+## Signs
+
+Staff (`propwash.sign`) edit the sign they look at (the side facing them) with `/sign` on the hub, fpv and
+plots, our Fabric mod [`mods/signs`](../mods/signs/):
+
+- `/sign text <line>|<line>|...` sets the whole sign (lines not given are emptied), `/sign set <1-4> <text>`
+  one line, `/sign clear <1-4>` empties one. `&` codes: `&0`-`&f` colours, `&#rrggbb`, `&l` bold, `&o`
+  italic, `&n` underlined, `&m` strikethrough, `&k` obfuscated, `&r` reset. Unlike chat's codes a colour
+  keeps bold etc., and with `/sign text` the style carries on to the next line:
+  `/sign text &f&lClick [&6Here&f]|to go back|to &6Spawn&f!`.
+- `/sign click <command>` runs that command (as the player who clicks) when the sign is clicked; it
+  also waxes the sign and sets `allow_op_features`, without which vanilla 26.x refuses a sign's click
+  commands. `/sign noclick` removes it; changing the text keeps it.
+- `/sign wax` and `/sign unwax`: whether players can edit it.
+
 ## Vanish
 
 `/v` or `/vanish` (admin, `propwash.vanish`) hides you on every server until you `/v` again, through restarts and

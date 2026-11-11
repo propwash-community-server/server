@@ -38,6 +38,8 @@ mods = [
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.22.0-26.3.jar",
+    # /sign: colours and click commands on signs, for staff (mods/signs).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
