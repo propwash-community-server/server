@@ -677,6 +677,7 @@ delete them once looked at.
 | Status | `systemctl status mc@<name>` |
 | Logs | `/home/mc/servers/<name>/logs/latest.log` |
 | Hub spawn | the coordinates in `servers/hub/files/world/datapacks/hubspawn` (players are sent there on every arrival) and `files/config/melius-commands/commands/spawn.json` (`/spawn`) |
+| Hub speed | `servers/hub/files/world/datapacks/hubspeed`: everyone in the hub has Speed IV (no particles), given again if lost; the level is the `3` (amplifier) in its `tick.mcfunction` and `predicate/has_speed.json` |
 | Hub portals | `portal.<name>` in the hub's `[config."config/tweaks.properties"]` (mods/tweaks): a box of blocks and the server it sends to; nether portal blocks inside it don't lead to the nether. Read on start |
 | Hub server commands | `command.<name> = <server>` in the same file: /<name> sends the player to that server (replaces tweaks' own /race there). Read on start |
 | Island maps | `below.<namespace>.<path> = <y>` in a server's `[config."config/tweaks.properties"]` (mods/tweaks), e.g. `below.worlds.gilbert_pro = -75`: players and drones (flying or not) that go below that Y on that map are put back at its race start (where `/race` lands you). Read on start |
