@@ -29,7 +29,15 @@ slow.
    ```
 
    Past the border, only void would be generated. It is set on every start, so changing it
-   takes effect on the next deploy. `rtp = false` keeps the map out of `/rtp` (`/map rtp`, a
+   takes effect on the next deploy. `rank = "Beginner"` (or `"Intermediate"`, `"Advanced"`, `"Pro"`)
+   ranks the map: `/race` groups its race courses under it ([Race courses](servers.md#race-courses)). A map made by more than one person lists its roles, one line each:
+   `credits = ["Uncrashed map by SHO", "Adapted by pincil"]` shows the lines under the title when a player
+   enters the map (names in Propwash yellow), and under the map in `/map` and its courses in `/race` (instead of
+   "by <author>"). A title has only one subtitle line: the second and third are drawn with the maps resource pack's
+   `propwash:credits1`/`credits2` fonts (vanilla's glyphs, lower down) and centred with its `propwash:space` font,
+   using `deploy/files/font_widths.json` (both made by `deploy/files/make_credit_fonts.py`). Players without the
+   pack see boxes there. Credits with other than plain ASCII characters, or more than three lines, fall back to the
+   first line under the title and the rest above the hotbar. `rtp = false` keeps the map out of `/rtp` (`/map rtp`, a
    random spot on a random map) and `/rtp <map>` (a random spot on it); the lobby has it. `/rtp <map>` lands on
    the highest block of a random column inside `rtp_area = { x = [from, to], z = [from, to] }`
    (else anywhere inside the border), not on liquids, fire or void; `rtp_y = { min = ..., max = ... }`
@@ -137,7 +145,7 @@ the URL and SHA-1 in the three `server.toml` files (hub, fpv, plots), deploy, th
 
 ### Drone nets
 
-Oxidized copper bars (waxed or not) are **drone nets**: the same pack (`propwash-maps-06573e10.zip`,
+Oxidized copper bars (waxed or not) are **drone nets**: the same pack (`propwash-maps-1aa06938.zip`,
 from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only) and makes them look like
 a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are
 hidden by overriding the `oxidized_copper_bars_*` block models). It is only looks: the block, its
