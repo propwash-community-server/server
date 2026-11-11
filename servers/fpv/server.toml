@@ -80,6 +80,8 @@ welcome = """
 
 # Set on every start. Maps are for flying: no mobs (drones are placed, not spawned).
 [gamerules]
+# New players and respawns land exactly on spawn (the lobby's /spawn spot), not scattered up to 10 blocks around it.
+respawn_radius = 0
 spawn_mobs = false
 spawn_monsters = false
 spawn_patrols = false
