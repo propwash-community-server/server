@@ -60,13 +60,14 @@ welcome = """
 
 # Players arrive at the hub spawn every time (files/world/datapacks/hubspawn); /spawn goes there too
 # (files/config/melius-commands/commands/spawn.json). Only the Essential Commands players get through
-# permissions.toml; these are off here: the hub is just the lobby.
+# permissions.toml; these are off here: the hub is just the lobby. Warps are on: /warp tp for
+# everyone, /warp set and /warp delete for builders (permissions.toml).
 [config."config/EssentialCommands.properties"]
 use_permissions_api = "true"
 enable_spawn = "false"
 enable_home = "false"
 enable_tpa = "false"
-enable_warp = "false"
+enable_warp = "true"
 enable_back = "false"
 enable_rtp = "false"
 enable_enderchest = "false"
