@@ -34,6 +34,8 @@ configs = {p.parent.name: tomllib.loads(p.read_text(encoding="utf-8")) for p in 
 velocity = configs.pop("velocity")
 backends = configs
 
+# A map's rank (maps/<map>.toml), easiest first.
+RANKS = ("Beginner", "Intermediate", "Advanced", "Pro")
 maps = {}
 for p in sorted(ROOT.glob("servers/*/maps/*.toml")):
     maps.setdefault(p.parent.parent.name, []).append({"name": p.stem, **tomllib.loads(p.read_text(encoding="utf-8"))})
@@ -297,14 +299,60 @@ def map_load_function(server_maps):
     return "\n".join(lines) + "\n"
 
 
+def credit_markup(line):
+    # "Uncrashed map by SHO": the role muted, the name (after the last " by ") in Propwash yellow.
+    role, by, who = line.rpartition(" by ")
+    return f"<muted>{role}{by}</muted><propwash>{who}</propwash>" if by else f"<muted>{line}</muted>"
+
+
+# Vanilla's glyph widths (pixels, spacing included) for the characters the maps resource pack's credits
+# fonts have; made with deploy/files/make_credit_fonts.py from the client's ascii.png.
+FONT_WIDTHS = json.loads((ROOT / "deploy/files/font_widths.json").read_text(encoding="utf-8"))
+
+
+def pen_move(pixels):
+    # Characters of the pack's propwash:space font that move the pen this many pixels (+-2^k each).
+    sign, n, out = (0xE000 if pixels >= 0 else 0xE010), abs(pixels), ""
+    for k in range(10):
+        if n >> k & 1:
+            out += chr(sign + k)
+    return {"text": out, "font": "propwash:space"} if out else None
+
+
+def credits_subtitle(credits):
+    # A title has one subtitle line, so a second and third credit line are drawn with the pack's
+    # propwash:credits1 / credits2 fonts (the same glyphs, one / two lines lower), each one centred
+    # under the first: the pen goes back by the right amount before each, and ends where the first
+    # line ends, so the subtitle's width (what the game centres) is the first line's.
+    if len(credits) > 3 or any(c not in FONT_WIDTHS for line in credits for c in line):
+        return None
+    widths = [sum(FONT_WIDTHS[c] for c in line) for line in credits]
+    parts, pen = json.loads(to_json(credit_markup(credits[0])))[1:], widths[0]
+    for n, (line, width) in enumerate(zip(credits[1:], widths[1:]), start=1):
+        start = (widths[0] - width) // 2
+        parts += [p for p in [pen_move(start - pen)] if p]
+        parts += [{**p, "font": f"propwash:credits{n}"} for p in json.loads(to_json(credit_markup(line)))[1:]]
+        pen = start + width
+    parts += [p for p in [pen_move(widths[0] - pen)] if p]
+    return json.dumps(["", *parts])
+
+
 def map_tick_function(server_maps):
-    # Title and author on screen each time a player enters a map.
+    # Title and author on screen each time a player enters a map. A map with credits shows them under
+    # the title, one line each (credits_subtitle); if they don't fit there, the first line under the
+    # title and the others above the hotbar.
     lines = []
     for m in server_maps:
         tag, dim = f"map_{m['name']}", f"maps:{m['name']}"
         entering = f"execute as @a[tag=!{tag}] at @s if dimension {dim} run"
+        credits = m.get("credits") or ["by " + m["author"]]
+        subtitle = credits_subtitle(credits) if len(credits) > 1 else None
+        if len(credits) > 1 and not subtitle:
+            lines.append(f"{entering} title @s actionbar {to_json('<muted>  ·  </muted>'.join(credit_markup(c) for c in credits[1:]))}")
+        if not subtitle:
+            subtitle = to_json(credit_markup(credits[0]) if m.get("credits") else "<muted>" + credits[0])
         lines += [
-            f"{entering} title @s subtitle {to_json('<muted>by ' + m['author'])}",
+            f"{entering} title @s subtitle {subtitle}",
             f"{entering} title @s title {to_json('<brand>' + m.get('title', m['name'].capitalize()))}",
             f"{entering} tag @s add {tag}",
             f"execute as @a[tag={tag}] at @s unless dimension {dim} run tag @s remove {tag}",
@@ -320,10 +368,22 @@ def map_command(server_maps):
     def run(command):
         return {"command": command, "op_level": 2, "silent": True}
 
-    names = ", ".join(m["name"] for m in server_maps)
+    # One map a line, like /race: its title (click to go), then who made it (its credits, a line each).
+    listing = [{"text": "Maps (click one to go there):", "color": "gray"}]
+    for m in server_maps:
+        go = f"/map {m['name']}"
+        listing += [{"text": "\n » ", "color": "dark_gray"},
+                    {"text": m.get("title", m["name"].capitalize()), "color": "white",
+                     "click_event": {"action": "run_command", "command": go},
+                     "hover_event": {"action": "show_text", "value": go}}]
+        if m.get("credits"):
+            for line in m["credits"]:
+                listing += [{"text": "\n     "}, *json.loads(to_json(credit_markup(line)))[1:]]
+        elif m.get("author"):
+            listing.append({"text": " by " + m["author"], "color": "gray"})
     return json.dumps({
         "id": "map",
-        "executes": [run(f"tellraw @s {to_json('<muted>Maps:</muted> ' + names)}")],
+        "executes": [run(f"tellraw @s {json.dumps(['', *listing])}")],
         "literals": [{"id": m["name"], "executes": [run(f"tag @s remove map_{m['name']}"), run(f"warp tp {m['name']}")]}
                      for m in server_maps] + [{"id": "rtp", "executes": map_rtp(server_maps)}],
     }, indent=2)
@@ -834,6 +894,21 @@ for name, cfg in backends.items():
     if cfg.get("gamerules"):
         changes += gamerules_ops(name, d, cfg["gamerules"])
 
+    # Map rankings (a map's rank in its maps/<map>.toml): /race groups the courses by them (mods/tweaks).
+    # Credits (a map's credits, one line per role) go under its courses in /race too.
+    ranks = {f"rank.maps.{m['name']}": m["rank"] for m in maps.get(name, []) if "rank" in m}
+    ranks |= {f"credits.maps.{m['name']}": "|".join(m["credits"]) for m in maps.get(name, []) if m.get("credits")}
+    # A map's only course goes by the map's title in /race.
+    ranks |= {f"title.maps.{m['name']}": m["title"] for m in maps.get(name, []) if m.get("title")}
+    for m in maps.get(name, []):
+        if "rank" in m and m["rank"] not in RANKS:
+            raise SystemExit(f"servers/{name}/maps/{m['name']}.toml: rank must be one of {', '.join(RANKS)}")
+        credits = m.get("credits", [])
+        if not isinstance(credits, list) or not all(isinstance(c, str) and c.strip() and "|" not in c for c in credits):
+            raise SystemExit(f"servers/{name}/maps/{m['name']}.toml: credits must be a list of lines (without |)")
+    if ranks:
+        tweaks = {**ranks, **cfg.get("config", {}).get("config/tweaks.properties", {})}
+        cfg = {**cfg, "config": {**cfg.get("config", {}), "config/tweaks.properties": tweaks}}
     changes += config_ops(name, d, cfg)
 
     # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so

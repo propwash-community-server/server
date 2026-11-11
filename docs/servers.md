@@ -63,6 +63,16 @@ players should land, face the way they should look, and run `/race setstart <cou
 <course>` goes back to the gate. These spots are kept per server in `world/data/propwash_race_starts.json`
 (by course number), so they stay through deploys.
 
+The list is grouped by the ranking of the course's map: **Beginner**, **Intermediate**, **Advanced** and
+**Pro** (easiest first; a ranking without courses shows "none yet"), then the courses on unranked maps.
+A map's ranking is `rank = "Advanced"` in its `servers/<server>/maps/<map>.toml` (see
+[Maps](maps.md#adding-a-map)); the deploy writes it into the server's `config/tweaks.properties` as
+`rank.maps.<map>`. A course in another world (e.g. a `/world create` world, `worlds:<name>`) is ranked
+with a `"rank.worlds.<name>" = "Pro"` line in that server's `[config."config/tweaks.properties"]`.
+A ranked world without any course is listed itself, as `"title.worlds.<name>"` (else its name, e.g.
+`gilbert_fast` as Gilbert Fast) by `"author.worlds.<name>"`; `/race <title>` takes you to the ground at 0 0
+there, or to its `/race setstart` spot.
+
 ## Short commands
 
 On the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)): `/gm <mode>` (`survival`, `creative`,

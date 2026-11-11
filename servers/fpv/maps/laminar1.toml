@@ -1,5 +1,8 @@
 title = "Laminar I"
 author = "SHO"
+# More than one person: these lines show instead of "by <author>" (one line per role).
+credits = ["Uncrashed map by SHO", "Adapted by pincil"]
+rank = "Advanced"
 border = { x = 16, z = 24, size = 976 }
 # Where /rtp lands: x and z ranges (inside the border).
 rtp_area = { x = [0, 40], z = [0, 41] }

@@ -37,7 +37,7 @@ mods = [
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.22.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
@@ -177,8 +177,8 @@ send-join-disconnect-message = "false"
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-06573e10.zip'
-resource-pack-sha1 = "06573e10626030bf1dd1a0e46acacbcd0adad981"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-1aa06938.zip'
+resource-pack-sha1 = "1aa06938f6bc5a5f1b52af2788fa8361aeedf275"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
