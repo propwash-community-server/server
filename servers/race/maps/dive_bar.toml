@@ -1,0 +1,6 @@
+title = "Dive Bar"
+author = "Itsj5j6j7"
+credits = ["Course by Skinmanjoe", "Adapted & built by Itsj5j6j7"]
+rank = "Advanced"
+# Was worlds:dive_bar (builder world, Fantasy); a map since 0.6.0.
+border = { x = -25, z = -55, size = 480 }

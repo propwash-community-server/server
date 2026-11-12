@@ -1,0 +1,5 @@
+title = "Flippy Floppy"
+author = "Itsj5j6j7"
+credits = ["Course by Skinmanjoe", "Adapted & built by Itsj5j6j7"]
+rank = "Advanced"
+border = { x = -90, z = -73, size = 480 }
