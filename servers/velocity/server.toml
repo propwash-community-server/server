@@ -66,6 +66,7 @@ help = """
 <accent>/msg <player> <message></accent>, <accent>/r <message></accent>: private messages
 <accent>/ignore <player></accent>: hide a player's messages
 <accent>/vote yes</accent>, <accent>/vote no</accent>: answer a vote (or click it)
+<accent>/shop</accent>: our Ko-fi shop, to help support the server
 """
 
 # /maintenance starttimer <minutes> turns maintenance on later, announcing it at the plugin's default
