@@ -140,44 +140,12 @@ enable_rtp = "false"
 # you to the start of a random course from /race, so the deploy writes no Melius Commands /map or /rtp here.
 [config."config/tweaks.properties"]
 map = "race"
-# Community tracks that live as builder worlds (worlds:<id>, mods/worlds), copied to prod by hand, not from
-# the store: their tier, name and builders in /race (the maps' own come from maps/<map>.toml). Without a
-# title line /race shows the course's own name.
+# The race tracks that were builder worlds are maps now (maps/<map>.toml, from the store).
 # TODO before 0.6.0: re-evaluate Dive Bar, Getchasum, Go Go and Scratch Attack (Advanced for now).
-"rank.worlds.flippy_floppy" = "Advanced"
-"title.worlds.flippy_floppy" = "Flippy Floppy"
-"author.worlds.flippy_floppy" = "Itsj5j6j7"
-"credits.worlds.flippy_floppy" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.tripple_threat" = "Intermediate"
-"author.worlds.tripple_threat" = "Itsj5j6j7"
-"credits.worlds.tripple_threat" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.getchasum" = "Advanced"
-"title.worlds.getchasum" = "Getchasum"
-"credits.worlds.getchasum" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.dive_bar" = "Advanced"
-"title.worlds.dive_bar" = "Dive Bar"
-"credits.worlds.dive_bar" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.go_go" = "Advanced"
-"title.worlds.go_go" = "Go Go"
-"credits.worlds.go_go" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.scratch_attack" = "Advanced"
-"title.worlds.scratch_attack" = "Scratch Attack"
-"credits.worlds.scratch_attack" = "Course by Skinmanjoe|Adapted & built by Itsj5j6j7"
-"rank.worlds.gilbert_fast" = "Beginner"
-"author.worlds.gilbert_fast" = "FPVGilbert"
-"rank.worlds.gilbert_pro" = "Pro"
-"title.worlds.gilbert_pro" = "Gilbert Pro"
-"author.worlds.gilbert_pro" = "FPVGilbert"
-"rank.worlds.gilbert_training" = "Pro"
-"title.worlds.gilbert_training" = "Gilbert Pro 2"
-"author.worlds.gilbert_training" = "FPVGilbert"
-"rank.worlds.first_base" = "Beginner"
-"title.worlds.first_base" = "First Base"
-"author.worlds.first_base" = "FPVGilbert"
 # Island map: fall below this Y and you (and your drone) go back to its race start.
-"below.worlds.gilbert_pro" = "-75"
+"below.maps.gilbert_pro" = "-75"
 
-# The tab list's name for race's worlds:* tracks that have no title line above (their course name in /race).
+# The tab list's name for race tracks whose tab name differs from their /race title (see maps/<map>.toml).
 [tab.names]
 tripple_threat = "Triple Threat"
 gilbert_fast = "Gilbert Flow"
