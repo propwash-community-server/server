@@ -47,6 +47,9 @@ plugins = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/crossserver-1.9.1.jar",
     # Simple Voice Chat's proxy: players' voice on one public UDP port, passed on to the server they're on.
     "https://cdn.modrinth.com/data/9eGKb6K1/versions/Ue35nhwF/voicechat-velocity-2.6.26.jar",
+    # /shop on every server: a clickable link to the Ko-fi shop (pets and drone trails): our mods/shop,
+    # built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/shop-1.0.2.jar",
 ]
 # MiniPlaceholders expansions, loaded from plugins/miniplaceholders/expansions/.
 expansions = [
