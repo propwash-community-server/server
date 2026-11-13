@@ -66,7 +66,8 @@ final class Perms {
         }
 
         static void grant(UUID id, String permission) {
-            api().getUserManager().modifyUser(id, user -> user.data().add(PermissionNode.builder(permission).build()));
+            // Waited for: a pick's permission and its "used" meta must be in place before the next command runs.
+            api().getUserManager().modifyUser(id, user -> user.data().add(PermissionNode.builder(permission).build())).join();
         }
 
         static void setMeta(UUID id, String key, String value) {
@@ -75,7 +76,7 @@ final class Perms {
                 if (value != null) {
                     user.data().add(MetaNode.builder(key, value).build());
                 }
-            });
+            }).join();
         }
     }
 }
