@@ -97,7 +97,7 @@ def check_secrets():
     print("secrets")
     rules = sops_rules()
     for path in tracked("*.sops"):
-        rel = str(path.relative_to(ROOT))
+        rel = path.relative_to(ROOT).as_posix()  # rules use / (on Windows str() gives \)
         text = path.read_text(errors="replace")
         if not re.search(r'^sops_version=|"sops": *\{', text, flags=re.M):
             error(f"{rel}: not encrypted")
