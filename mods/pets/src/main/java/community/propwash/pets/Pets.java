@@ -1,9 +1,13 @@
 package community.propwash.pets;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -69,6 +73,11 @@ import net.minecraft.world.scores.Team;
  * it away. It's kept as an entity tag on the mannequin (propwash.pet.display.<name>, so vanilla /tag does
  * the same), so it lasts: the pet comes back whenever the mannequin loads, and goes when it unloads. A
  * mannequin stands still, so its pet circles it the whole time.
+ *
+ * <p>Picks (/pet pick, /drone pick): each supporter gets one pet pick once, with the rank, and one drone pick
+ * once, at their second month in a row (the Trails mod's propwash-supporter-since). A pick is one animal (or
+ * one drone), permanent, and made in two confirms. It's kept as LuckPerms meta (propwash-pick-pet,
+ * propwash-pick-drone), and usable only while the rank is active. Nothing else gives a pick.
  */
 public final class Pets implements ModInitializer {
     private static final String PERMISSION = "propwash.pets.";
@@ -77,6 +86,17 @@ public final class Pets implements ModInitializer {
     private static final String ORBIT_META = "propwash-pet-orbit";
     /** LuckPerms meta "off" when the player muted their pet (/pet sound off); absent: on. */
     private static final String SOUND_META = "propwash-pet-sound";
+    /** One-time picks, given once each: "available", or "used:<name>" once made. Absent: not given yet. */
+    private static final String PET_PICK_META = "propwash-pick-pet";
+    private static final String DRONE_PICK_META = "propwash-pick-drone";
+    /** The Trails mod sets this while a player is a supporter: the date their streak started (yyyy-mm-dd). */
+    private static final String SINCE_META = "propwash-supporter-since";
+    /** Whole months in a row as a supporter before the drone pick comes. */
+    private static final int DRONE_PICK_MONTHS = 2;
+    /** Each click of a pick's two confirms must come within this long of the one before. */
+    private static final long PICK_CONFIRM_MILLIS = 60_000;
+    /** Supporters are checked for their drone pick every five minutes, not only on join. */
+    private static final int PICK_CHECK_TICKS = 20 * 60 * 5;
     private static final String TAG = "propwash.pet";
     /** On drone pets, followed by the owner's UUID: how the Trails mod finds whose trail to draw. */
     private static final String DRONE_OWNER_TAG = "propwash.pet.drone.";
@@ -213,6 +233,10 @@ public final class Pets implements ModInitializer {
     private final java.util.Set<UUID> noOrbit = new java.util.HashSet<>();
     /** Players who muted their pet. */
     private final java.util.Set<UUID> noSound = new java.util.HashSet<>();
+    /** A pick under way: the pet name, the step (1: asked, 2: asked again) and when it runs out (millis). */
+    private record PickStep(String name, int step, long expires) {
+    }
+    private final Map<UUID, PickStep> picking = new java.util.concurrent.ConcurrentHashMap<>();
     /** Each pet's next allowed sound tick. */
     private final Map<UUID, Long> nextSound = new HashMap<>();
     /** Rabbit pets: the tick their current hop started, and how high above its path the hop has it now. */
@@ -256,6 +280,7 @@ public final class Pets implements ModInitializer {
                         .then(Commands.literal("sound")
                                 .then(Commands.literal("on").executes(c -> setSound(c.getSource(), true)))
                                 .then(Commands.literal("off").executes(c -> setSound(c.getSource(), false))))
+                        .then(pick(true))
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests((c, b) -> {
                                     ServerPlayer player = c.getSource().getPlayer();
@@ -266,7 +291,10 @@ public final class Pets implements ModInitializer {
                                     return b.buildFuture();
                                 })
                                 .executes(c -> choose(c.getSource(), StringArgumentType.getString(c, "name").toLowerCase())))));
+        CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) -> dispatcher.register(
+                Commands.literal("drone").executes(c -> pickList(c.getSource(), false)).then(pick(false))));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            picks(handler.player, true);
             String name = Perms.meta(handler.player, META);
             if (name != null) {
                 chosen.put(handler.player.getUUID(), name);
@@ -291,6 +319,7 @@ public final class Pets implements ModInitializer {
             custom.remove(handler.player.getUUID());
             noOrbit.remove(handler.player.getUUID());
             noSound.remove(handler.player.getUUID());
+            picking.remove(handler.player.getUUID());
         });
         ServerTickEvents.END_SERVER_TICK.register(this::tick);
         ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
@@ -572,6 +601,253 @@ public final class Pets implements ModInitializer {
         return 1;
     }
 
+    private static String pickMeta(boolean animal) {
+        return animal ? PET_PICK_META : DRONE_PICK_META;
+    }
+
+    private static String pickWord(boolean animal) {
+        return animal ? "pet" : "drone";
+    }
+
+    /** Whoever has the propwash.pets.use rank (an active supporter), or everything (admins, ops). */
+    private boolean supporter(ServerPlayer player) {
+        return everything(player) || Perms.has(player, USE_PERMISSION);
+    }
+
+    /** Whole months since a supporter streak started (yyyy-mm-dd, as the Trails mod writes it); 0 if unreadable. */
+    private static int months(String since) {
+        try {
+            return (int) Math.max(0, ChronoUnit.MONTHS.between(LocalDate.parse(since.trim()), LocalDate.now()));
+        } catch (DateTimeParseException e) {
+            return 0;
+        }
+    }
+
+    /** Gives this player the one-time picks they have earned, and says so while one waits. remind: on join. */
+    private void picks(ServerPlayer player, boolean remind) {
+        if (!Perms.enabled() || everything(player)) {
+            return;
+        }
+        UUID id = player.getUUID();
+        boolean supporter = supporter(player);
+        String pet = Perms.meta(player, PET_PICK_META);
+        boolean newPet = pet == null && supporter;
+        if (newPet) {
+            Perms.setMeta(id, PET_PICK_META, "available");
+            pet = "available";
+        }
+        String since = Perms.meta(player, SINCE_META);
+        String drone = Perms.meta(player, DRONE_PICK_META);
+        boolean newDrone = drone == null && since != null && months(since) >= DRONE_PICK_MONTHS;
+        if (newDrone) {
+            Perms.setMeta(id, DRONE_PICK_META, "available");
+            drone = "available";
+        }
+        if (newPet || (remind && "available".equals(pet))) {
+            announce(player, true, newPet, supporter);
+        }
+        if (newDrone || (remind && "available".equals(drone))) {
+            announce(player, false, newDrone, supporter);
+        }
+    }
+
+    /** The reminder (and, when earned just now, the news) of a waiting pick: clickable, until it's made. */
+    private void announce(ServerPlayer player, boolean animal, boolean earned, boolean supporter) {
+        String what = pickWord(animal);
+        String command = "/" + what + " pick";
+        MutableComponent line;
+        if (supporter) {
+            line = Component.literal(earned
+                            ? "You earned a " + what + " token! Thank you for supporting the server! "
+                            : "You have a " + what + " token waiting! ")
+                    .withStyle(ChatFormatting.GOLD)
+                    .append(Component.literal("[Redeem it: " + command + "]").withStyle(ChatFormatting.GREEN)
+                            .withStyle(s -> s.withClickEvent(new ClickEvent.RunCommand(command))))
+                    .append(Component.literal(" It's permanent: You get one pick. Take your time.")
+                            .withStyle(ChatFormatting.GRAY));
+        } else {
+            line = Component.literal("You have a " + what + " pick saved. You can use it while your supporter rank is active: " + KOFI)
+                    .withStyle(ChatFormatting.GRAY);
+        }
+        player.sendSystemMessage(line);
+    }
+
+    /** Why this player can't make this pick now, or null if they can. */
+    private String pickProblem(ServerPlayer player, String name, boolean animal) {
+        String what = pickWord(animal);
+        if (!Perms.enabled()) {
+            return "Picks need LuckPerms, which this server doesn't have.";
+        }
+        String token = Perms.meta(player, pickMeta(animal));
+        if (token == null) {
+            return animal
+                    ? "You don't have a pet pick yet. You get one, once, with the supporter rank (" + KOFI + ")."
+                    : "You don't have a drone pick yet. You get one after " + DRONE_PICK_MONTHS + " months as a supporter in a row.";
+        }
+        if (token.startsWith("used:")) {
+            return "You've already made your " + what + " pick (" + token.substring("used:".length()).replace('_', ' ')
+                    + "). It's permanent and can't be changed.";
+        }
+        if (!supporter(player)) {
+            return "Your " + what + " pick is saved. You can use it while your supporter rank is active: " + KOFI;
+        }
+        if (permitted(player, name)) {
+            return "You already have " + name.replace('_', ' ') + ", so pick another one.";
+        }
+        return null;
+    }
+
+    /** /pet pick and /drone pick: one animal (or drone) to choose, in two confirms. */
+    private LiteralArgumentBuilder<CommandSourceStack> pick(boolean animal) {
+        return Commands.literal("pick")
+                .executes(c -> pickList(c.getSource(), animal))
+                .then(Commands.argument("name", StringArgumentType.word())
+                        .suggests((c, b) -> {
+                            kinds.forEach((name, kind) -> {
+                                if ((kind.baby() != null) == animal) {
+                                    b.suggest(name);
+                                }
+                            });
+                            return b.buildFuture();
+                        })
+                        .executes(c -> pickStep(c.getSource(), StringArgumentType.getString(c, "name").toLowerCase(), animal, 1))
+                        .then(Commands.literal("continue")
+                                .executes(c -> pickStep(c.getSource(), StringArgumentType.getString(c, "name").toLowerCase(), animal, 2)))
+                        .then(Commands.literal("lock")
+                                .executes(c -> pickLock(c.getSource(), StringArgumentType.getString(c, "name").toLowerCase(), animal))));
+    }
+
+    private int pickList(CommandSourceStack source, boolean animal) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        String what = pickWord(animal);
+        String base = "/" + what + " pick";
+        if (!Perms.enabled()) {
+            source.sendFailure(Component.literal("Picks need LuckPerms, which this server doesn't have."));
+            return 0;
+        }
+        String token = Perms.meta(player, pickMeta(animal));
+        if (token == null) {
+            source.sendFailure(Component.literal(animal
+                    ? "You don't have a pet pick yet. You get one, once, with the supporter rank (" + KOFI + ")."
+                    : "You don't have a drone pick yet. You get one after " + DRONE_PICK_MONTHS + " months as a supporter in a row."));
+            return 0;
+        }
+        if (token.startsWith("used:")) {
+            source.sendFailure(Component.literal(pickProblem(player, "", animal)));
+            return 0;
+        }
+        if (!supporter(player)) {
+            source.sendFailure(Component.literal("Your " + what + " pick is saved. You can use it while your supporter rank is active: " + KOFI));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Your " + what + " pick: you get ONE, and it is PERMANENT. You can't change it later.")
+                .withStyle(ChatFormatting.GOLD), false);
+        MutableComponent line = Component.literal("Click one, then confirm twice: ").withStyle(ChatFormatting.GRAY);
+        boolean first = true;
+        for (Map.Entry<String, Kind> entry : kinds.entrySet()) {
+            if ((entry.getValue().baby() != null) != animal) {
+                continue;
+            }
+            String name = entry.getKey();
+            if (!first) {
+                line.append(Component.literal(", ").withStyle(ChatFormatting.GRAY));
+            }
+            first = false;
+            boolean owned = permitted(player, name);
+            line.append(Component.literal(name.replace('_', ' '))
+                    .withStyle(owned ? ChatFormatting.DARK_GRAY : ChatFormatting.YELLOW)
+                    .withStyle(s -> owned
+                            ? s.withHoverEvent(new HoverEvent.ShowText(Component.literal("You already have this one, so it can't be your pick.")))
+                            : s.withClickEvent(new ClickEvent.RunCommand(base + " " + name))
+                                .withHoverEvent(new HoverEvent.ShowText(Component.literal("Choose this as your permanent " + what + " pick")))));
+        }
+        source.sendSuccess(() -> line, false);
+        return 1;
+    }
+
+    /** A pick's confirms: step 1 warns and asks; step 2 asks again. Both say it's permanent. */
+    private int pickStep(CommandSourceStack source, String name, boolean animal, int step) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        String what = pickWord(animal);
+        String base = "/" + what + " pick";
+        String shown = name.replace('_', ' ');
+        Kind kind = kinds.get(name);
+        if (kind == null || (kind.baby() != null) != animal) {
+            source.sendFailure(Component.literal("There's no " + what + " called " + shown + ". " + base + " lists them."));
+            return 0;
+        }
+        String problem = pickProblem(player, name, animal);
+        if (problem != null) {
+            picking.remove(player.getUUID());
+            source.sendFailure(Component.literal(problem));
+            return 0;
+        }
+        UUID id = player.getUUID();
+        long expires = System.currentTimeMillis() + PICK_CONFIRM_MILLIS;
+        if (step == 1) {
+            picking.put(id, new PickStep(name, 1, expires));
+            source.sendSuccess(() -> Component.literal("Step 1 of 2: you're choosing " + shown + " as your " + what + " pick. ")
+                    .withStyle(ChatFormatting.GOLD)
+                    .append(Component.literal("This is PERMANENT. It can't be changed later, and your one " + what + " pick is used up for good. ")
+                            .withStyle(ChatFormatting.YELLOW))
+                    .append(Component.literal("[Continue]").withStyle(ChatFormatting.GREEN)
+                            .withStyle(s -> s.withClickEvent(new ClickEvent.RunCommand(base + " " + name + " continue"))))
+                    .append(Component.literal("  (Ignore this to cancel.)").withStyle(ChatFormatting.GRAY)), false);
+            return 1;
+        }
+        PickStep current = picking.get(id);
+        if (current == null || current.step() != 1 || !current.name().equals(name) || System.currentTimeMillis() > current.expires()) {
+            source.sendFailure(Component.literal("That confirmation has expired or doesn't match. Start again: " + base));
+            return 0;
+        }
+        picking.put(id, new PickStep(name, 2, expires));
+        source.sendSuccess(() -> Component.literal("Step 2 of 2: are you sure? Locking in " + shown + " is FINAL. ")
+                .withStyle(ChatFormatting.RED)
+                .append(Component.literal("Your " + what + " pick is used up forever, and you can never pick again. ")
+                        .withStyle(ChatFormatting.YELLOW))
+                .append(Component.literal("[Lock in " + shown + "]").withStyle(ChatFormatting.DARK_RED)
+                        .withStyle(s -> s.withClickEvent(new ClickEvent.RunCommand(base + " " + name + " lock"))))
+                .append(Component.literal("  ")
+                        .append(Component.literal("[Go back]").withStyle(ChatFormatting.GRAY)
+                                .withStyle(s -> s.withClickEvent(new ClickEvent.RunCommand(base))))), false);
+        return 1;
+    }
+
+    /** The last step: gives the pet (its permission, kept in LuckPerms) and uses the pick up for good. */
+    private int pickLock(CommandSourceStack source, String name, boolean animal) {
+        ServerPlayer player = source.getPlayer();
+        if (player == null) {
+            return 0;
+        }
+        String what = pickWord(animal);
+        String base = "/" + what + " pick";
+        UUID id = player.getUUID();
+        PickStep current = picking.remove(id);
+        if (current == null || current.step() != 2 || !current.name().equals(name) || System.currentTimeMillis() > current.expires()) {
+            source.sendFailure(Component.literal("That confirmation has expired or doesn't match. Start again: " + base));
+            return 0;
+        }
+        String problem = pickProblem(player, name, animal);
+        if (problem != null) {
+            source.sendFailure(Component.literal(problem));
+            return 0;
+        }
+        Perms.grant(id, PERMISSION + name);
+        Perms.setMeta(id, pickMeta(animal), "used:" + name);
+        org.slf4j.LoggerFactory.getLogger("pets").info("{} made their {} pick: {}", player.getScoreboardName(), what, name);
+        String shown = name.replace('_', ' ');
+        source.sendSuccess(() -> Component.literal("Locked in: " + shown + " is yours, forever. Your " + what + " pick is used up and can't be changed. ")
+                .withStyle(ChatFormatting.GREEN)
+                .append(Component.literal("Bring it out with /pet " + name + ".").withStyle(ChatFormatting.GRAY)), false);
+        return 1;
+    }
+
     private static java.lang.reflect.Method ambientMethod() {
         try {
             java.lang.reflect.Method m = net.minecraft.world.entity.Mob.class.getDeclaredMethod("getAmbientSound");
@@ -615,6 +891,9 @@ public final class Pets implements ModInitializer {
 
     private void tick(MinecraftServer server) {
         ticks++;
+        if (ticks % PICK_CHECK_TICKS == 0) {
+            server.getPlayerList().getPlayers().forEach(player -> picks(player, false));
+        }
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             UUID id = player.getUUID();
             Kind kind = kind(id, chosen.get(id));
