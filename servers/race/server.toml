@@ -142,8 +142,9 @@ enable_rtp = "false"
 map = "race"
 # The race tracks that were builder worlds are maps now (maps/<map>.toml, from the store).
 # TODO before 0.6.0: re-evaluate Dive Bar, Getchasum, Go Go and Scratch Attack (Advanced for now).
-# Island map: fall below this Y and you (and your drone) go back to its race start.
+# Island maps: fall below this Y and you (and your drone) go back to its race start.
 "below.maps.gilbert_pro" = "-75"
+"below.maps.gilbert_training" = "-75"
 
 # The tab list's name for race tracks whose tab name differs from their /race title (see maps/<map>.toml).
 [tab.names]
