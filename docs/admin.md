@@ -471,6 +471,23 @@ shared by every server.
 It's kept as the tag `propwash.pet.display.<name>` on the mannequin. Presets only, and drone pets on
 mannequins leave no trail.
 
+### Pet and drone picks
+
+Two one-time tokens per account, each a permanent choice. Neither is ever given twice.
+
+- **Pet pick**: given once, when the account first gets the supporter rank. `/pet pick` lists the 26 baby
+  animals (owned ones greyed out); `/pet pick <name>` starts it, and it takes two confirms (`continue`,
+  then `lock`, each within 60 seconds). The pick grants `propwash.pets.<name>` and uses the token up.
+- **Drone pick**: given once, at the second month in a row as a supporter (the Trails mod's
+  `propwash-supporter-since`, so a lapse restarts that count, but the token is never given again). `/drone pick`
+  and `/drone pick <name>` work the same way for the drone presets.
+
+Tokens are LuckPerms meta: `propwash-pick-pet` and `propwash-pick-drone`, `available` until made, then
+`used:<name>`. They're usable only while the supporter rank is active; without it the holder is told the pick
+is saved. The mod grants both (on join, and every five minutes for the drone one), reminds the holder on each
+join until it's made, and logs each pick to the server console (`pets` logger). The Discord supporter log isn't
+told yet. Staff can undo a pick only by hand (`lpv`: remove the `propwash.pets.<name>` permission and reset the meta).
+
 ## Drone trails
 
 `/trail` lists a player's drone trails and `/trail <name>` picks one (`/trail off`): particles behind

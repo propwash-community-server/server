@@ -6,6 +6,7 @@ import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.MetaNode;
+import net.luckperms.api.node.types.PermissionNode;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -26,9 +27,21 @@ final class Perms {
         return Lp.has(player, permission);
     }
 
+    /** Whether LuckPerms is installed (picks and their saved state need it). */
+    static boolean enabled() {
+        return LUCKPERMS;
+    }
+
     /** The player's meta value for key, or null. */
     static String meta(ServerPlayer player, String key) {
         return LUCKPERMS ? Lp.meta(player, key) : null;
+    }
+
+    /** Gives the player a permission node, kept in LuckPerms (every server). Only with LuckPerms. */
+    static void grant(UUID id, String permission) {
+        if (LUCKPERMS) {
+            Lp.grant(id, permission);
+        }
     }
 
     /** Sets (or with null, removes) the player's meta value for key. */
@@ -50,6 +63,10 @@ final class Perms {
 
         static String meta(ServerPlayer player, String key) {
             return api().getPlayerAdapter(ServerPlayer.class).getMetaData(player).getMetaValue(key);
+        }
+
+        static void grant(UUID id, String permission) {
+            api().getUserManager().modifyUser(id, user -> user.data().add(PermissionNode.builder(permission).build()));
         }
 
         static void setMeta(UUID id, String key, String value) {
