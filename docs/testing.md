@@ -19,7 +19,7 @@ through [Minescript](https://minescript.net). Servers are checked and set up thr
 
 ```
 uv run pyinfra deploy/inventory.py deploy/deploy.py --limit test -y   # twice on a new stack
-uv run e2e -k fpv
+uv run e2e -k freestyle
 ```
 
 `uv run e2e` takes pytest options; the client log ends up in `tests/e2e/logs/`.

@@ -3,7 +3,7 @@
   "id": "regen",
   "version": "${version}",
   "name": "Regen",
-  "description": "Drones break glass on the fpv maps (Propwash's drones_break_blocks, let through Flan for drones only), and broken blocks come back after a while (config/regen.properties, per map).",
+  "description": "Drones break glass on the fpv maps (Propwash's drones_break_blocks, let through Flan for drones only), and broken blocks come back after a while (config/regen.properties, per map). With Flan, every world gets the overworld's Flan world rules unless the config names it.",
   "license": "MIT",
   "environment": "server",
   "entrypoints": {

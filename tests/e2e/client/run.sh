@@ -8,7 +8,7 @@ cp /hmc/e2e_agent.py "$game/minescript/"
 printf 'python="/usr/bin/python3"\nautorun[*] = e2e_agent\n' > "$game/minescript/config.txt"
 printf 'pauseOnLostFocus:false\nonboardAccessibility:false\nnarrator:0\nrenderDistance:2\nsimulationDistance:5\n' > "$game/options.txt"
 # The server in the list with its resource packs declined (acceptTextures 0), so joining doesn't stop at
-# the prompt for the hub's and fpv's packs. servers.dat is uncompressed NBT.
+# the prompt for the hub's and freestyle's packs. servers.dat is uncompressed NBT.
 python3 - "$1" "$game/servers.dat" <<'EOF'
 import struct, sys
 def string(s): b = s.encode(); return struct.pack(">H", len(b)) + b

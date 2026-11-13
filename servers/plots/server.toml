@@ -6,12 +6,17 @@ url = "https://meta.fabricmc.net/v2/versions/loader/26.3/0.19.5/1.1.2/server/jar
 mods = [
     "https://cdn.modrinth.com/data/P7dR8mSH/versions/v2j28coa/fabric-api-0.162.0%2B26.3.jar",
     "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-fabric-26.3-0.5.2.jar",
+    # Propwash 0.6.0 (final jars, and their add-ons).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-fabric-26.3-0.6.0.jar",
     # Propwash: Just more Parts (143 extra FPV parts and frames, by lardtom). Clients need it too:
     # Propwash compares a parts fingerprint, so keep it on every server that runs Propwash.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.2.0.jar",
+    # Propwash add-ons, by lardtom: Camera Drones and Mob Defense. Clients need them too (Propwash's join
+    # check matches add-ons), so they are on every server that runs Propwash.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/camdrones-fabric-26.3-1.0.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/mobdefense-fabric-26.3-1.0.0.jar",
     # Drones break glass on plots with the drone-glass or drone-glass-members flag, and it comes back after the plot's
-    # /plot glassregen time (our mods/regen; on fpv for the maps too).
+    # /plot glassregen time (our mods/regen; on freestyle and race for the maps too).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/regen-1.2.0-26.3.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
@@ -37,15 +42,26 @@ mods = [
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.20.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
+    # /sign: colours and click commands on signs, for staff (mods/signs).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
+    # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends
+    # their tab entries and bodies shortly after (mods/seeplayers). Our mod, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/seeplayers-1.0.0-26.3.jar",
     # /kit: players' own kits, shared with the other servers that have it ([config."config/kits.properties"]
     # below). Our mods/kits, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/kits-1.0.0-26.3.jar",
     # /backpack: a backpack on your back (propwash.backpack; for now only admins have it), with your drone on it
     # (/backpack drone); its model is in the maps resource pack. Our mods/backpack, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
+    # /pet: a cosmetic pet, a baby animal or a Propwash drone (bought on Ko-fi: propwash.pets.<name>), on every
+    # server that has it (docs/admin.md#pets). Our mods/pets, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/pets/pets-1.9.0-26.3-20261113-2045.jar",
+    # /trail: particle trails behind a flying drone (and drone pets), server side only: bought on Ko-fi or
+    # earned as a supporter (docs/admin.md#drone-trails). Our trails mod, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/trails-1.3.3-26.3.jar",
     # Server status for the Discord bot; its key is BRIDGE_KEY_PLOTS (see docs/admin.md#discord-bot).
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.4.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-bridge-0.5.0-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
@@ -75,7 +91,7 @@ help = """
 <accent>/mydrone</accent>: bring your drone to you
 <accent>/dronetp</accent>: go to your drone
 <accent>/clear</accent>: empty your inventory
-<accent>/kit create <name></accent>, <accent>/kit <name></accent>, <accent>/kit edit <name></accent>: your own kits (also on fpv)
+<accent>/kit create <name></accent>, <accent>/kit <name></accent>, <accent>/kit edit <name></accent>: your own kits (also on freestyle and race)
 <accent>/plot flag set drone-glass on</accent> (everyone's drones) or <accent>drone-glass-members on</accent> (yours and trusted players'), <accent>/plot glassregen <seconds></accent>: let drones smash the glass on your plot, back after 3 min or your time
 <accent>/debugstick</accent>: change block states (facing, half, waterlogged...) on your plot
 Only you and players you trust can build on your plot.
@@ -83,7 +99,7 @@ Only you and players you trust can build on your plot.
 
 # Shown in chat every time a player arrives on the server, in MiniMessage with palette.toml tags.
 welcome = """
-<brand><bold>Plots</bold></brand>: <accent>/plot auto</accent> to get a plot, <accent>/help</accent> for more.
+<propwash><bold>Plots</bold></propwash><muted>: </muted><white>/plot auto</white><muted> to get a plot, </muted><white>/help</white><muted> for more.</muted>
 """
 
 # Set on every start.
@@ -154,7 +170,7 @@ advance-time = "false"
 advance-weather = "false"
 # Anyone may, anywhere in the plot world (other people's plots too): place drones (the item used on a
 # block), use drone workbenches, and fly, hit and pick up drones. Our patch's free-* settings.
-# One drone per player at a time: files/world/datapacks/propwash_drone_limit (the same as fpv).
+# One drone per player at a time: files/world/datapacks/propwash_drone_limit (the same as freestyle and race).
 # Escaped the way FabricPlots writes them back, so deploys don't see a change and restart.
 free-items = 'propwash\:drone'
 free-blocks = 'propwash\:drone_workbench'
@@ -172,13 +188,13 @@ welcome-message = "false"
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
-# The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
+# The maps' resource pack (Drift Arena furniture models), as on freestyle and race; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-06573e10.zip'
-resource-pack-sha1 = "06573e10626030bf1dd1a0e46acacbcd0adad981"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-1aa06938.zip'
+resource-pack-sha1 = "1aa06938f6bc5a5f1b52af2788fa8361aeedf275"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
@@ -191,7 +207,7 @@ generate-structures = "false"
 
 # mods/kits: /kit cooldown (staff.cooldown: propwash.kits.staff), kits and items per kit
 # (supporter.*: propwash.kits.supporter). Kits are
-# in storage, the same folder on fpv and plots, so they're shared. Read again when the file changes.
+# in storage, the same folder on freestyle, race and plots, so they're shared. Read again when the file changes.
 [config."config/kits.properties"]
 cooldown = "20"
 "staff.cooldown" = "2"

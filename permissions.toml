@@ -1,5 +1,5 @@
 # LuckPerms groups, applied on deploy (see docs). Each entry is passed to
-# `lp group <name> permission set`, so contexts work: "worldedit.* server=fpv".
+# `lp group <name> permission set`, so contexts work: "worldedit.* server=race".
 # A listed group is replaced as a whole; groups not listed here are left alone.
 # Nobody is op: staff powers come from these groups.
 
@@ -9,10 +9,14 @@ permissions = [
     "essentials.home",
     "essentials.sethome",
     "essentials.help",
-    "flan.claim.create false server=fpv",
-    "essentialcommands.warp.tp server=fpv",
-    # /spawn on fpv: the lobby.
-    "essentialcommands.spawn.tp server=fpv",
+    "flan.claim.create false server=freestyle",
+    "flan.claim.create false server=race",
+    "essentialcommands.warp.tp server=freestyle",
+    "essentialcommands.warp.tp server=race",
+    "essentialcommands.warp.tp server=hub",
+    # /spawn on freestyle and race: the lobby.
+    "essentialcommands.spawn.tp server=freestyle",
+    "essentialcommands.spawn.tp server=race",
     # /tpa, /tpahere, /tpaccept, /tpdeny across servers (mods/crossserver, on the proxy; it replaces
     # each server's own).
     "propwash.tpa",
@@ -35,16 +39,20 @@ permissions = [
     "carbon.chatlinks",
     # Plots: two 120x120 plots.
     "fabricplots.limit.2 server=plots",
-    # /clear on plots and fpv, only their own inventory (Vanilla Permissions checks who a command hits,
+    # /clear on plots, freestyle and race, only their own inventory (Vanilla Permissions checks who a command hits,
     # so naming another player is refused too).
     "minecraft.command.clear server=plots",
     "minecraft.selector server=plots",
     "minecraft.selector.player.clear.* false server=plots",
     "minecraft.selector.entity.clear.* false server=plots",
-    "minecraft.command.clear server=fpv",
-    "minecraft.selector server=fpv",
-    "minecraft.selector.player.clear.* false server=fpv",
-    "minecraft.selector.entity.clear.* false server=fpv",
+    "minecraft.command.clear server=freestyle",
+    "minecraft.command.clear server=race",
+    "minecraft.selector server=freestyle",
+    "minecraft.selector server=race",
+    "minecraft.selector.player.clear.* false server=freestyle",
+    "minecraft.selector.player.clear.* false server=race",
+    "minecraft.selector.entity.clear.* false server=freestyle",
+    "minecraft.selector.entity.clear.* false server=race",
     # Plots build tools (DraftSmith, inside FabricPlots): only edit plots the player can build on,
     # at most 65,536 blocks per edit. Not draftsmith.admin, which edits outside plots.
     "draftsmith.use server=plots",
@@ -107,6 +115,9 @@ permissions = [
     "worldedit.replacenear server=plots",
     "worldedit.snow server=plots",
     "worldedit.thaw server=plots",
+    # No drone trails here (mods/trails): each one comes from a supporter streak (trails-streak-<n>
+    # below) or Ko-fi (the Discord bot sets propwash.trails.preset.<name> on the buyer). Every trail:
+    # admins ("*") and ops only. /trail lists only a player's own.
 ]
 
 # Ko-fi donors (given by the Discord bot, with the "Ko-fi supporter" Discord role). Below the builder
@@ -114,29 +125,54 @@ permissions = [
 [groups.supporter]
 permissions = [
     "weight.50",
-    '"prefix.50.<supporter>[Supporter]</supporter> "',
-    # /fly on the hub and fpv (Essential Commands; it also has /fly speed <n>).
+    '"prefix.50.<gold>[Supporter]</gold> "',
+    # /fly on the hub, freestyle and race (Essential Commands; it also has /fly speed <n>).
     "essentialcommands.fly.self server=hub",
-    "essentialcommands.fly.self server=fpv",
+    "essentialcommands.fly.self server=freestyle",
+    "essentialcommands.fly.self server=race",
     # /kit: 3 kits of 18 items instead of 1 of 3 (mods/kits, config/kits.properties).
     "propwash.kits.supporter",
-    # /flyspeed on the hub, fpv and plots (mods/tweaks), up to the highest
+    # /flyspeed on the hub, freestyle, race and plots (mods/tweaks), up to the highest
     # propwash.flyspeed.<1-10> held.
     "propwash.flyspeed.6",
-    # /enderchest, /ec, /echest on fpv and plots (mods/tweaks).
+    # /enderchest, /ec, /echest on freestyle, race and plots (mods/tweaks).
     "propwash.enderchest",
+    # Drone trails (mods/trails): using the ones they own (bought on Ko-fi, or kept from a supporter
+    # streak, trails-streak-<n> below). Without it /trail shows them grey.
+    "propwash.trails.use",
+    # Pets (mods/pets): using the pets they own, each bought on Ko-fi (the Discord bot sets
+    # propwash.pets.<name> on the buyer). Without it /pet shows them grey. Every pet: admins ("*") and ops only.
+    "propwash.pets.use",
     # /fly and /flyspeed in /help, after "On every server" (mods/staffhelp, files/plugins/staffhelp/supporter.txt).
     "propwash.help.supporter",
     # Four plots instead of two (the highest fabricplots.limit.<n> wins: builders keep their 10).
     "fabricplots.limit.4 server=plots",
 ]
 
+# Supporter trails (mods/trails): the mod looks into trails-streak-<n> for a player who has been a
+# supporter n whole months in a row (LuckPerms meta propwash-supporter-since, which the mod sets when
+# the supporter group comes and clears when it goes); nobody is made a member. Each gives one built-in
+# preset as it is (propwash.trails.preset.<name>): supporter1 in the first month, supporter2 in the
+# second, supporter3 in the fourth, supporter4 in the sixth. Once reached the mod sets it on the player,
+# so it stays theirs after the streak ends (usable whenever they're a supporter: propwash.trails.use).
+[groups.trails-streak-0]
+permissions = ["propwash.trails.preset.supporter1"]
+
+[groups.trails-streak-1]
+permissions = ["propwash.trails.preset.supporter2"]
+
+[groups.trails-streak-3]
+permissions = ["propwash.trails.preset.supporter3"]
+
+[groups.trails-streak-5]
+permissions = ["propwash.trails.preset.supporter4"]
+
 # Content creators: everything supporters have, and /record. Above supporter, so a creator who
 # donates keeps [Creator]; below the builder ranks.
 [groups.creator]
 permissions = [
     "weight.60",
-    '"prefix.60.<creator>[Creator]</creator> "',
+    '"prefix.60.<light_purple>[Creator]</light_purple> "',
     "group.supporter",
     # /record: recording mode, no chat from others and the server address on top (mods/crossserver).
     "propwash.record",
@@ -148,7 +184,7 @@ permissions = [
 permissions = [
     # Role shown in the tab list; the highest weight wins and sorts first.
     "weight.90",
-    '"prefix.90.<builder>[Builder]</builder> "',
+    '"prefix.90.<green>[Builder]</green> "',
     "group.supporter",
     # Plots: ten plots (the highest fabricplots.limit.<n> wins).
     "fabricplots.limit.10 server=plots",
@@ -160,22 +196,35 @@ permissions = [
 [groups.senior-builder]
 permissions = [
     "weight.100",
-    '"prefix.100.<builder>[Builder]</builder> "',
+    '"prefix.100.<green>[Builder]</green> "',
     "group.junior-builder",
-    # Map editing on fpv.
-    "worldedit.* server=fpv",
-    "flan.command.bypass.claim server=fpv",
+    # Map editing on freestyle and race.
+    "worldedit.* server=freestyle",
+    "worldedit.* server=race",
+    "flan.command.bypass.claim server=freestyle",
+    "flan.command.bypass.claim server=race",
     # Map spawns (<map>) and spots (<map>_<spot>) are warps.
-    "essentialcommands.warp.set server=fpv",
-    "essentialcommands.warp.delete server=fpv",
+    "essentialcommands.warp.set server=freestyle",
+    "essentialcommands.warp.set server=race",
+    "essentialcommands.warp.delete server=freestyle",
+    "essentialcommands.warp.delete server=race",
+    "essentialcommands.warp.set server=hub",
+    "essentialcommands.warp.delete server=hub",
     # Map time: /time on a map changes only that map's clock.
-    "minecraft.command.time server=fpv",
+    "minecraft.command.time server=freestyle",
+    "minecraft.command.time server=race",
     # Getting into a map that has no warp yet: /execute in maps:<name> run tp @s X Y Z
-    "minecraft.command.execute server=fpv",
-    "minecraft.command.teleport server=fpv",
-    "minecraft.command.tp server=fpv",
+    "minecraft.command.execute server=freestyle",
+    "minecraft.command.execute server=race",
+    "minecraft.command.teleport server=freestyle",
+    "minecraft.command.teleport server=race",
+    "minecraft.command.tp server=freestyle",
+    "minecraft.command.tp server=race",
     # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
     "propwash.race.setstart",
+    # /world create <name>: a new builder world from the template, and /world tp to it (mods/worlds).
+    "propwash.worlds.create",
+    "propwash.worlds.tp",
 ]
 
 # Helpers: everything supporters have, plus these. /help shows them all (mods/staffhelp,
@@ -184,7 +233,7 @@ permissions = [
 [groups.helper]
 permissions = [
     "weight.120",
-    '"prefix.120.<helper>[Helper]</helper> "',
+    '"prefix.120.<dark_green>[Helper]</dark_green> "',
     "group.supporter",
     # /record, like creators, and being told when someone is recording (mods/crossserver).
     "propwash.record",
@@ -193,10 +242,12 @@ permissions = [
     "carbon.channel.staff",
     "carbon.channel.staff.see",
     "carbon.channel.staff.speak",
-    # /flyspeed up to 10 on the hub, fpv and plots (mods/tweaks).
+    # /flyspeed up to 10 on the hub, freestyle, race and plots (mods/tweaks).
     "propwash.flyspeed.10",
     # /tp <player> on any server (mods/crossserver).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     # /maintenance on|off, and staying on while it's on (it kicks everyone without the bypass).
     "maintenance.command",
     "maintenance.toggle",
@@ -216,7 +267,7 @@ permissions = [
 [groups.mod]
 permissions = [
     "weight.150",
-    '"prefix.150.<mod>[Mod]</mod> "',
+    '"prefix.150.<blue>[Mod]</blue> "',
     "group.supporter",
     # /record, like creators, and being told when someone is recording (mods/crossserver).
     "propwash.record",
@@ -225,7 +276,7 @@ permissions = [
     "carbon.channel.staff",
     "carbon.channel.staff.see",
     "carbon.channel.staff.speak",
-    # /flyspeed up to 10 on the hub, fpv and plots (mods/tweaks).
+    # /flyspeed up to 10 on the hub, freestyle, race and plots (mods/tweaks).
     "propwash.flyspeed.10",
     # /vote start and /vote end (mods/crossserver).
     "propwash.vote",
@@ -243,6 +294,8 @@ permissions = [
     "libertybans.list.history",
     # /tp <player> on any server (mods/crossserver).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     # /spy: see private messages and other servers' local chat (Carbon).
     "carbon.spy",
     # /v and /v auto (mods/vanish), and seeing vanished players like staff do.
@@ -263,8 +316,9 @@ permissions = [
     "fabricplots.feature server=plots",
     # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
     "propwash.race.setstart",
-    # /flan bypass: build on fpv maps (Flan's claims), as senior builders can.
-    "flan.command.bypass.claim server=fpv",
+    # /flan bypass: build on freestyle and race maps (Flan's claims), as senior builders can.
+    "flan.command.bypass.claim server=freestyle",
+    "flan.command.bypass.claim server=race",
     # /gamemode on the hub (Vanilla Permissions; their own, without the selector permissions).
     "minecraft.command.gamemode server=hub",
     # The mod part of /help (mods/staffhelp).
@@ -277,7 +331,7 @@ permissions = [
 [groups.staff]
 permissions = [
     "weight.200",
-    '"prefix.200.<staff>[Staff]</staff> "',
+    '"prefix.200.<gold>[Staff]</gold> "',
     "group.senior-builder",
     # /record, like creators, and being told when someone is recording (mods/crossserver).
     "propwash.record",
@@ -302,9 +356,13 @@ permissions = [
     "propwash.kits.staff",
     # /announce: send one of the announcements now (mods/announcements).
     "propwash.announce",
+    # /pet display <name>: give a mannequin or armor stand a pet, for pet showcases (mods/pets).
+    "propwash.pets.display",
     # /tp <player> and /invsee <player> on any server (mods/crossserver); /invsee needs the
-    # server's own too (EssentialsX via essentials.*, InvView on fpv and plots).
+    # server's own too (EssentialsX via essentials.*, InvView on freestyle, race and plots).
     "propwash.tp",
+    # /ping <player>, and everyone's ping in the tab list (mods/crossserver, TAB).
+    "propwash.ping.others",
     "propwash.invsee",
     "invview.command.root",
     "invview.command.inv",
@@ -337,12 +395,14 @@ permissions = [
     # /dronetp <player>: to a player's drone; /kill drone <player>: remove it (mods/tweaks).
     "propwash.dronetp.others",
     "propwash.dronekill",
+    # /sign: colours and click commands on signs (mods/signs).
+    "propwash.sign",
 ]
 
 [groups.admin]
 permissions = [
     "weight.300",
-    '"prefix.300.<admin>[Admin]</admin> "',
+    '"prefix.300.<red>[Admin]</red> "',
     "*",
     # Not from "*": the invisibility effect (and its particles) of EssentialsX's /vanish, and arriving
     # vanished on the hub or unannounced on the network, which mods/vanish sets per player only while

@@ -8,8 +8,13 @@ mods = [
     "https://cdn.modrinth.com/data/8dI2tmqs/versions/CsEpiziv/FabricProxy-Lite-2.12.0.jar",
     # Clients need Propwash and Just More Parts for the hub too: players without them can't join a
     # Fabric server with them, and go to limbo (mods/crossserver, docs/servers.md#limbo).
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-fabric-26.3-0.5.2.jar",
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.1.1.jar",
+    # Propwash 0.6.0 (final jars, and their add-ons).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/propwash-fabric-26.3-0.6.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/justmoreparts-fabric-26.3-1.2.0.jar",
+    # Propwash add-ons, by lardtom: Camera Drones and Mob Defense. Clients need them too (Propwash's join
+    # check matches add-ons), so they are on every server that runs Propwash.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/camdrones-fabric-26.3-1.0.0.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/mobdefense-fabric-26.3-1.0.0.jar",
     "https://cdn.modrinth.com/data/lCC4AmlO/versions/YN9zoh6h/melius-commands-2.1.3%2B26.3.jar",
     "https://cdn.modrinth.com/data/1u6JkXh5/versions/E7sbeRFx/worldedit-mod-7.4.6-beta-02.jar",
     # drone_net / waxed_drone_net as WorldEdit block names (the maps pack's drone nets); our mods/blockaliases, built and uploaded by hand.
@@ -22,11 +27,20 @@ mods = [
     "https://cdn.modrinth.com/data/7IbzD4Zm/versions/MBoj4XJ8/SignedVelocity-Fabric-1.5.0.jar",
     # No "joined the game" / "left the game" / AFK messages in chat; our mods/quiet, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
-    # As on fpv and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
+    # As on freestyle, race and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.20.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
+    # /sign: colours and click commands on signs, for staff (mods/signs).
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
+    # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends
+    # their tab entries and bodies shortly after (mods/seeplayers). Our mod, built and uploaded by hand.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/seeplayers-1.0.0-26.3.jar",
     # /backpack (for now only admins); see plots.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
+    # /pet (Ko-fi pets, for supporters); see plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/pets/pets-1.9.0-26.3-20261113-2045.jar",
+    # /trail: particle trails behind drones (Ko-fi and supporter trails); see plots.
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/trails-1.3.3-26.3.jar",
     # /vanish, switched on by mods/vanish on the proxy (/v); see docs/admin.md#vanish.
     "https://cdn.modrinth.com/data/UL4bJFDY/versions/KgeCcJWw/vanish-1.6.16%2B26.3.jar",
     # /view inv|echest <player> for staff, items can be moved; /invsee on the proxy opens it here.
@@ -54,35 +68,42 @@ welcome = """
 
 # Players arrive at the hub spawn every time (files/world/datapacks/hubspawn); /spawn goes there too
 # (files/config/melius-commands/commands/spawn.json). Only the Essential Commands players get through
-# permissions.toml; these are off here: the hub is just the lobby.
+# permissions.toml; these are off here: the hub is just the lobby. Warps are on: /warp tp for
+# everyone, /warp set and /warp delete for builders (permissions.toml).
 [config."config/EssentialCommands.properties"]
 use_permissions_api = "true"
 enable_spawn = "false"
 enable_home = "false"
 enable_tpa = "false"
-enable_warp = "false"
+enable_warp = "true"
 enable_back = "false"
 enable_rtp = "false"
 enable_enderchest = "false"
 
-# The portals to fpv and plots (mods/tweaks: a player inside the box goes to that server; the nether
+# The portals to freestyle, race and plots (mods/tweaks: a player inside the box goes to that server; the nether
 # portal blocks in them only look the part). "<dimension> <x1> <y1> <z1> <x2> <y2> <z2> <server>".
 [config."config/tweaks.properties"]
 staffwatch-folder = "/home/mc/servers/velocity/plugins/staffwatch"
-"portal.fpv" = "maps:mountains -124 -28 54 -121 -18 54 fpv"
+"portal.freestyle" = "maps:mountains -124 -28 54 -121 -18 54 freestyle"
+"portal.race" = "maps:mountains -123 -28 92 -120 -18 92 race"
 "portal.plots" = "maps:mountains -103 -28 72 -103 -18 75 plots"
+# /race, /freestyle, /plots on the hub send you to that server ("command.<name>" = "<server>", mods/tweaks).
+# Ships with the 0.6.0 release, together with the race and freestyle servers.
+"command.race" = "race"
+"command.freestyle" = "freestyle"
+"command.plots" = "plots"
 
 # Vanish (/v): no fake "left the game" / "joined the game" when vanishing, like every other join message.
 [config."config/vanish.hocon"]
 send-join-disconnect-message = "false"
 
-# The maps' resource pack (Drift Arena furniture models), as on fpv; see docs/maps.md#drift-arena-and-moto-arena.
+# The maps' resource pack (Drift Arena furniture models), as on freestyle and race; see docs/maps.md#drift-arena-and-moto-arena.
 [properties]
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-06573e10.zip'
-resource-pack-sha1 = "06573e10626030bf1dd1a0e46acacbcd0adad981"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-1aa06938.zip'
+resource-pack-sha1 = "1aa06938f6bc5a5f1b52af2788fa8361aeedf275"
 require-resource-pack = "false"
 
 # Only written when the server is first created.

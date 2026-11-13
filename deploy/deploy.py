@@ -34,6 +34,8 @@ configs = {p.parent.name: tomllib.loads(p.read_text(encoding="utf-8")) for p in 
 velocity = configs.pop("velocity")
 backends = configs
 
+# A map's rank (maps/<map>.toml), easiest first.
+RANKS = ("Beginner", "Intermediate", "Advanced", "Pro")
 maps = {}
 for p in sorted(ROOT.glob("servers/*/maps/*.toml")):
     maps.setdefault(p.parent.parent.name, []).append({"name": p.stem, **tomllib.loads(p.read_text(encoding="utf-8"))})
@@ -76,7 +78,7 @@ def service_env(name, stop_cmd):
         "LUCKPERMS_DATA_USERNAME=minecraft\n"
         f"LUCKPERMS_DATA_PASSWORD={mariadb_password}\n"
     )
-    # The bridge mod's key for this server (BRIDGE_KEY_FPV for fpv); the key is how the bot's API knows the server.
+    # The bridge mod's key for this server (BRIDGE_KEY_RACE for race); the key is how the bot's API knows the server.
     if f"BRIDGE_KEY_{name.upper()}" in bot_keys:
         env += f"PROPWASH_BRIDGE_API_KEY={bot_keys[f'BRIDGE_KEY_{name.upper()}']}\n"
     return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
@@ -297,14 +299,60 @@ def map_load_function(server_maps):
     return "\n".join(lines) + "\n"
 
 
+def credit_markup(line):
+    # "Uncrashed map by SHO": the role muted, the name (after the last " by ") in Propwash yellow.
+    role, by, who = line.rpartition(" by ")
+    return f"<muted>{role}{by}</muted><propwash>{who}</propwash>" if by else f"<muted>{line}</muted>"
+
+
+# Vanilla's glyph widths (pixels, spacing included) for the characters the maps resource pack's credits
+# fonts have; made with deploy/files/make_credit_fonts.py from the client's ascii.png.
+FONT_WIDTHS = json.loads((ROOT / "deploy/files/font_widths.json").read_text(encoding="utf-8"))
+
+
+def pen_move(pixels):
+    # Characters of the pack's propwash:space font that move the pen this many pixels (+-2^k each).
+    sign, n, out = (0xE000 if pixels >= 0 else 0xE010), abs(pixels), ""
+    for k in range(10):
+        if n >> k & 1:
+            out += chr(sign + k)
+    return {"text": out, "font": "propwash:space"} if out else None
+
+
+def credits_subtitle(credits):
+    # A title has one subtitle line, so a second and third credit line are drawn with the pack's
+    # propwash:credits1 / credits2 fonts (the same glyphs, one / two lines lower), each one centred
+    # under the first: the pen goes back by the right amount before each, and ends where the first
+    # line ends, so the subtitle's width (what the game centres) is the first line's.
+    if len(credits) > 3 or any(c not in FONT_WIDTHS for line in credits for c in line):
+        return None
+    widths = [sum(FONT_WIDTHS[c] for c in line) for line in credits]
+    parts, pen = json.loads(to_json(credit_markup(credits[0])))[1:], widths[0]
+    for n, (line, width) in enumerate(zip(credits[1:], widths[1:]), start=1):
+        start = (widths[0] - width) // 2
+        parts += [p for p in [pen_move(start - pen)] if p]
+        parts += [{**p, "font": f"propwash:credits{n}"} for p in json.loads(to_json(credit_markup(line)))[1:]]
+        pen = start + width
+    parts += [p for p in [pen_move(widths[0] - pen)] if p]
+    return json.dumps(["", *parts])
+
+
 def map_tick_function(server_maps):
-    # Title and author on screen each time a player enters a map.
+    # Title and author on screen each time a player enters a map. A map with credits shows them under
+    # the title, one line each (credits_subtitle); if they don't fit there, the first line under the
+    # title and the others above the hotbar.
     lines = []
     for m in server_maps:
         tag, dim = f"map_{m['name']}", f"maps:{m['name']}"
         entering = f"execute as @a[tag=!{tag}] at @s if dimension {dim} run"
+        credits = m.get("credits") or ["by " + m["author"]]
+        subtitle = credits_subtitle(credits) if len(credits) > 1 else None
+        if len(credits) > 1 and not subtitle:
+            lines.append(f"{entering} title @s actionbar {to_json('<muted>  ·  </muted>'.join(credit_markup(c) for c in credits[1:]))}")
+        if not subtitle:
+            subtitle = to_json(credit_markup(credits[0]) if m.get("credits") else "<muted>" + credits[0])
         lines += [
-            f"{entering} title @s subtitle {to_json('<muted>by ' + m['author'])}",
+            f"{entering} title @s subtitle {subtitle}",
             f"{entering} title @s title {to_json('<brand>' + m.get('title', m['name'].capitalize()))}",
             f"{entering} tag @s add {tag}",
             f"execute as @a[tag={tag}] at @s unless dimension {dim} run tag @s remove {tag}",
@@ -320,10 +368,22 @@ def map_command(server_maps):
     def run(command):
         return {"command": command, "op_level": 2, "silent": True}
 
-    names = ", ".join(m["name"] for m in server_maps)
+    # One map a line, like /race: its title (click to go), then who made it (its credits, a line each).
+    listing = [{"text": "Maps (click one to go there):", "color": "gray"}]
+    for m in server_maps:
+        go = f"/map {m['name']}"
+        listing += [{"text": "\n » ", "color": "dark_gray"},
+                    {"text": m.get("title", m["name"].capitalize()), "color": "white",
+                     "click_event": {"action": "run_command", "command": go},
+                     "hover_event": {"action": "show_text", "value": go}}]
+        if m.get("credits"):
+            for line in m["credits"]:
+                listing += [{"text": "\n     "}, *json.loads(to_json(credit_markup(line)))[1:]]
+        elif m.get("author"):
+            listing.append({"text": " by " + m["author"], "color": "gray"})
     return json.dumps({
         "id": "map",
-        "executes": [run(f"tellraw @s {to_json('<muted>Maps:</muted> ' + names)}")],
+        "executes": [run(f"tellraw @s {json.dumps(['', *listing])}")],
         "literals": [{"id": m["name"], "executes": [run(f"tag @s remove map_{m['name']}"), run(f"warp tp {m['name']}")]}
                      for m in server_maps] + [{"id": "rtp", "executes": map_rtp(server_maps)}],
     }, indent=2)
@@ -348,7 +408,7 @@ def rtp_bounds(m):
         lo, hi = sorted(area.get(axis, edge[axis]))
         lo, hi = int(max(lo, edge[axis][0])), int(min(hi, edge[axis][1]))  # a border centre may be x.5
         if lo >= hi:
-            raise SystemExit(f"servers/fpv/maps/{m['name']}.toml: rtp_area {axis} is outside the border")
+            raise SystemExit(f"maps/{m['name']}.toml: rtp_area {axis} is outside the border")
         out[axis] = (lo, hi)
     return out
 
@@ -444,7 +504,7 @@ def rtp_command(server_maps):
     }, indent=2)
 
 
-def map_ops(name, d, server_maps, rtp_cooldown):
+def map_ops(name, d, server_maps, rtp_cooldown, with_map_command=True):
     store = host.data.get("world_store")
     if not store:
         raise SystemExit(f"{host.name} has no world_store but servers/{name}/maps/ lists maps")
@@ -460,16 +520,22 @@ def map_ops(name, d, server_maps, rtp_cooldown):
                          dest=f"{pack}/data/minecraft/tags/function/tick.json", **OWNER))
     ops.append(files.put(name=f"{name}: maps tick function", src=StringIO(map_tick_function(server_maps)),
                          dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
-    ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
-                         dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
-    ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
-                         dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
-    ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
-                         dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
-    for m in rtp_pool(server_maps):
-        for rel, text in rtp_functions(m).items():
-            ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
-                                 dest=f"{pack}/data/maps/function/{rel}", **OWNER))
+    if with_map_command:
+        # Not where mods/tweaks makes /map the same as /race (map = "race" in its tweaks.properties).
+        ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
+                             dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
+        ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
+                             dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
+        ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
+                             dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
+        for m in rtp_pool(server_maps):
+            for rel, text in rtp_functions(m).items():
+                ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
+                                     dest=f"{pack}/data/maps/function/{rel}", **OWNER))
+    else:
+        # There mods/tweaks' /rtp (and /map rtp) is a random race, not a random spot: no Melius /rtp to clash with it.
+        ops.append(files.file(name=f"{name}: no Melius /rtp", path=f"{d}/config/melius-commands/commands/rtp.json",
+                              present=False))
     for m in server_maps:
         for rel, data in map_pack_files(m).items():
             ops.append(files.put(
@@ -490,10 +556,12 @@ def map_ops(name, d, server_maps, rtp_cooldown):
 def welcome_ops(name, d, text):
     # A datapack, the same on Paper and Fabric: welcome text to players new to the server, and to
     # those back after leaving it (the leave_game stat also counts switching servers on the proxy).
+    # The second line only for players already welcomed: a player whose player data is gone but whose
+    # leave_game score is still in the world's scoreboard would otherwise get the message twice.
     pack = f"{d}/world/datapacks/welcome"
     message = to_json(text)
     tick = (f"tellraw @a[tag=!welcomed] {message}\n"
-            f"tellraw @a[scores={{welcome.left=1..}}] {message}\n"
+            f"tellraw @a[tag=welcomed,scores={{welcome.left=1..}}] {message}\n"
             "tag @a add welcomed\n"
             "scoreboard players reset @a[scores={welcome.left=1..}] welcome.left\n")
     pack_files = {
@@ -725,6 +793,22 @@ if bot_keys.get("TUNNEL_TOKEN") and not LOCAL:
                     daemon_reload=True, _if=any_changed(*tunnel_changes))
     systemd.service(name="cloudflared: running", service="cloudflared", running=True, enabled=True, daemon_reload=True)
 
+def tab_world_names():
+    """The tab list's map after the server name, by the world TAB-Bridge reports (world_<name>):
+    {world: (on race, elsewhere)}. Race shows a track's /race name (its title; for worlds:* the
+    title.worlds.<id> line in race's tweaks.properties, else race's [tab] names), freestyle the world name."""
+    race_tweaks = configs.get("race", {}).get("config", {}).get("config/tweaks.properties", {})
+    race_names = {m["name"]: m.get("title", m["name"]) for m in maps.get("race", [])}
+    race_names |= {k.removeprefix("title.worlds."): v for k, v in race_tweaks.items() if k.startswith("title.worlds.")}
+    race_names |= configs.get("race", {}).get("tab", {}).get("names", {})
+    other = {m["name"] for server, server_maps in maps.items() if server != "race" for m in server_maps}
+    names = {}
+    for world in sorted(set(race_names) | other):
+        names[world] = (race_names.get(world, world) if world in race_names else None,
+                        world if world in other else None)
+    return names
+
+
 # --- Velocity (first: Paper backends read its forwarding.secret) ------------
 
 v = f"{SERVERS}/velocity"
@@ -754,7 +838,7 @@ changes = [
         name="velocity: TAB config.yml",
         src=str(ROOT / "servers/velocity/tab.yml.j2"),
         dest=f"{v}/plugins/tab/config.yml",
-        maps=maps.get("fpv", []),
+        tab_worlds=tab_world_names(),
         **OWNER,
     ),
     *config_ops("velocity", v, velocity),
@@ -812,7 +896,8 @@ for name, cfg in backends.items():
         changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
     changes += extra_files(name, d)
     if maps.get(name):
-        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15))
+        tweaks = cfg.get("config", {}).get("config/tweaks.properties", {})
+        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15), with_map_command=tweaks.get("map") != "race")
 
     # /help: the server's help, then the network-wide one from the velocity server.toml.
     if cfg.get("help"):
@@ -834,7 +919,30 @@ for name, cfg in backends.items():
     if cfg.get("gamerules"):
         changes += gamerules_ops(name, d, cfg["gamerules"])
 
+    # Map rankings (a map's rank in its maps/<map>.toml): /race groups the courses by them (mods/tweaks).
+    # Credits (a map's credits, one line per role) go under its courses in /race too.
+    ranks = {f"rank.maps.{m['name']}": m["rank"] for m in maps.get(name, []) if "rank" in m}
+    ranks |= {f"credits.maps.{m['name']}": "|".join(m["credits"]) for m in maps.get(name, []) if m.get("credits")}
+    # A map's only course goes by the map's title in /race.
+    ranks |= {f"title.maps.{m['name']}": m["title"] for m in maps.get(name, []) if m.get("title")}
+    for m in maps.get(name, []):
+        if "rank" in m and m["rank"] not in RANKS:
+            raise SystemExit(f"servers/{name}/maps/{m['name']}.toml: rank must be one of {', '.join(RANKS)}")
+        credits = m.get("credits", [])
+        if not isinstance(credits, list) or not all(isinstance(c, str) and c.strip() and "|" not in c for c in credits):
+            raise SystemExit(f"servers/{name}/maps/{m['name']}.toml: credits must be a list of lines (without |)")
+    if ranks:
+        tweaks = {**ranks, **cfg.get("config", {}).get("config/tweaks.properties", {})}
+        cfg = {**cfg, "config": {**cfg.get("config", {}), "config/tweaks.properties": tweaks}}
     changes += config_ops(name, d, cfg)
+    # [propwash]: top-level keys of Propwash's config/propwash/server.json (written on first start, so this
+    # applies from the next deploy), e.g. worldCourses = false. Edited line by line, so a key must already be
+    # in the file and not be its last one (each line ends in a comma).
+    server_json = f"{d}/config/propwash/server.json"
+    if cfg.get("propwash") and host.get_fact(File, path=server_json):
+        for key, value in cfg["propwash"].items():
+            changes.append(files.line(name=f"{name}: propwash {key}", path=server_json,
+                                      line=rf'^\s*"{key}":.*', replace=f'  "{key}": {json.dumps(value)},'))
 
     # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so
     # nobody gets advancement pop-ups. From the deploy after the first start, when spigot.yml exists.
@@ -847,7 +955,9 @@ for name, cfg in backends.items():
                                   extended_regex=True))
 
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
-    # /flan bypass (explicit dimensions, since Flan saves "*" back expanded); other keys are top-level
+    # /flan bypass (explicit dimensions, since Flan saves "*" back expanded, and "*" only reaches the
+    # worlds loaded when Flan first reads it). Worlds not listed here (/world create, maps added by hand)
+    # get the overworld's rules from mods/regen (FlanAllWorldsMixin). Other keys are top-level
     # keys of flan_config.json. Flan rewrites the file on every start, so it's compared as data. Also
     # only from the next deploy after the first start.
     flan_config = f"{d}/config/flan/flan_config.json"

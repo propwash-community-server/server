@@ -16,7 +16,7 @@ def test_gamemode_is_refused(player, server):
 
 
 @pytest.mark.parametrize("command", ["/warp set e2e", "/time set midnight"])
-def test_builder_commands_are_refused_on_fpv(player, command):
+def test_builder_commands_are_refused_on_freestyle(player, command):
     player.go(FPV)
     player.command(command)
     player.expect_chat(REFUSED)

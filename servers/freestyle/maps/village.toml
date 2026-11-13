@@ -1,0 +1,9 @@
+title = "Village"
+author = "the flying duke"
+# More than one person: these lines show instead of "by <author>" (one line per role).
+credits = ["Uncrashed map by the flying duke", "Adapted by pincil"]
+# A square around x 6..1075, z 94..1163 (centre 540.5 628.5).
+border = { x = 540.5, z = 628.5, size = 1070 }
+# Where /rtp lands: x and z ranges (inside the border), at y 100 or above.
+rtp_area = { x = [95, 894], z = [165, 991] }
+rtp_y = { min = 100 }

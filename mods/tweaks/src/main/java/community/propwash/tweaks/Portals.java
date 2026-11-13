@@ -12,10 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -32,6 +36,10 @@ import org.slf4j.LoggerFactory;
  * A player inside one is sent to that server through the proxy (the BungeeCord "Connect" message, which
  * Velocity takes with bungee-plugin-message-channel on), at most every 2 seconds. Nether portal blocks
  * inside one don't take anyone to the nether (mixin.NetherPortalMixin), so they can make the portal's look.
+ *
+ * Lines "command.<name> = <server>" add a command /<name> that sends the player to that server the same way
+ * (the hub's /race, /freestyle, /plots), for everyone, at most every 2 seconds. It takes the place of a
+ * command of that name from this mod (Race's /race).
  */
 public final class Portals {
     private static final Logger LOG = LoggerFactory.getLogger("tweaks");
@@ -66,6 +74,8 @@ public final class Portals {
 
     private static final List<Portal> PORTALS = new ArrayList<>();
     private static final Map<UUID, Long> lastSent = new HashMap<>();
+    /** command.<name> lines: the command and the server it sends to. */
+    private static final Map<String, String> COMMANDS = new HashMap<>();
 
     private Portals() {
     }
@@ -81,6 +91,16 @@ public final class Portals {
             }
         }
         for (String key : properties.stringPropertyNames()) {
+            if (key.startsWith("command.")) {
+                String name = key.substring(8).strip();
+                String server = properties.getProperty(key).strip();
+                if (name.isEmpty() || server.isEmpty() || server.contains(" ")) {
+                    LOG.warn("Command {} ignored: want 'command.<name> = <server>'", key);
+                } else {
+                    COMMANDS.put(name, server);
+                }
+                continue;
+            }
             if (!key.startsWith("portal.")) {
                 continue;
             }
@@ -93,11 +113,20 @@ public final class Portals {
                 LOG.warn("Portal {} ignored: want '<dimension> <x1> <y1> <z1> <x2> <y2> <z2> <server>'", key);
             }
         }
+        if (PORTALS.isEmpty() && COMMANDS.isEmpty()) {
+            return;
+        }
+        PayloadTypeRegistry.clientboundPlay().register(BungeeMessage.TYPE, BungeeMessage.CODEC);
+        if (!COMMANDS.isEmpty()) {
+            LOG.info("Server commands: {}", COMMANDS);
+            CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+                    COMMANDS.forEach((name, server) -> dispatcher.register(Commands.literal(name)
+                            .executes(c -> command(c.getSource(), server)))));
+        }
         if (PORTALS.isEmpty()) {
             return;
         }
         LOG.info("Portals: {}", PORTALS.stream().map(p -> p.name() + " -> " + p.server()).toList());
-        PayloadTypeRegistry.clientboundPlay().register(BungeeMessage.TYPE, BungeeMessage.CODEC);
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             long now = server.getTickCount();
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -109,6 +138,22 @@ public final class Portals {
                 connect(player, portal.server());
             }
         });
+    }
+
+    /** Whether a command.<name> line makes /<name> a server command here. */
+    static boolean hasCommand(String name) {
+        return COMMANDS.containsKey(name);
+    }
+
+    private static int command(CommandSourceStack source, String server) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        long now = source.getServer().getTickCount();
+        if (now - lastSent.getOrDefault(player.getUUID(), -COOLDOWN_TICKS) < COOLDOWN_TICKS) {
+            return 0;
+        }
+        lastSent.put(player.getUUID(), now);
+        connect(player, server);
+        return 1;
     }
 
     /** The portal around this position, if any. */

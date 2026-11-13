@@ -22,11 +22,15 @@ scoreboard-teams:
   can-see-friendly-invisibles: false
   disable-condition: ""
 
+# Everyone's ping as the number in the tab list, seen only by staff (propwash.ping.others).
 playerlist-objective:
-  enabled: false
-  title: TAB
-  value: ""
+  enabled: true
+  title: Ping
+  value: "%ping%"
+  # What 1.20.3+ clients show in place of the number.
+  fancy-value: "<gray>%ping% ms</gray>"
   render-type: INTEGER
+  disable-condition: "%condition:ping-viewer%=no"
 
 belowname-objective:
   enabled: false
@@ -68,27 +72,47 @@ placeholders:
 placeholder-refresh-intervals:
   default-refresh-interval: 500
 
-# TAB-Bridge on fpv reports a map's dimension maps:<name> as the world world_<name>, and fpv's
-# overworld as world. Other servers have no TAB-Bridge, so there %world% is still the last fpv one.
+# TAB-Bridge on freestyle and race reports a map's dimension maps:<name> (or worlds:<name>) as the world
+# world_<name>, and the overworld as world. Other servers have no TAB-Bridge, so there %world% is still the
+# last one, and the map condition leaves it out. Race shows a track's /race name ("[race: Laminar I]"),
+# freestyle the world name; a world on both gets a race-<name> condition (deploy.py tab_world_names).
 placeholder-output-replacements:
   "%world%":
-{%- for m in maps %}
-    "world_{{ m.name }}": ": {{ m.name }}"
+{%- for world, (on_race, elsewhere) in tab_worlds.items() %}
+{%- if on_race and elsewhere %}
+    "world_{{ world }}": "%condition:race-{{ world }}%"
+{%- else %}
+    "world_{{ world }}": ": {{ on_race or elsewhere }}"
+{%- endif %}
 {%- endfor %}
     else: ""
 
 conditions:
   map:
     conditions:
-      - "%server%=fpv"
+      - "%server%=freestyle"
+      - "%server%=race"
+    type: OR
     true: "%world%"
     false: ""
+{%- for world, (on_race, elsewhere) in tab_worlds.items() if on_race and elsewhere %}
+  race-{{ world }}:
+    conditions:
+      - "%server%=race"
+    true: ": {{ on_race }}"
+    false: ": {{ elsewhere }}"
+{%- endfor %}
   # Only staff see vanished players in the tab list at all, so only they see this (mods/vanish).
   vanished:
     conditions:
       - "%vanished%=true"
     true: " <gray>[V]</gray>"
     false: ""
+  ping-viewer:
+    conditions:
+      - "permission:propwash.ping.others"
+    true: "yes"
+    false: "no"
 
 assign-groups-by-permissions: false
 primary-group-finding-list:

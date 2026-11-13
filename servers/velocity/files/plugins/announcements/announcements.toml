@@ -15,7 +15,8 @@ prefix = "<propwash><bold>[Propwash]</bold></propwash> "
 # Which servers get them, and how: "chat" or "bossbar". Servers not listed get none.
 [servers]
 hub = "chat"
-fpv = "chat"
+freestyle = "chat"
+race = "chat"
 plots = "chat"
 
 # Reminder to link Discord, only for players who haven't (no propwash.linked, which the Discord bot sets

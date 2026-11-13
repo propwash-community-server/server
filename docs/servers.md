@@ -9,10 +9,10 @@ Each server has a [`servers/<name>/server.toml`](../servers/) with its `type` (`
 | `[new_world]` | server.properties, set only for a new server |
 | `[config."<path>"]` | top-level keys in a plugin's config file, palette tags expanded (also on the proxy) |
 | `[gamerules]` | game rules, set on every start (a generated datapack); removing one doesn't reset it |
-| `[flan]` | `deny`: [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension, maps included; other keys go to Flan's config |
+| `[flan]` | `deny`: [Flan](https://modrinth.com/mod/flan) permissions denied in every dimension, maps and `/world create` worlds included (mods/regen copies the overworld's rules to unlisted worlds); other keys go to Flan's config |
 | `help` | text shown by `/help`; the velocity `help` is added to the end of every server's |
 | `welcome` | text shown in chat every time a player arrives on the server |
-| `rtp_cooldown` | fpv: seconds between two `/rtp` for each player, nobody skips it (default 15; see [maps.md](maps.md)) |
+| `rtp_cooldown` | freestyle: seconds between two `/rtp` for each player, nobody skips it (default 15; see [maps.md](maps.md)) |
 
 Staff and admin (`propwash.help.staff`) also get the staff part of `/help`, from
 [`servers/velocity/files/plugins/staffhelp/help.txt`](../servers/velocity/files/plugins/staffhelp/help.txt)
@@ -49,13 +49,26 @@ plugins that comes from the URL, for the server jar it is `jar`.
 | Update a server jar | change `url` and `jar`, deploy |
 | Add a server | add `servers/<name>/server.toml` with a free port |
 
+## Freestyle and Race
+
+The maps are on two servers: `freestyle` (open maps) and `race` (race tracks), with their maps in
+`servers/<server>/maps/` (see [maps.md](maps.md)). Both started in November 2026 as copies of the
+old `fpv` server's world, so warps, race courses and players' spots carried over; each copy then
+lost the maps, warps and race courses of the other. Players get there through the hub's portals
+(`portal.freestyle`, `portal.race` in the hub's `server.toml`); staff also with `/server freestyle`, `/server race`.
+`equilibrium` is on both, as two copies: its racetrack is to be taken off the Freestyle one.
+
 ## Race courses
 
 `/race` lists the server's Propwash race courses (one a line, clickable), and `/race <course>` (its
 name, or its number for an unnamed one) takes you just in front of its start gate, facing through it,
-at most every 2 seconds. Everyone has it, on the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)).
+at most every 2 seconds. Everyone has it, on the hub, freestyle, race and plots ([`mods/tweaks`](../mods/tweaks/)).
 Propwash keeps the courses in `world/data/propwash_race.json` and writes it when the world is saved,
-so a new course shows up after the next save (every few minutes).
+so a new course shows up after the next save (every few minutes). On `race`, where every map is a
+track, `/map` is the same as `/race`, and `/rtp` (`/map rtp`, the rtp mannequin) takes you to the start of a
+random course from the `/race` list (on another map when there is one): `map = "race"` in its
+`[config."config/tweaks.properties"]`, and the deploy then writes no Melius Commands `/map` or `/rtp` there. On `freestyle`, whose maps aren't
+tracks, it's the other way round: `/race` is `/map` (`race = "map"` there).
 
 If in front of the gate is inside blocks, `/race` lands you higher up (up to 6 blocks), else at the gate
 itself. Where that's still wrong, senior builders, mods and staff (`propwash.race.setstart`) stand where
@@ -63,9 +76,19 @@ players should land, face the way they should look, and run `/race setstart <cou
 <course>` goes back to the gate. These spots are kept per server in `world/data/propwash_race_starts.json`
 (by course number), so they stay through deploys.
 
+The list is grouped by the ranking of the course's map: **Beginner**, **Intermediate**, **Advanced** and
+**Pro** (easiest first; a ranking without courses shows "none yet"), then the courses on unranked maps.
+A map's ranking is `rank = "Advanced"` in its `servers/<server>/maps/<map>.toml` (see
+[Maps](maps.md#adding-a-map)); the deploy writes it into the server's `config/tweaks.properties` as
+`rank.maps.<map>`. A course in another world (e.g. a `/world create` world, `worlds:<name>`) is ranked
+with a `"rank.worlds.<name>" = "Pro"` line in that server's `[config."config/tweaks.properties"]`.
+A ranked world without any course is listed itself, as `"title.worlds.<name>"` (else its name, e.g.
+`gilbert_fast` as Gilbert Fast) by `"author.worlds.<name>"`; `/race <title>` takes you to the ground at 0 0
+there, or to its `/race setstart` spot.
+
 ## Short commands
 
-On the hub, fpv and plots ([`mods/tweaks`](../mods/tweaks/)): `/gm <mode>` (`survival`, `creative`,
+On the hub, freestyle, race and plots ([`mods/tweaks`](../mods/tweaks/)): `/gm <mode>` (`survival`, `creative`,
 `adventure`, `spectator`, or `0`, `1`, `2`, `3`, `spec`), `/gmc` and `/gms` run `/gamemode`, and `/ci`
 runs `/clear`. Whoever may use `/gamemode` or `/clear` there may use them; nobody else sees them.
 
@@ -88,7 +111,7 @@ so players there see its nets as oxidized copper bars.
 
 ## Voice chat
 
-Proximity voice chat on the hub, fpv and plots: [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat),
+Proximity voice chat on the hub, freestyle, race and plots: [Simple Voice Chat](https://modrinth.com/plugin/simple-voice-chat),
 optional for players (without the mod they just don't hear or speak; nobody goes to limbo for it). Players
 press V for its settings and groups. Its voice goes over UDP, not through the proxy's Minecraft
 connection: Simple Voice Chat's Velocity plugin takes it on one public port, `24454/udp` (opened in

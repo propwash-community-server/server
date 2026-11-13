@@ -33,7 +33,7 @@ fi
 if [ -f /home/bot/pw-server/bot/database.yml ]; then
     extra="$extra /home/bot/pw-server/bot/database.yml"
 fi
-# Players' /kit kits (mods/kits), shared by fpv and plots outside their folders.
+# Players' /kit kits (mods/kits), shared by freestyle, race and plots outside their folders.
 if [ -d /home/mc/kits ]; then
     extra="$extra /home/mc/kits"
 fi

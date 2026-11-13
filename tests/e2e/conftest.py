@@ -7,7 +7,7 @@ import pytest
 import harness
 from harness import FPV, HUB, PLOTS, ROOT, eventually, luckperms
 
-MAPS = {p.stem: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/fpv/maps/*.toml"))}
+MAPS = {p.stem: tomllib.loads(p.read_text()) for p in sorted(ROOT.glob("servers/freestyle/maps/*.toml"))}
 # The first map. The tests stand on a 5x5 stone platform at x/z 0-4, y 99 (made by map_spawn).
 MAP = next(iter(MAPS))
 SPAWN = (2.5, 100, 2.5)
@@ -106,7 +106,7 @@ def reset(player):
 
 @pytest.fixture
 def builder(player):
-    """The player in the senior-builder group on fpv, for one test."""
+    """The player in the senior-builder group on freestyle, for one test."""
     luckperms(f"user {player.name} parent add senior-builder", FPV)
     yield player
     luckperms(f"user {player.name} parent remove senior-builder", FPV)
