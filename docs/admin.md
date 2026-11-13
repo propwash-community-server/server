@@ -537,12 +537,11 @@ leaves it alone). `/trail` lists only a player's own:
 
 | Who | How | Permission |
 |---|---|---|
-| Ko-fi buyers | the Discord bot, for a shop order ([Ko-fi shop](#ko-fi-shop)) | `propwash.trails.preset.<name>` on the player |
-| Supporters | a streak of months in a row: supporter1 from the start, supporter2 in the 2nd month, supporter3 in the 4th, supporter4 in the 6th (`trails-streak-<n>` groups); kept once reached | the same, set by the mod |
+| Ko-fi buyers | the Discord bot, for a shop order ([Ko-fi shop](#ko-fi-shop)) | `propwash.trails.preset.<name>` and `propwash.trails.use` on the player |
 | Admins, ops | everything | `*` / `propwash.trails.all` |
 
-Owned trails are usable with `propwash.trails.use` (supporters); without it they show grey. The streak is
-LuckPerms meta `propwash-supporter-since`, set by the mod while `supporter` is a player's own parent.
+Owned trails are usable with `propwash.trails.use`; without it they show grey. Supporters get no trails from
+the group alone: no supporter streak, and no trails in `permissions.toml`.
 Don't rename or delete a sold preset: buyers own it by name.
 
 ## Ko-fi shop
