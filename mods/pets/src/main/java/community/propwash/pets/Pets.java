@@ -411,7 +411,7 @@ public final class Pets implements ModInitializer {
             line.append(Component.literal(name.replace('_', ' '))
                     .withStyle(!ok ? ChatFormatting.DARK_GRAY : name.equals(mine) ? ChatFormatting.GOLD : ChatFormatting.YELLOW)
                     .withStyle(s -> ok ? s.withClickEvent(new ClickEvent.RunCommand("/pet " + name))
-                            : s.withHoverEvent(new HoverEvent.ShowText(Component.literal("Yours, usable while you're a supporter: " + KOFI)))));
+                            : s.withHoverEvent(new HoverEvent.ShowText(Component.literal("Resubscribe to supporter for access: " + KOFI)))));
         }
         source.sendSuccess(() -> line, false);
         return 1;
@@ -436,7 +436,7 @@ public final class Pets implements ModInitializer {
             return 0;
         }
         if (!off && !usable(player, name)) {
-            source.sendFailure(Component.literal("Your " + name.replace('_', ' ') + " pet needs an active supporter rank: " + KOFI));
+            source.sendFailure(Component.literal("Your " + name.replace('_', ' ') + " pet: resubscribe to supporter for access: " + KOFI));
             return 0;
         }
         UUID id = player.getUUID();
