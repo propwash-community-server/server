@@ -91,7 +91,14 @@ public final class Pets implements ModInitializer {
     private static final String USE_PERMISSION = "propwash.pets.use";
     private static final String KOFI = "ko-fi.com/propwashfpv";
     /** Said when supporter-only pets are off for someone who isn't a supporter. */
-    private static final String DISABLED = "Your pets are currently disabled as they require an active supporter rank. Resubscribe here: " + KOFI;
+    private static final String DISABLED = "Your pets are currently disabled as they require an active supporter rank. Resubscribe here: ";
+
+    /** The disabled line, with the Ko-fi link clickable. */
+    private static Component disabled() {
+        return Component.literal(DISABLED).withStyle(ChatFormatting.RED).append(Component.literal(KOFI)
+                .withStyle(ChatFormatting.RED, ChatFormatting.UNDERLINE)
+                .withStyle(st -> st.withClickEvent(new ClickEvent.OpenUrl(java.net.URI.create("https://" + KOFI)))));
+    }
     /** How far (blocks) /pet display looks for the mannequin you're looking at. */
     private static final double DISPLAY_REACH = 8;
 
@@ -438,7 +445,7 @@ public final class Pets implements ModInitializer {
             return 0;
         }
         if (!off && !usable(player, name)) {
-            source.sendFailure(Component.literal(DISABLED));
+            source.sendFailure(disabled());
             return 0;
         }
         UUID id = player.getUUID();
@@ -621,7 +628,7 @@ public final class Pets implements ModInitializer {
             // Supporter rank gone: the pet goes away (and comes back with the rank: the choice is kept).
             if (pet != null && ticks % 100 == Math.floorMod(id.hashCode(), 100) && !usable(player, chosen.get(id))) {
                 remove(id);
-                player.sendSystemMessage(Component.literal(DISABLED).withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(disabled());
                 continue;
             }
             if (pet != null && (pet.isRemoved() || pet.level() != player.level() || toggled)) {
