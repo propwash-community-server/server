@@ -56,7 +56,7 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/backpack-1.0.0-26.3.jar",
     # /pet: a cosmetic pet, a baby animal or a Propwash drone (bought on Ko-fi: propwash.pets.<name>), on every
     # server that has it (docs/admin.md#pets). Our mods/pets, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/pets/pets-1.9.0-26.3-20261113-2045.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/pets/pets-1.10.0-26.3-20261114-1030.jar",
     # /trail: particle trails behind a flying drone (and drone pets), server side only: bought on Ko-fi or
     # earned as a supporter (docs/admin.md#drone-trails). Our trails mod, built and uploaded by hand.
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/trails-1.3.3-26.3.jar",

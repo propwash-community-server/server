@@ -199,6 +199,17 @@ public final class Pets implements ModInitializer {
         }
     }
 
+    /**
+     * Event drones: given out at events by staff (lp user <name> permission set propwash.pets.<name>), not sold.
+     * A Propwash share code each, built at start-up. Unlike other pets they need no supporter rank, and
+     * propwash.pets.drones and the drone pick don't include them.
+     */
+    private static final Map<String, String> EVENT_DRONES = Map.of("0.6.0_launch_event_whoop", "PW21SD0CKU3ep58K1tA5f3Hf");
+
+    private static boolean event(String name) {
+        return name != null && EVENT_DRONES.containsKey(name);
+    }
+
     /** Camera drones (the Camera Drones add-on's presets) fly smooth: they lean into turns but never roll. */
     private static final java.util.Set<String> NO_ROLLS = java.util.Set.of("cine", "tour", "compact");
 
@@ -349,6 +360,14 @@ public final class Pets implements ModInitializer {
             });
         }
         kinds.putAll(presetDrones());
+        EVENT_DRONES.forEach((name, code) -> {
+            ShareDrones.Result result = ShareDrones.decode(code);
+            if (result.drone() != null) {
+                kinds.put(name, new Kind(null, result.drone()));
+            } else {
+                org.slf4j.LoggerFactory.getLogger("pets").warn("Event drone {} not available: {}", name, result.error());
+            }
+        });
         org.slf4j.LoggerFactory.getLogger("pets").info("Pets: {}", kinds.keySet());
     }
 
@@ -389,9 +408,9 @@ public final class Pets implements ModInitializer {
                 || Perms.has(player, PERMISSION + "all");
     }
 
-    /** Owned and usable now: everything(), or owned with propwash.pets.use (an active supporter rank). */
+    /** Owned and usable now: everything(), owned with propwash.pets.use (an active supporter rank), or an owned event drone. */
     private boolean usable(ServerPlayer player, String name) {
-        return permitted(player, name) && (CUSTOM.equals(name) || everything(player) || Perms.has(player, USE_PERMISSION));
+        return permitted(player, name) && (CUSTOM.equals(name) || event(name) || everything(player) || Perms.has(player, USE_PERMISSION));
     }
 
     /** Is this pet the player's (listed in /pet): ops (level 2, even with LuckPerms), propwash.pets.all (admins), .animals or .drones, or .<name> (bought on Ko-fi). */
@@ -408,7 +427,7 @@ public final class Pets implements ModInitializer {
             return false;
         }
         return Perms.has(player, PERMISSION + "all")
-                || Perms.has(player, PERMISSION + (kind.baby() != null ? "animals" : "drones"))
+                || !event(name) && Perms.has(player, PERMISSION + (kind.baby() != null ? "animals" : "drones"))
                 || Perms.has(player, PERMISSION + name);
     }
 
@@ -704,7 +723,7 @@ public final class Pets implements ModInitializer {
                 .then(Commands.argument("name", StringArgumentType.word())
                         .suggests((c, b) -> {
                             kinds.forEach((name, kind) -> {
-                                if ((kind.baby() != null) == animal) {
+                                if ((kind.baby() != null) == animal && !event(name)) {
                                     b.suggest(name);
                                 }
                             });
@@ -748,7 +767,7 @@ public final class Pets implements ModInitializer {
         MutableComponent line = Component.literal("Click one, then confirm twice: ").withStyle(ChatFormatting.GRAY);
         boolean first = true;
         for (Map.Entry<String, Kind> entry : kinds.entrySet()) {
-            if ((entry.getValue().baby() != null) != animal) {
+            if ((entry.getValue().baby() != null) != animal || event(entry.getKey())) {
                 continue;
             }
             String name = entry.getKey();
@@ -778,7 +797,7 @@ public final class Pets implements ModInitializer {
         String base = "/" + what + " pick";
         String shown = name.replace('_', ' ');
         Kind kind = kinds.get(name);
-        if (kind == null || (kind.baby() != null) != animal) {
+        if (kind == null || (kind.baby() != null) != animal || event(name)) {
             source.sendFailure(Component.literal("There's no " + what + " called " + shown + ". " + base + " lists them."));
             return 0;
         }

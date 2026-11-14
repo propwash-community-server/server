@@ -526,6 +526,11 @@ shared by every server.
 It's kept as the tag `propwash.pet.display.<name>` on the mannequin. Presets only, and drone pets on
 mannequins leave no trail.
 
+Event drones are given out at events, not sold: a share-code drone built into the mod (`EVENT_DRONES` in
+`Pets.java`), usable **without** a supporter rank. `propwash.pets.drones` and the drone pick don't include
+them. Now: `0.6.0_launch_event_whoop` (shown as "0.6.0 launch event whoop"), for the 0.6.0 launch event.
+Give it with `lp user <player> permission set propwash.pets.0.6.0_launch_event_whoop`.
+
 ### Pet and drone picks
 
 Two one-time tokens per account, each a permanent choice. Neither is ever given twice.
