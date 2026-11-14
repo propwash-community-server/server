@@ -2,4 +2,4 @@ title = "Go Go"
 author = "Itsj5j6j7"
 credits = ["Course by Skinmanjoe", "Adapted & built by Itsj5j6j7"]
 rank = "Advanced"
-border = { x = -25, z = -55, size = 480 }
+border = { x = -26.58, z = -44.78, size = 400 }

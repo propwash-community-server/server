@@ -1,4 +1,4 @@
 title = "Gilbert Flow"
 author = "FPVGilbert"
 rank = "Beginner"
-border = { x = 0, z = 0, size = 600 }
+border = { x = 0, z = 0, size = 500 }
