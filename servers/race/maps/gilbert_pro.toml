@@ -1,4 +1,4 @@
 title = "Gilbert Pro"
 author = "FPVGilbert"
 rank = "Pro"
-border = { x = -13, z = -18, size = 500 }
+border = { x = -12, z = -20, size = 280 }
