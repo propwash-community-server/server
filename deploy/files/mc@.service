@@ -5,6 +5,9 @@
 Description=Minecraft %i
 After=network-online.target
 Wants=network-online.target
+# A crash loop gives up after 5 starts in 10 minutes (then: systemctl reset-failed + start).
+StartLimitIntervalSec=600
+StartLimitBurst=5
 
 [Service]
 Type=forking
@@ -15,10 +18,15 @@ EnvironmentFile=/home/mc/servers/%i/service.env
 ExecStart=/usr/bin/tmux -L %i new-session -d -s %i ./start.sh
 # Type the stop command into the console, then wait for a clean shutdown.
 # -l types it literally (otherwise tmux reads e.g. "end" as the End key).
-ExecStop=/usr/bin/tmux -L %i send-keys -t %i -l ${STOP_CMD}
-ExecStop=/usr/bin/tmux -L %i send-keys -t %i Enter
+# "-": after a crash or an in-game stop the tmux session is already gone; that's no failure.
+ExecStop=-/usr/bin/tmux -L %i send-keys -t %i -l ${STOP_CMD}
+ExecStop=-/usr/bin/tmux -L %i send-keys -t %i Enter
 ExecStop=/bin/sh -c 'while /usr/bin/tmux -L %i has-session -t %i 2>/dev/null; do sleep 1; done'
 TimeoutStopSec=120
+# Back up by itself after a crash (or an in-game stop): the exit code is lost behind tmux, so
+# "always". systemctl stop/restart (deploys, us) still stops it for good.
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
