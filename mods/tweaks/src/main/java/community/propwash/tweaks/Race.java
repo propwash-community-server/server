@@ -57,6 +57,9 @@ import net.minecraft.world.level.storage.LevelResource;
  * /map rtp, and so the rtp mannequin) takes you to the start of a random course from the /race list, another map than
  * the one you're on when there is one; that server then has no Melius Commands /map or /rtp. With "race = map" (freestyle) it's the other way
  * round: /race is Melius Commands' /map, and there's no course list.
+ *
+ * On the race server players are asked to rate a course's difficulty after 10 laps of it: /race rate,
+ * /race ratings (staff), see RaceRatings.
  */
 final class Race {
     /** Blocks in front of the start gate where you land. */
@@ -150,6 +153,14 @@ final class Race {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 dispatcher.register(Commands.literal("race")
                         .executes(c -> list(c.getSource()))
+                        .then(Commands.literal("rate")
+                                .then(Commands.argument("course", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1))
+                                        .then(Commands.argument("stars", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 5))
+                                                .executes(c -> RaceRatings.rate(c.getSource(),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c, "course"),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c, "stars"))))))
+                        .then(Commands.literal("ratings").requires(s -> Tweaks.permitted(s, RaceRatings.VIEW))
+                                .executes(c -> RaceRatings.list(c.getSource())))
                         .then(Commands.literal("setstart").requires(s -> Tweaks.permitted(s, SETSTART))
                                 .then(courseArgument().executes(c -> setStart(c.getSource(), StringArgumentType.getString(c, "course"), true))))
                         .then(Commands.literal("clearstart").requires(s -> Tweaks.permitted(s, SETSTART))
@@ -157,6 +168,13 @@ final class Race {
                         .then(courseArgument().executes(c -> go(c.getSource(), StringArgumentType.getString(c, "course"))))));
         if (setting("map").equals("race")) {
             // The race server, where every map is a race track: /map is /race, and /rtp (/map rtp) a random race.
+            // Players who fly 10 laps of a course are asked how difficult it is (RaceRatings).
+            RaceRatings.enabled = true;
+            try {
+                RaceRatings.LAPS = Math.max(1, Integer.parseInt(setting("ratings.laps")));
+            } catch (NumberFormatException e) {
+                // the default, 10
+            }
             CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
                 dispatcher.register(Commands.literal("map")
                         .executes(c -> list(c.getSource()))
@@ -165,6 +183,17 @@ final class Race {
                 dispatcher.register(Commands.literal("rtp").executes(c -> random(c.getSource())));
             });
         }
+    }
+
+    /** Course number {@code id}'s name as /race lists it ("Course <id>" when it has none). */
+    static String title(MinecraftServer server, int id) {
+        return courses(server).stream().filter(c -> !c.world() && c.id() == id).map(Course::title)
+                .findFirst().orElse("Course " + id);
+    }
+
+    /** Whether course number {@code id} is in the /race list. */
+    static boolean exists(MinecraftServer server, int id) {
+        return courses(server).stream().anyMatch(c -> !c.world() && c.id() == id);
     }
 
     /** /map [args], as whoever typed /race. */
