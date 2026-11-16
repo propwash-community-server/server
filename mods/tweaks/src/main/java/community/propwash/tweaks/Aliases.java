@@ -12,6 +12,10 @@ import net.minecraft.commands.Commands;
  * /gmc, /gms for /gamemode, and /ci for /clear. Each runs the vanilla command as the player, so whoever
  * may use /gamemode or /clear (op, or LuckPerms through Vanilla Permissions) may use its short form,
  * and nobody else sees it.
+ *
+ * A bare /warp is /warp list (Essential Commands only has /warp list|tp|set|delete): whoever may use
+ * /warp list may type /warp alone; /warp list itself is unchanged. Where there are no warps (plots), there's
+ * no /warp list, and so no bare /warp either.
  */
 final class Aliases {
     private static final Map<String, String> GAME_MODES = Map.ofEntries(
@@ -31,6 +35,13 @@ final class Aliases {
             dispatcher.register(alias(dispatcher, "gmc", "gamemode").executes(c -> run(c.getSource(), "gamemode creative")));
             dispatcher.register(alias(dispatcher, "gms", "gamemode").executes(c -> run(c.getSource(), "gamemode survival")));
             dispatcher.register(alias(dispatcher, "ci", "clear").executes(c -> run(c.getSource(), "clear")));
+            // Merged into Essential Commands' /warp whichever registers first (Brigadier keeps the first
+            // node's requirement and takes the command of whichever has one).
+            dispatcher.register(Commands.literal("warp").requires(source -> {
+                var warp = dispatcher.getRoot().getChild("warp");
+                var list = warp == null ? null : warp.getChild("list");
+                return list != null && list.canUse(source);
+            }).executes(c -> run(c.getSource(), "warp list")));
         });
     }
 

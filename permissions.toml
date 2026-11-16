@@ -222,6 +222,8 @@ permissions = [
     "minecraft.command.tp server=race",
     # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
     "propwash.race.setstart",
+    # /race ratings: the players' difficulty ratings of the race courses (mods/tweaks).
+    "propwash.race.ratings",
     # /world create <name>: a new builder world from the template, and /world tp to it (mods/worlds).
     "propwash.worlds.create",
     "propwash.worlds.tp",
@@ -316,6 +318,8 @@ permissions = [
     "fabricplots.feature server=plots",
     # /race setstart <course>: where /race <course> lands you, where you stand (mods/tweaks).
     "propwash.race.setstart",
+    # /race ratings: the players' difficulty ratings of the race courses (mods/tweaks).
+    "propwash.race.ratings",
     # /flan bypass: build on freestyle and race maps (Flan's claims), as senior builders can.
     "flan.command.bypass.claim server=freestyle",
     "flan.command.bypass.claim server=race",
