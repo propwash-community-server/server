@@ -177,7 +177,8 @@ twangier thump with a rope creak; three variants each, synthesized by
 The whole pack is built with
 [`deploy/files/drone_nets/buildpack.py`](../deploy/files/drone_nets/buildpack.py).
 
-In WorldEdit (hub, freestyle, race, plots) `drone_net` and `waxed_drone_net` work as block names, with
+In WorldEdit (hub, freestyle, race, plots) `drone_net`, `drone_net_worn`, `drone_net_torn`,
+`drone_net_flat`, `drone_net_flat_worn` and `drone_net_flat_torn` work as block names, with
 states, in patterns and masks ([`mods/blockaliases`](../mods/blockaliases/)), e.g. `//set drone_net`.
 
 ## Halloween
