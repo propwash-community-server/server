@@ -148,23 +148,37 @@ the URL and SHA-1 in the four `server.toml` files (hub, freestyle, race, plots),
 
 ### Drone nets
 
-Oxidized copper bars (waxed or not) are **drone nets**: the same pack
-(`propwash-maps-1aa06938.zip`, from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only)
-and makes them look like a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are hidden). It is only looks: the block, its hitbox and its id stay vanilla, so
-no datapack is needed, and players without the pack see ordinary oxidized copper bars. In creative,
-search "drone net". Use the waxed ones on maps where the net must not be scraped back with an axe.
+Drone nets are vanilla copper blocks that the maps pack (`propwash-maps-14a7fa8b.zip`, from 2026-11-16)
+renames (English only) and draws as a thin, slightly sagging rope net (32x32 textures). They were picked
+among copper blocks the maps didn't use, so no map changes look:
 
-### Drone nets
+| In creative | Block | Looks |
+|---|---|---|
+| Drone Net | `oxidized_copper_bars` | the net, upright like bars |
+| Worn Drone Net | `copper_bars` | greyer rope, a few broken strands |
+| Torn Drone Net | `waxed_copper_bars` | a ragged hole with strands hanging into it |
+| Flat Drone Net | `copper_trapdoor` | one flat net in the middle of the trapdoor (floor or ceiling) |
+| Worn Flat Drone Net | `exposed_copper_trapdoor` | flat, worn |
+| Torn Flat Drone Net | `weathered_copper_trapdoor` | flat, torn |
 
-Oxidized copper bars (waxed or not) are **drone nets**: the same pack (`propwash-maps-1aa06938.zip`,
-from 2026-11-05) renames them "Drone Net" / "Waxed Drone Net" (English only) and makes them look like
-a thin, slightly sagging rope net (32x32 texture; the bars' edge, top/bottom and end-cap faces are
-hidden by overriding the `oxidized_copper_bars_*` block models). It is only looks: the block, its
-hitbox and its id stay vanilla, so no datapack is needed, and players without the pack see ordinary
-oxidized copper bars. In creative, search "drone net". In WorldEdit (hub, freestyle, race, plots)
-`drone_net` and `waxed_drone_net` work as block names, with states, in patterns and masks
-([`mods/blockaliases`](../mods/blockaliases/)), e.g. `//set drone_net`. Use the waxed ones where the net must not be
-scraped back with an axe.
+There are no waxed nets to pick: nets can't age, be scraped or waxed anyway (below). Older maps used
+waxed oxidized copper bars as nets; those still look like nets where they are placed, but in the
+inventory they have their vanilla name and icon again.
+
+It is mostly looks: the blocks, hitboxes and ids stay vanilla, so no datapack is needed, and players
+without the pack see ordinary copper bars and trapdoors. In creative, search "drone net".
+[`mods/tweaks`](../mods/tweaks/) (`DroneNets`) keeps nets as they are on every server: they don't age,
+axes don't scrape them, honeycomb doesn't wax them, and flat nets never open (hand, redstone, wind
+charges). Clicking a flat net can show it opening for a moment on that player's screen; the server
+puts it back at once. Placing and breaking a net play the pack's own sounds for everyone nearby
+(`propwash:block.drone_net.place`, a soft thump and rustle, and `propwash:block.drone_net.break`, a
+twangier thump with a rope creak; three variants each, synthesized by
+[`deploy/files/drone_nets/netsound.py`](../deploy/files/drone_nets/netsound.py)).
+The whole pack is built with
+[`deploy/files/drone_nets/buildpack.py`](../deploy/files/drone_nets/buildpack.py).
+
+In WorldEdit (hub, freestyle, race, plots) `drone_net` and `waxed_drone_net` work as block names, with
+states, in patterns and masks ([`mods/blockaliases`](../mods/blockaliases/)), e.g. `//set drone_net`.
 
 ## Halloween
 

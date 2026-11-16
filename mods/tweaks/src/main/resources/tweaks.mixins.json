@@ -2,8 +2,9 @@
   "required": true,
   "minVersion": "0.8",
   "package": "community.propwash.tweaks.mixin",
+  "plugin": "community.propwash.tweaks.mixin.TweaksMixinPlugin",
   "compatibilityLevel": "JAVA_25",
-  "server": ["NoDropMixin", "VanishShowMixin", "DebugStickMixin", "FireworkCooldownMixin", "FireworkCooldownMessageMixin", "StaffWatchPlaceMixin", "StaffWatchBucketMixin", "NetherPortalMixin", "CommandNodeRequirementAccessor"],
+  "server": ["NoDropMixin", "VanishShowMixin", "DebugStickMixin", "FireworkCooldownMixin", "FireworkCooldownMessageMixin", "StaffWatchPlaceMixin", "StaffWatchBucketMixin", "NetherPortalMixin", "CommandNodeRequirementAccessor", "DroneNetSoundMixin", "DroneNetTrapdoorMixin", "DroneNetAgingMixin", "DroneNetToolMixin", "DroneNetWaxMixin", "RaceLapMixin"],
   "injectors": {
     "defaultRequire": 1
   }

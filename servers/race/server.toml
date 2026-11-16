@@ -39,7 +39,7 @@ mods = [
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.23.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.24.2-26.3.jar",
     # /sign: colours and click commands on signs, for staff (mods/signs).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
     # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends
@@ -122,8 +122,8 @@ spawn-protection = "0"
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-1aa06938.zip'
-resource-pack-sha1 = "1aa06938f6bc5a5f1b52af2788fa8361aeedf275"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-14a7fa8b.zip'
+resource-pack-sha1 = "14a7fa8bf7470c0adba4cc80d06369466b2c1f78"
 require-resource-pack = "false"
 
 # Warps (/warp set, /warp tp) go through LuckPerms, see permissions.toml.

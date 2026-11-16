@@ -66,6 +66,7 @@ public final class Tweaks implements ModInitializer {
         Aliases.init();
         Race.init();
         DroneActivity.init();
+        DroneNets.init();
         RecordingBar.init();
         VoidReturn.init();
         DroneTp.init();
