@@ -48,6 +48,10 @@ slow.
    (the server's `server.toml`, 15) between two `/rtp`, staff too. A mannequin tagged `propwash.map.rtp` runs
    `/map rtp`, like the map signposts (see [Lobby](#lobby)). All this is freestyle's; on race, `/rtp` is a
    random race instead (see [servers.md](servers.md)), and `rtp`, `rtp_area` and `rtp_y` do nothing there.
+   `hidden = true` makes it a secret map (race's Flowmap): its courses aren't in `/race`, `/map`, `/rtp` or
+   their tab completion, so only `/race <course>` (or `/map <name>` on freestyle) gets there; a new lap or class
+   record on it is told only to the pilot who set it, and none of its times, results or leaderboards go to
+   the Discord bot (`mods/tweaks`, SecretMaps).
 
    Once it's merged and deployed, the server restarts with the new dimension, its clock, its race courses
    and a `/map <name>` entry.

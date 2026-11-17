@@ -60,6 +60,11 @@ import net.minecraft.world.level.storage.LevelResource;
  *
  * On the race server players are asked to rate a course's difficulty after 10 laps of it: /race rate,
  * /race ratings (staff), see RaceRatings.
+ *
+ * Secret maps ("hidden.<namespace>.<path> = true", the deploy writes it from the map's hidden = true): their
+ * courses are left out of /race, /map, /rtp and the command suggestions, so only who knows the name gets there
+ * (/race <course>). Their lap records aren't announced to others or sent to Discord either
+ * (SecretMaps).
  */
 final class Race {
     /** Blocks in front of the start gate where you land. */
@@ -220,7 +225,7 @@ final class Race {
         return Commands.argument("course", StringArgumentType.greedyString())
                 .suggests((c, b) -> {
                     String typed = b.getRemaining().toLowerCase(Locale.ROOT);
-                    courses(c.getSource().getServer()).stream().map(Course::key)
+                    listed(c.getSource().getServer()).stream().map(Course::key)
                             .filter(k -> k.toLowerCase(Locale.ROOT).startsWith(typed)).forEach(b::suggest);
                     return b.buildFuture();
                 });
@@ -354,6 +359,12 @@ final class Race {
         return out.toString();
     }
 
+    /** The courses /race, /map and /rtp show: all but those on secret maps (SecretMaps). */
+    private static List<Course> listed(MinecraftServer server) {
+        Set<String> hidden = SecretMaps.dimensions();
+        return courses(server).stream().filter(c -> !hidden.contains(c.dimension())).toList();
+    }
+
     private static List<Course> courses(MinecraftServer server) {
         Path file = server.getWorldPath(LevelResource.ROOT).resolve("data/propwash_race.json");
         List<Course> courses = new ArrayList<>();
@@ -418,7 +429,7 @@ final class Race {
     }
 
     private static int list(CommandSourceStack source) {
-        List<Course> courses = courses(source.getServer());
+        List<Course> courses = listed(source.getServer());
         if (courses.isEmpty()) {
             source.sendFailure(Component.literal("No race courses here yet."));
             return 0;
@@ -508,7 +519,7 @@ final class Race {
         if (player == null) {
             return 0;
         }
-        List<Course> courses = courses(source.getServer());
+        List<Course> courses = listed(source.getServer());
         String here = player.level().dimension().identifier().toString();
         List<Course> elsewhere = courses.stream().filter(c -> !c.dimension().equals(here)).toList();
         List<Course> pool = elsewhere.isEmpty() ? courses : elsewhere;

@@ -371,6 +371,8 @@ def map_command(server_maps):
     # One map a line, like /race: its title (click to go), then who made it (its credits, a line each).
     listing = [{"text": "Maps (click one to go there):", "color": "gray"}]
     for m in server_maps:
+        if m.get("hidden"):
+            continue  # a secret map: /map <name> goes there, but /map doesn't list it
         go = f"/map {m['name']}"
         listing += [{"text": "\n » ", "color": "dark_gray"},
                     {"text": m.get("title", m["name"].capitalize()), "color": "white",
@@ -393,7 +395,7 @@ RTP_TRIES = 10
 
 
 def rtp_pool(server_maps):
-    return [m for m in server_maps if m.get("rtp", True)]
+    return [m for m in server_maps if m.get("rtp", True) and not m.get("hidden")]
 
 
 def rtp_bounds(m):
@@ -925,6 +927,8 @@ for name, cfg in backends.items():
     ranks |= {f"credits.maps.{m['name']}": "|".join(m["credits"]) for m in maps.get(name, []) if m.get("credits")}
     # A map's only course goes by the map's title in /race.
     ranks |= {f"title.maps.{m['name']}": m["title"] for m in maps.get(name, []) if m.get("title")}
+    # Secret maps: not in /race, /map or /rtp, their records not announced or sent to Discord (mods/tweaks SecretMaps).
+    ranks |= {f"hidden.maps.{m['name']}": "true" for m in maps.get(name, []) if m.get("hidden")}
     for m in maps.get(name, []):
         if "rank" in m and m["rank"] not in RANKS:
             raise SystemExit(f"servers/{name}/maps/{m['name']}.toml: rank must be one of {', '.join(RANKS)}")

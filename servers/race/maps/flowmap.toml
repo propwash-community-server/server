@@ -1,0 +1,6 @@
+title = "Flowmap"
+author = "SHO"
+# A secret map: not in /race, /map or /rtp; only /race flowmap gets there. Its records are told only to
+# whoever sets them, and its times don't go to Discord (docs/maps.md).
+hidden = true
+border = { x = 24, z = 32, size = 224 }
