@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-/** Mixins into Propwash (RaceLapMixin) only where Propwash is loaded (not on servers without it). */
+/** Mixins into Propwash (RaceLapMixin, RaceAnnounceMixin) and the Propwash bridge (BridgeHiddenMixin) only where they are loaded. */
 public final class TweaksMixinPlugin implements IMixinConfigPlugin {
     @Override
     public void onLoad(String mixinPackage) {
@@ -20,6 +20,9 @@ public final class TweaksMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (targetClassName.startsWith("dev.j4v1.propwashbridge.")) {
+            return FabricLoader.getInstance().isModLoaded("propwash-bridge");
+        }
         return !targetClassName.startsWith("de.lardtom.propwash.") || FabricLoader.getInstance().isModLoaded("propwash");
     }
 

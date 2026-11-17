@@ -29,7 +29,7 @@ mods = [
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/quiet-1.2.0-26.3.jar",
     # As on freestyle, race and plots, and the hub's walk-in portals ([config."config/tweaks.properties"] below).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.24.2-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.25.0-26.3.jar",
     # /sign: colours and click commands on signs, for staff (mods/signs).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
     # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends

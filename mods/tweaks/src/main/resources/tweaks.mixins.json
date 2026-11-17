@@ -4,7 +4,7 @@
   "package": "community.propwash.tweaks.mixin",
   "plugin": "community.propwash.tweaks.mixin.TweaksMixinPlugin",
   "compatibilityLevel": "JAVA_25",
-  "server": ["NoDropMixin", "VanishShowMixin", "DebugStickMixin", "FireworkCooldownMixin", "FireworkCooldownMessageMixin", "StaffWatchPlaceMixin", "StaffWatchBucketMixin", "NetherPortalMixin", "CommandNodeRequirementAccessor", "DroneNetSoundMixin", "DroneNetTrapdoorMixin", "DroneNetAgingMixin", "DroneNetToolMixin", "DroneNetWaxMixin", "RaceLapMixin"],
+  "server": ["NoDropMixin", "VanishShowMixin", "DebugStickMixin", "FireworkCooldownMixin", "FireworkCooldownMessageMixin", "StaffWatchPlaceMixin", "StaffWatchBucketMixin", "NetherPortalMixin", "CommandNodeRequirementAccessor", "DroneNetSoundMixin", "DroneNetTrapdoorMixin", "DroneNetAgingMixin", "DroneNetToolMixin", "DroneNetWaxMixin", "RaceLapMixin", "RaceAnnounceMixin", "BridgeHiddenMixin"],
   "injectors": {
     "defaultRequire": 1
   }
