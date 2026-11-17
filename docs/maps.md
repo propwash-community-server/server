@@ -152,7 +152,7 @@ the URL and SHA-1 in the four `server.toml` files (hub, freestyle, race, plots),
 
 ### Drone nets
 
-Drone nets are vanilla copper blocks that the maps pack (`propwash-maps-14a7fa8b.zip`, from 2026-11-16)
+Drone nets are vanilla copper blocks that the maps pack (`propwash-maps-a72ac5fa.zip`, from 2026-11-17)
 renames (English only) and draws as a thin, slightly sagging rope net (32x32 textures). They were picked
 among copper blocks the maps didn't use, so no map changes look:
 
