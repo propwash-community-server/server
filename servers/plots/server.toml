@@ -193,8 +193,8 @@ send-join-disconnect-message = "false"
 # Escaped the way the server writes it back, so deploys don't see a change and restart.
 # The regular maps pack, with the backpack cosmetic's model (propwash_cosmetics:backpack, mods/backpack).
 # Halloween 2026 used propwash-maps-halloween-855e1980.zip instead (docs/maps.md#halloween).
-resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-14a7fa8b.zip'
-resource-pack-sha1 = "14a7fa8bf7470c0adba4cc80d06369466b2c1f78"
+resource-pack = 'https\://fsn1.your-objectstorage.com/propwash-worlds/fpv/resourcepacks/propwash-maps-a72ac5fa.zip'
+resource-pack-sha1 = "a72ac5fae61ee34e7456742e9fc3e2aa895e0bac"
 require-resource-pack = "false"
 
 # Only written when the server is first created. Nobody uses the overworld: players spawn in the
