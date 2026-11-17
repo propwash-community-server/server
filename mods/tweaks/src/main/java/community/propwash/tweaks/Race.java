@@ -583,6 +583,9 @@ final class Race {
             }
             player.teleportTo(level, x, y, z, Set.of(), course.yaw(), 0, true);
         }
+        // The maps datapack shows a map's arrival title once its map_<path> tag is gone; drop it so /race
+        // shows the title every time, also when the player is in that map already.
+        player.removeTag("map_" + Identifier.parse(start != null ? start.dimension() : course.dimension()).getPath());
         lastRace.put(player.getUUID(), now);
         List<String> roles = credits().get(course.dimension());
         MutableComponent arrived = Component.literal("At the start of " + (roles == null ? course.label() : course.title()) + ". Good luck!")
