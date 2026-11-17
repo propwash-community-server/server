@@ -12,14 +12,19 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 
 /**
- * Names for WorldEdit that match what the maps resource pack calls a block. "drone_net" (with or
- * without block states, e.g. drone_net[east=true]) is handed to WorldEdit's own parser as
- * oxidized_copper_bars, so patterns, masks and states work as for any block.
+ * Names for WorldEdit that match what the maps resource pack calls a block: the drone nets
+ * (docs/maps.md). "drone_net" (with or without block states, e.g. drone_net[east=true]) is handed to
+ * WorldEdit's own parser as oxidized_copper_bars, so patterns, masks and states work as for any block;
+ * the same for the worn, torn and flat nets.
  */
 public final class BlockAliases implements ModInitializer {
     static final Map<String, String> ALIASES = Map.of(
             "drone_net", "minecraft:oxidized_copper_bars",
-            "waxed_drone_net", "minecraft:waxed_oxidized_copper_bars");
+            "drone_net_worn", "minecraft:copper_bars",
+            "drone_net_torn", "minecraft:waxed_copper_bars",
+            "drone_net_flat", "minecraft:copper_trapdoor",
+            "drone_net_flat_worn", "minecraft:exposed_copper_trapdoor",
+            "drone_net_flat_torn", "minecraft:weathered_copper_trapdoor");
 
     @Override
     public void onInitialize() {
