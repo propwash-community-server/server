@@ -48,7 +48,7 @@ import org.slf4j.Logger;
  *
  * As a Predicate of players, for the announcements plugin: whether they're in recording mode.
  */
-@Plugin(id = "crossserver", name = "CrossServer", version = "1.10.0",
+@Plugin(id = "crossserver", name = "CrossServer", version = "1.10.2",
         description = "Teleporting and /invsee across servers",
         dependencies = {@Dependency(id = "vanish", optional = true), @Dependency(id = "maintenance", optional = true),
                 @Dependency(id = "tab", optional = true),

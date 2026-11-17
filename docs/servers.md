@@ -99,7 +99,10 @@ go to `limbo` instead of being disconnected: when a server refuses a player whil
 their first join into the network), [`mods/crossserver`](../mods/crossserver/) sends them to limbo and
 tells them why, just below limbo's welcome (`welcome` in `servers/limbo/server.toml`), which has
 the links to [propwashfpv.com](https://propwashfpv.com/) and [Discord](https://discord.propwashfpv.com).
-A player refused while already on limbo just gets the message. Limbo is Paper with [ViaVersion](https://modrinth.com/plugin/viaversion) and ViaBackwards,
+A player refused while already on limbo just gets the message.
+A server that doesn't answer (starting, restarting or down) hasn't refused anyone: players who are
+already on another server stay there and are told to try again in a moment; only a first join into
+the network still goes to limbo then. Limbo is Paper with [ViaVersion](https://modrinth.com/plugin/viaversion) and ViaBackwards,
 so other game versions get in, and EssentialsX; staff go there with `/server limbo`. Its world was
 built on dev and put in place by hand before the first deploy (the deploy never changes worlds), from
 `limbo/limbo-world-2026-11-01.tar.gz` in the world store; it also has the hub's `mountains`
