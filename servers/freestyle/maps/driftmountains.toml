@@ -1,0 +1,8 @@
+title = "Drift Mountains v0"
+author = "HighRez and LardTom"
+border = { x = 3, z = -18, size = 416 }
+# A driftgen track (tools/driftgen, not in this branch yet): three drift cars lap it for drones to chase
+# (files/world/datapacks/driftmountains-datapack.zip). Never /function driftmountains:build here: it
+# clears and rebuilds the area around the track. Car models: the maps resource pack, as Drift Arena.
+# Where /rtp lands: x and z ranges (inside the border).
+rtp_area = { x = [-110, 115], z = [-110, 75] }
