@@ -1,0 +1,8 @@
+title = "Airlift"
+author = "FPVGilbert"
+# More than one person: these lines show instead of "by <author>" (one line per role).
+credits = ["Race by FPVGilbert", "Map by Greenfield Team"]
+rank = "Advanced"
+# Race's own copy of freestyle's greenfield with FPVGilbert's Airlift track (moved here from first_base on dev,
+# 2026-11); its world is race/maps/airlift.tar.gz in the store.
+border = { x = -593, z = -982, size = 300 }

@@ -39,7 +39,7 @@ mods = [
     # fireworks have a 2-second cooldown; the server exits right after stopping (WorldEdit leaves a timer running);
     # /flyspeed <0-10> (up to the highest propwash.flyspeed.<1-10>, like the hub's).
     # Our mods/tweaks, built and uploaded by hand.
-    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.25.0-26.3.jar",
+    "https://fsn1.your-objectstorage.com/propwash-worlds/mods/tweaks-1.25.1-26.3.jar",
     # /sign: colours and click commands on signs, for staff (mods/signs).
     "https://fsn1.your-objectstorage.com/propwash-worlds/mods/signs-1.0.0-26.3.jar",
     # Players no longer turn invisible to each other after server switches or un-vanishing: re-sends
