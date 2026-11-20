@@ -1,5 +1,6 @@
 package community.propwash.voicebody;
 
+import java.util.UUID;
 import community.propwash.voicebody.VoiceBody.Spot;
 import de.maxhenkel.voicechat.api.VoicechatApi;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
@@ -7,7 +8,9 @@ import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.events.EntitySoundPacketEvent;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
+import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.packets.EntitySoundPacket;
+import de.maxhenkel.voicechat.api.packets.StaticSoundPacket;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -34,6 +37,7 @@ public final class VoiceBodyPlugin implements VoicechatPlugin {
     @Override
     public void registerEvents(EventRegistration registration) {
         registration.registerEvent(EntitySoundPacketEvent.class, this::onEntitySound);
+        registration.registerEvent(MicrophonePacketEvent.class, this::onMicrophone);
     }
 
     private void onEntitySound(EntitySoundPacketEvent event) {
@@ -54,5 +58,33 @@ public final class VoiceBodyPlugin implements VoicechatPlugin {
                 .position(api.createPosition(at.x, at.y, at.z))
                 .distance(packet.getDistance())
                 .build());
+    }
+
+    /** /voicemute: while muted, a player who isn't an admin can't be heard by anyone. */
+    private void onMicrophone(MicrophonePacketEvent event) {
+        VoicechatConnection sender = event.getSenderConnection();
+        if (sender == null || !VoiceBody.muted()) {
+            return;
+        }
+        UUID id = sender.getPlayer().getUuid();
+        if (!VoiceBody.isAdmin(id)) {
+            event.cancel();
+            return;
+        }
+        // An admin while muted is heard by everyone: the same audio, as a static (non-positional) sound to each other player.
+        event.cancel();
+        if (api == null) {
+            return;
+        }
+        StaticSoundPacket packet = event.getPacket().toStaticSoundPacket();
+        for (UUID listener : VoiceBody.spots().keySet()) {
+            if (listener.equals(id)) {
+                continue;
+            }
+            VoicechatConnection connection = api.getConnectionOf(listener);
+            if (connection != null) {
+                api.sendStaticSoundPacketTo(connection, packet);
+            }
+        }
     }
 }
