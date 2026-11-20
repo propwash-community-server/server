@@ -129,6 +129,10 @@ camera, which in FPV is on the drone, so [`mods/voicebody`](../mods/voicebody/) 
 their body still sound next to them. `enabled = "false"` in `[config."config/voicebody.properties"]` turns
 it off on that server.
 
+`/voicemute on [minutes] | off` (no argument: status) mutes everyone on that server except players with
+`propwash.voicemute` (admins through `"*"`), who are then heard by everyone there at any distance, e.g. for
+an announcement. It lasts until turned off, the minutes run out or the server restarts.
+
 ## Colors
 
 Texts the repo writes (chat formats, the tab list, rank prefixes, the MOTD, map titles, `/map`,
