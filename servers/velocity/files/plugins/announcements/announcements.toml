@@ -37,7 +37,7 @@ bossbar_color = "yellow"
 # <click:open_url:'https://...'>text</click> (in chat only; a boss bar can't be clicked).
 [[messages]]
 weight = 25
-text = "<muted>Press <white>F7</white> to spectate other players.</muted>"
+text = "<muted>Press <white>F7</white> to spectate other players flying their drones.</muted>"
 
 [[messages]]
 weight = 50
