@@ -5,18 +5,22 @@ Safe to re-run: it only changes what differs, and never touches worlds,
 whitelists, ops or any server.properties setting except the ones it manages.
 """
 
+import base64
+import hashlib
 import json
 import os
 import re
+import shlex
 import subprocess
+import tarfile
 import tomllib
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from urllib.parse import unquote
 
 from pyinfra import host
 from pyinfra.api import FactBase
-from pyinfra.facts.files import Directory, File, FindFiles
+from pyinfra.facts.files import File, FindDirectories, FindFiles
 from pyinfra.operations import apt, files, server, systemd
 from pyinfra.operations.util import any_changed
 
@@ -66,7 +70,7 @@ def filename(url):
     return unquote(url.split("?")[0].rsplit("/", 1)[-1])
 
 
-def service_env(name, stop_cmd):
+def service_env(bundle, name, stop_cmd):
     # Read by mc@.service. LuckPerms takes its settings from LUCKPERMS_* variables, so every
     # server shares one MariaDB database and knows its own name for server= contexts.
     env = (
@@ -81,7 +85,7 @@ def service_env(name, stop_cmd):
     # The bridge mod's key for this server (BRIDGE_KEY_RACE for race); the key is how the bot's API knows the server.
     if f"BRIDGE_KEY_{name.upper()}" in bot_keys:
         env += f"PROPWASH_BRIDGE_API_KEY={bot_keys[f'BRIDGE_KEY_{name.upper()}']}\n"
-    return files.put(name=f"{name}: service env", src=StringIO(env), dest=f"{SERVERS}/{name}/service.env", mode="600", **OWNER)
+    bundle.put(f"{SERVERS}/{name}/service.env", env, mode="600")
 
 
 # Texts are MiniMessage, with the palette.toml colors as tags: <muted>text</muted>.
@@ -181,14 +185,14 @@ DIAGNOSTIC_JVM_FLAGS = (
 )
 
 
-def start_script(path, jar, ram, args="", jvm_flags=""):
+def start_script(bundle, path, jar, ram, args="", jvm_flags=""):
     jvm = f" {DIAGNOSTIC_JVM_FLAGS}" + (f" {jvm_flags}" if jvm_flags else "")
     script = (
         "#!/bin/sh\n"
         "# Managed by pyinfra - edit servers/<name>/server.toml instead.\n"
         f"exec java -Xms{ram} -Xmx{ram}{jvm} -jar {jar} {args}\n"
     )
-    return files.put(name=f"start script {path}", src=StringIO(script), dest=path, mode="755", **OWNER)
+    bundle.put(path, script, mode="755")
 
 
 class PaperVelocityOk(FactBase):
@@ -216,15 +220,124 @@ class JsonFile(FactBase):
         return json.loads("\n".join(output))
 
 
+class Contents(FactBase):
+    """The files among paths that exist: {path: bytes}. One command for them all."""
+
+    default = dict
+
+    def command(self, paths):
+        quoted = " ".join(shlex.quote(p) for p in paths)
+        return f'for p in {quoted}; do [ -f "$p" ] && echo "$(base64 -w0 < "$p"):$p"; done; true'
+
+    def process(self, output):
+        return {path: base64.b64decode(data) for data, _, path in (line.partition(":") for line in output)}
+
+
+class Snapshot(FactBase):
+    """The files among paths that exist: {path: (sha1, octal mode)}. One command for them all."""
+
+    default = dict
+
+    def command(self, paths):
+        quoted = " ".join(shlex.quote(p) for p in paths)
+        return f'for p in {quoted}; do [ -f "$p" ] && echo "$(sha1sum < "$p" | cut -c1-40) $(stat -c %a "$p") $p"; done; true'
+
+    def process(self, output):
+        return {path: (sha, mode) for sha, mode, path in (line.split(" ", 2) for line in output)}
+
+
+def edit_lines(text, edits):
+    """files.line for many lines at once, in Python: for each (pattern, replacement), the lines matching
+    the pattern as a whole line become the replacement; with none, it's appended unless already there."""
+    trailing = text.endswith("\n")
+    lines = text.split("\n")[:-1] if trailing else (text.split("\n") if text else [])
+    for pattern, replacement in edits:
+        pattern = (pattern if pattern.startswith("^") else f"^.*{pattern}")
+        pattern = (pattern if pattern.endswith("$") else f"{pattern}.*$")
+        rx = re.compile(pattern)
+        hits = [i for i, line in enumerate(lines) if rx.search(line)]
+        for i in hits:
+            lines[i] = replacement
+        if not hits and replacement not in lines:
+            lines.append(replacement)
+            trailing = True
+    return "\n".join(lines) + ("\n" if trailing else "")
+
+
+class Bundle:
+    """A server's small files (configs, datapacks, scripts), compared in one command and the changed ones
+    sent in one tar: a handful of operations instead of one or more per file, which made deploys slow.
+    restart=False files (read on use) don't restart the server."""
+
+    def __init__(self, label, d):
+        self.label, self.d, self.files = label, d, {}
+        self.remote = None
+
+    def contents(self, paths):
+        # The current contents of files this bundle edits; one command, read once per bundle.
+        if self.remote is None:
+            self.remote = host.get_fact(Contents, paths=sorted(paths)) if paths else {}
+        return self.remote
+
+    def put(self, dest, content, mode=None, restart=True):
+        if isinstance(content, Path):
+            content = content.read_bytes()
+        self.files[dest] = (content.encode() if isinstance(content, str) else content, mode, restart)
+
+    def edit(self, dest, edits, base="", restart=True):
+        # Like files.line on dest for each edit, on top of what this bundle already puts there, else the
+        # file on the server, else base. Unchanged files are left out when the bundle is sent.
+        if dest in self.files:
+            text = self.files[dest][0].decode()
+        elif dest in self.remote:
+            text = self.remote[dest].decode()
+        else:
+            text = base
+        self.put(dest, edit_lines(text, edits), restart=restart)
+
+    def ops(self):
+        """(ops that should restart the server, other ops)."""
+        if not self.files:
+            return [], []
+        remote = host.get_fact(Snapshot, paths=sorted(self.files))
+        changed = {True: {}, False: {}}
+        for dest, (data, mode, restart) in sorted(self.files.items()):
+            have = remote.get(dest)
+            if have is None or have[0] != hashlib.sha1(data).hexdigest() or (mode and have[1] != mode):
+                changed[restart][dest] = (data, mode or (have[1] if have else "644"))
+        return self._send(changed[True], "restart"), self._send(changed[False], "live")
+
+    def _send(self, changed, kind):
+        if not changed:
+            return []
+        buf = BytesIO()
+        with tarfile.open(fileobj=buf, mode="w") as tar:
+            for dest, (data, mode) in changed.items():
+                info = tarfile.TarInfo(dest.lstrip("/"))
+                info.size, info.mode, info.mtime = len(data), int(mode, 8), 0
+                info.uname = info.gname = MC
+                tar.addfile(info, BytesIO(data))
+        buf.seek(0)
+        names = [p.removeprefix(self.d + "/") for p in changed]
+        shown = ", ".join(names[:3]) + (f" and {len(names) - 3} more" if len(names) > 3 else "")
+        tmp = f"/tmp/deploy-{self.label}-{kind}.tar"
+        return [
+            files.put(name=f"{self.label}: send {shown}", src=buf, dest=tmp, mode="600"),
+            server.shell(name=f"{self.label}: unpack {len(names)} file(s)", commands=[f"tar -xpf {tmp} -C / && rm {tmp}"]),
+        ]
+
+
 def jar_folder(label, folder, urls):
-    # Download listed jars, delete any other jar in the folder.
+    # Download listed jars, delete any other jar in the folder. A jar's file name has its version, so one
+    # that's there already is the right one: no operation for it (the listing is one command for all).
     wanted = {filename(u): u for u in urls}
     ops = [files.directory(name=f"{label} folder", path=folder, **OWNER)]
+    there = {Path(p).name for p in host.get_fact(FindFiles, path=folder, maxdepth=1, fname="*.jar") or []}
     for jar, url in wanted.items():
-        ops.append(files.download(name=f"{label} {jar}", src=url, dest=f"{folder}/{jar}", **OWNER))
-    for path in host.get_fact(FindFiles, path=folder, maxdepth=1, fname="*.jar") or []:
-        if Path(path).name not in wanted:
-            ops.append(files.file(name=f"{label} remove {Path(path).name}", path=path, present=False))
+        if jar not in there:
+            ops.append(files.download(name=f"{label} {jar}", src=url, dest=f"{folder}/{jar}", **OWNER))
+    for jar in sorted(there - set(wanted)):
+        ops.append(files.file(name=f"{label} remove {jar}", path=f"{folder}/{jar}", present=False))
     return ops
 
 
@@ -233,17 +346,16 @@ def palette_file(p):
     try:
         text = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:
-        return str(p)
-    return StringIO(palette_tags(text)) if palette_tags(text) != text else str(p)
+        return p
+    return palette_tags(text) if palette_tags(text) != text else p
 
 
-def extra_files(name, d):
+def extra_files(bundle, name, d):
     # servers/<name>/files/ is copied into the server folder, palette tags expanded.
     src = ROOT / "servers" / name / "files"
-    return [
-        files.put(name=f"{name}: {p.relative_to(src).as_posix()}", src=palette_file(p), dest=f"{d}/{p.relative_to(src).as_posix()}", **OWNER)
-        for p in sorted(src.rglob("*")) if p.is_file()
-    ]
+    for p in sorted(src.rglob("*")):
+        if p.is_file():
+            bundle.put(f"{d}/{p.relative_to(src).as_posix()}", palette_file(p))
 
 
 # Maps are dimensions (maps:<name>) whose region files come from the store, void around them
@@ -506,56 +618,43 @@ def rtp_command(server_maps):
     }, indent=2)
 
 
-def map_ops(name, d, server_maps, rtp_cooldown, with_map_command=True):
+def map_ops(bundle, name, d, server_maps, rtp_cooldown, with_map_command=True):
     store = host.data.get("world_store")
     if not store:
         raise SystemExit(f"{host.name} has no world_store but servers/{name}/maps/ lists maps")
     world = f"{d}/world"
     pack = f"{world}/datapacks/maps"
     ops = []
-    ops.append(files.put(name=f"{name}: maps datapack", src=StringIO(MAP_PACK), dest=f"{pack}/pack.mcmeta", **OWNER))
-    ops.append(files.put(name=f"{name}: maps load tag", src=StringIO(LOAD_TAG),
-                         dest=f"{pack}/data/minecraft/tags/function/load.json", **OWNER))
-    ops.append(files.put(name=f"{name}: maps load function", src=StringIO(map_load_function(server_maps)),
-                         dest=f"{pack}/data/maps/function/load.mcfunction", **OWNER))
-    ops.append(files.put(name=f"{name}: maps tick tag", src=StringIO(TICK_TAG),
-                         dest=f"{pack}/data/minecraft/tags/function/tick.json", **OWNER))
-    ops.append(files.put(name=f"{name}: maps tick function", src=StringIO(map_tick_function(server_maps)),
-                         dest=f"{pack}/data/maps/function/tick.mcfunction", **OWNER))
+    bundle.put(f"{pack}/pack.mcmeta", MAP_PACK)
+    bundle.put(f"{pack}/data/minecraft/tags/function/load.json", LOAD_TAG)
+    bundle.put(f"{pack}/data/maps/function/load.mcfunction", map_load_function(server_maps))
+    bundle.put(f"{pack}/data/minecraft/tags/function/tick.json", TICK_TAG)
+    bundle.put(f"{pack}/data/maps/function/tick.mcfunction", map_tick_function(server_maps))
     if with_map_command:
         # Not where mods/tweaks makes /map the same as /race (map = "race" in its tweaks.properties).
-        ops.append(files.put(name=f"{name}: /map command", src=StringIO(map_command(server_maps)),
-                             dest=f"{d}/config/melius-commands/commands/map.json", **OWNER))
-        ops.append(files.put(name=f"{name}: /rtp command", src=StringIO(rtp_command(server_maps)),
-                             dest=f"{d}/config/melius-commands/commands/rtp.json", **OWNER))
-        ops.append(files.put(name=f"{name}: /rtp cooldown", src=StringIO(rtp_cooldown_function(rtp_cooldown)),
-                             dest=f"{pack}/data/maps/function/rtp/cooldown.mcfunction", **OWNER))
+        bundle.put(f"{d}/config/melius-commands/commands/map.json", map_command(server_maps))
+        bundle.put(f"{d}/config/melius-commands/commands/rtp.json", rtp_command(server_maps))
+        bundle.put(f"{pack}/data/maps/function/rtp/cooldown.mcfunction", rtp_cooldown_function(rtp_cooldown))
         for m in rtp_pool(server_maps):
             for rel, text in rtp_functions(m).items():
-                ops.append(files.put(name=f"{name}: /rtp {m['name']}", src=StringIO(text),
-                                     dest=f"{pack}/data/maps/function/{rel}", **OWNER))
+                bundle.put(f"{pack}/data/maps/function/{rel}", text)
     else:
         # There mods/tweaks' /rtp (and /map rtp) is a random race, not a random spot: no Melius /rtp to clash with it.
         ops.append(files.file(name=f"{name}: no Melius /rtp", path=f"{d}/config/melius-commands/commands/rtp.json",
                               present=False))
+    seeded = {Path(p).name for p in host.get_fact(FindDirectories, path=f"{world}/dimensions/maps", maxdepth=1) or []}
     for m in server_maps:
         for rel, data in map_pack_files(m).items():
-            ops.append(files.put(
-                name=f"{name}: map {m['name']} {rel}",
-                src=StringIO(json.dumps(data)),
-                dest=f"{pack}/data/{rel}",
-                **OWNER,
-            ))
-        dim = f"{world}/dimensions/maps/{m['name']}"
+            bundle.put(f"{pack}/data/{rel}", json.dumps(data))
         # The world on the server is the map (builders edit it there); the store only seeds a
         # server that doesn't have it yet. `uv run apply` replaces one that's there.
-        if host.get_fact(Directory, path=dim) is None:
+        if m["name"] not in seeded:
             ops.append(server.shell(name=f"{name}: map {m['name']} seed",
                                     commands=[f"mc-seed-dimension {name} maps:{m['name']} {store}"]))
     return ops
 
 
-def welcome_ops(name, d, text):
+def welcome_ops(bundle, name, d, text):
     # A datapack, the same on Paper and Fabric: welcome text to players new to the server, and to
     # those back after leaving it (the leave_game stat also counts switching servers on the proxy).
     # The second line only for players already welcomed: a player whose player data is gone but whose
@@ -574,11 +673,11 @@ def welcome_ops(name, d, text):
             "scoreboard objectives add welcome.left minecraft.custom:minecraft.leave_game\n",
         "data/welcome/function/tick.mcfunction": tick,
     }
-    return [files.put(name=f"{name}: welcome {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
-            for rel, content in pack_files.items()]
+    for rel, content in pack_files.items():
+        bundle.put(f"{pack}/{rel}", content)
 
 
-def gamerules_ops(name, d, rules):
+def gamerules_ops(bundle, name, d, rules):
     # Game rules are saved in the world, not server.properties: a datapack sets them on every start.
     pack = f"{d}/world/datapacks/gamerules"
     load = "".join(f"gamerule {k} {str(v).lower() if isinstance(v, bool) else v}\n" for k, v in rules.items())
@@ -587,34 +686,28 @@ def gamerules_ops(name, d, rules):
         "data/minecraft/tags/function/load.json": json.dumps({"values": ["gamerules:load"]}),
         "data/gamerules/function/load.mcfunction": load,
     }
-    return [files.put(name=f"{name}: gamerules {rel}", src=StringIO(content), dest=f"{pack}/{rel}", **OWNER)
-            for rel, content in pack_files.items()]
+    for rel, content in pack_files.items():
+        bundle.put(f"{pack}/{rel}", content)
 
 
-def config_ops(name, d, cfg):
+def config_paths(d, cfg):
+    return [f"{d}/{rel}" for rel in cfg.get("config", {})]
+
+
+def config_edits(bundle, d, cfg):
     # [config."<path>"]: top-level keys in a plugin's own config ("key: value", or "key=value" for
     # .properties), palette tags expanded. Plugins write their config on first start, so this applies
     # from the next deploy; a missing .properties is written with just these keys before it
     # (FabricPlots' plot-size has to be there when the plot world is first made), and the plugin adds its defaults.
-    ops = []
     for rel, settings in cfg.get("config", {}).items():
-        if rel.endswith(".properties") and not host.get_fact(File, path=f"{d}/{rel}"):
-            content = "".join(f"{key}={palette_tags(str(value))}\n" for key, value in settings.items())
-            ops.append(files.put(name=f"{name}: {rel}", src=StringIO(content), dest=f"{d}/{rel}", **OWNER))
-        elif host.get_fact(File, path=f"{d}/{rel}"):
+        if rel.endswith(".properties") or f"{d}/{rel}" in bundle.remote:
             sep = "=" if rel.endswith((".properties", ".hocon")) else ": "
-            for key, value in settings.items():
-                ops.append(files.line(
-                    name=f"{name}: {rel} {key}",
-                    path=f"{d}/{rel}",
-                    line=f"^{key}{sep.strip()}.*",
-                    replace=f"{key}{sep}{palette_tags(str(value))}",
-                ))
-    return ops
+            bundle.edit(f"{d}/{rel}", [(f"^{key}{sep.strip()}.*", f"{key}{sep}{palette_tags(str(value))}")
+                                       for key, value in settings.items()])
 
 
 def ownership(name, d):
-    # Files and folders written as root (files.line, the parents files.put creates, the paper-velocity
+    # Files and folders written as root (the parent folders a bundle's tar creates, the paper-velocity
     # helper, ...) go back to mc. A plain chown: files.directory(recursive=True) only recurses when the
     # top folder's owner is wrong, so root-owned files inside an mc-owned folder would stay root and
     # the server couldn't save them.
@@ -816,11 +909,35 @@ def tab_world_names():
 
 v = f"{SERVERS}/velocity"
 files.directory(name="velocity folder", path=v, **OWNER)
+bundle = Bundle("velocity", v)
+libertybans_sql = f"{v}/plugins/libertybans/sql.yml"
+bundle.contents(config_paths(v, velocity) + [libertybans_sql])
+
+start_script(bundle, f"{v}/start.sh", velocity["jar"], RAM or velocity["ram"])
+service_env(bundle, "velocity", "end")
+bundle.put(f"{v}/forwarding.secret", secret, mode="600")
+extra_files(bundle, "velocity", v)
+config_edits(bundle, v, velocity)
+
+# mods/crossserver moves players with a console tp over rcon, so it gets each backend's rcon port and
+# the password (a file of its own, taken as it is). Read on every teleport, so no restart.
+bundle.put(f"{v}/plugins/crossserver/rcon.properties", "".join(f"{n}={c['port'] + 10000}\n" for n, c in backends.items()),
+           restart=False)
+bundle.put(f"{v}/plugins/crossserver/rcon.password", rcon_password, mode="600", restart=False)
+
+# LibertyBans writes sql.yml on first start (with its own embedded database); from the next
+# deploy it points at MariaDB. The auth-details keys are each unique in that file.
+if libertybans_sql in bundle.remote:
+    bundle.edit(libertybans_sql, [(f"^{key}:.*", f"{key}: '{value}'") for key, value in {
+        "rdms-vendor": "MARIADB",
+        "  host": "127.0.0.1",
+        "  database": "libertybans",
+        "  user": "minecraft",
+        "  password": mariadb_password,
+    }.items()])
 
 changes = [
     files.download(name="velocity jar", src=velocity["url"], dest=f"{v}/{velocity['jar']}", **OWNER),
-    start_script(f"{v}/start.sh", velocity["jar"], RAM or velocity["ram"]),
-    service_env("velocity", "end"),
     files.template(
         name="velocity.toml",
         src=str(ROOT / "servers/velocity/velocity.toml.j2"),
@@ -832,11 +949,9 @@ changes = [
         motd=json.dumps(palette_tags(velocity["motd"])),
         **OWNER,
     ),
-    files.put(name="forwarding.secret", src=StringIO(secret), dest=f"{v}/forwarding.secret", mode="600", **OWNER),
     *jar_folder("velocity: plugin", f"{v}/plugins", velocity.get("plugins", [])),
     # MiniPlaceholders loads its expansions (placeholder add-ons) from its own folder, not plugins/.
     *jar_folder("velocity: expansion", f"{v}/plugins/miniplaceholders/expansions", velocity.get("expansions", [])),
-    *extra_files("velocity", v),
     files.template(
         name="velocity: TAB config.yml",
         src=str(ROOT / "servers/velocity/tab.yml.j2"),
@@ -844,37 +959,9 @@ changes = [
         tab_worlds=tab_world_names(),
         **OWNER,
     ),
-    *config_ops("velocity", v, velocity),
 ]
-
-# mods/crossserver moves players with a console tp over rcon, so it gets each backend's rcon port and
-# the password (a file of its own, taken as it is). Read on every teleport, so no restart.
-files.put(
-    name="velocity: crossserver rcon ports",
-    src=StringIO("".join(f"{n}={c['port'] + 10000}\n" for n, c in backends.items())),
-    dest=f"{v}/plugins/crossserver/rcon.properties",
-    **OWNER,
-)
-files.put(name="velocity: crossserver rcon password", src=StringIO(rcon_password),
-          dest=f"{v}/plugins/crossserver/rcon.password", mode="600", **OWNER)
-
-# LibertyBans writes sql.yml on first start (with its own embedded database); from the next
-# deploy it points at MariaDB. The auth-details keys are each unique in that file.
-libertybans_sql = f"{v}/plugins/libertybans/sql.yml"
-if host.get_fact(File, path=libertybans_sql):
-    for key, value in {
-        "rdms-vendor": "MARIADB",
-        "  host": "127.0.0.1",
-        "  database": "libertybans",
-        "  user": "minecraft",
-        "  password": mariadb_password,
-    }.items():
-        changes.append(files.line(
-            name=f"LibertyBans {key.strip()}",
-            path=libertybans_sql,
-            line=f"^{key}:.*",
-            replace=f"{key}: '{value}'",
-        ))
+restart_ops, _ = bundle.ops()
+changes += restart_ops
 
 ownership("velocity", v)
 service("velocity", changes)
@@ -885,42 +972,6 @@ for name, cfg in backends.items():
     d = f"{SERVERS}/{name}"
     kind = cfg["type"]
     files.directory(name=f"{name}: folder", path=d, **OWNER)
-
-    changes = [
-        files.download(name=f"{name}: server jar", src=cfg["url"], dest=f"{d}/{cfg['jar']}", **OWNER),
-        start_script(f"{d}/start.sh", cfg["jar"], RAM or cfg["ram"], "nogui", FABRIC_JVM_FLAGS if kind == "fabric" else ""),
-        service_env(name, "stop"),
-        files.put(name=f"{name}: eula", src=StringIO("eula=true\n"), dest=f"{d}/eula.txt", **OWNER),
-        files.put(name=f"{name}: no ops", src=StringIO("[]"), dest=f"{d}/ops.json", **OWNER),
-    ]
-    if kind == "fabric":
-        changes += jar_folder(f"{name}: mod", f"{d}/mods", cfg.get("mods", []))
-    else:
-        changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
-    changes += extra_files(name, d)
-    if maps.get(name):
-        tweaks = cfg.get("config", {}).get("config/tweaks.properties", {})
-        changes += map_ops(name, d, maps[name], cfg.get("rtp_cooldown", 15), with_map_command=tweaks.get("map") != "race")
-
-    # /help: the server's help, then the network-wide one from the velocity server.toml.
-    if cfg.get("help"):
-        text = cfg["help"].strip() + "\n\n" + velocity.get("help", "").strip()
-        if kind == "fabric":
-            # Melius Commands, in place of vanilla /help; tellraw needs op level 2.
-            help_command = {"id": "help", "executes": [{"command": f"tellraw @s {to_json(text)}", "op_level": 2}]}
-            changes.append(files.put(name=f"{name}: /help", src=StringIO(json.dumps(help_command, indent=2)),
-                                     dest=f"{d}/config/melius-commands/commands/help.json", **OWNER))
-        elif kind == "paper":
-            # EssentialsX /help shows help.txt when there is one. It's read on use, so no restart.
-            files.put(name=f"{name}: /help", src=StringIO(to_legacy(text) + "\n"),
-                      dest=f"{d}/plugins/Essentials/help.txt", **OWNER)
-        else:
-            raise SystemExit(f"servers/{name}/server.toml has help, but /help is only made for fabric and paper")
-
-    if cfg.get("welcome"):
-        changes += welcome_ops(name, d, cfg["welcome"].strip())
-    if cfg.get("gamerules"):
-        changes += gamerules_ops(name, d, cfg["gamerules"])
 
     # Map rankings (a map's rank in its maps/<map>.toml): /race groups the courses by them (mods/tweaks).
     # Credits (a map's credits, one line per role) go under its courses in /race too.
@@ -939,25 +990,58 @@ for name, cfg in backends.items():
     if ranks:
         tweaks = {**ranks, **cfg.get("config", {}).get("config/tweaks.properties", {})}
         cfg = {**cfg, "config": {**cfg.get("config", {}), "config/tweaks.properties": tweaks}}
-    changes += config_ops(name, d, cfg)
+
+    server_json = f"{d}/config/propwash/server.json"
+    server_properties = f"{d}/server.properties"
+    proxy_toml = f"{d}/config/FabricProxy-Lite.toml"
+    spigot_yml = f"{d}/spigot.yml"
+    bundle = Bundle(name, d)
+    bundle.contents(config_paths(d, cfg) + [server_json, server_properties, proxy_toml, spigot_yml])
+
+    start_script(bundle, f"{d}/start.sh", cfg["jar"], RAM or cfg["ram"], "nogui", FABRIC_JVM_FLAGS if kind == "fabric" else "")
+    service_env(bundle, name, "stop")
+    bundle.put(f"{d}/eula.txt", "eula=true\n")
+    bundle.put(f"{d}/ops.json", "[]")
+    changes = [files.download(name=f"{name}: server jar", src=cfg["url"], dest=f"{d}/{cfg['jar']}", **OWNER)]
+    if kind == "fabric":
+        changes += jar_folder(f"{name}: mod", f"{d}/mods", cfg.get("mods", []))
+    else:
+        changes += jar_folder(f"{name}: plugin", f"{d}/plugins", cfg.get("plugins", []))
+    extra_files(bundle, name, d)
+    if maps.get(name):
+        tweaks = cfg.get("config", {}).get("config/tweaks.properties", {})
+        changes += map_ops(bundle, name, d, maps[name], cfg.get("rtp_cooldown", 15), with_map_command=tweaks.get("map") != "race")
+
+    # /help: the server's help, then the network-wide one from the velocity server.toml.
+    if cfg.get("help"):
+        text = cfg["help"].strip() + "\n\n" + velocity.get("help", "").strip()
+        if kind == "fabric":
+            # Melius Commands, in place of vanilla /help; tellraw needs op level 2.
+            help_command = {"id": "help", "executes": [{"command": f"tellraw @s {to_json(text)}", "op_level": 2}]}
+            bundle.put(f"{d}/config/melius-commands/commands/help.json", json.dumps(help_command, indent=2))
+        elif kind == "paper":
+            # EssentialsX /help shows help.txt when there is one. It's read on use, so no restart.
+            bundle.put(f"{d}/plugins/Essentials/help.txt", to_legacy(text) + "\n", restart=False)
+        else:
+            raise SystemExit(f"servers/{name}/server.toml has help, but /help is only made for fabric and paper")
+
+    if cfg.get("welcome"):
+        welcome_ops(bundle, name, d, cfg["welcome"].strip())
+    if cfg.get("gamerules"):
+        gamerules_ops(bundle, name, d, cfg["gamerules"])
+
+    config_edits(bundle, d, cfg)
     # [propwash]: top-level keys of Propwash's config/propwash/server.json (written on first start, so this
     # applies from the next deploy), e.g. worldCourses = false. Edited line by line, so a key must already be
     # in the file and not be its last one (each line ends in a comma).
-    server_json = f"{d}/config/propwash/server.json"
-    if cfg.get("propwash") and host.get_fact(File, path=server_json):
-        for key, value in cfg["propwash"].items():
-            changes.append(files.line(name=f"{name}: propwash {key}", path=server_json,
-                                      line=rf'^\s*"{key}":.*', replace=f'  "{key}": {json.dumps(value)},'))
+    if cfg.get("propwash") and server_json in bundle.remote:
+        bundle.edit(server_json, [(rf'^\s*"{key}":.*', f'  "{key}": {json.dumps(value)},') for key, value in cfg["propwash"].items()])
 
     # disable_advancements (Paper): Spigot's list of disabled advancements becomes "*", all of them, so
     # nobody gets advancement pop-ups. From the deploy after the first start, when spigot.yml exists.
-    # The pattern also matches the already-replaced line: pyinfra's own "replacement already there?"
-    # check greps for the unescaped "'*'" (a regex quantifier), never finds it and appends another
-    # "  - '*'" at the end of the file on every deploy, which breaks the YAML and Paper won't start.
-    if cfg.get("disable_advancements") and kind == "paper" and host.get_fact(File, path=f"{d}/spigot.yml"):
-        changes.append(files.line(name=f"{name}: no advancements", path=f"{d}/spigot.yml",
-                                  line=r"^  - (minecraft:story/disabled|'\*')$", replace="  - '*'",
-                                  extended_regex=True))
+    # The pattern also matches the already-replaced line, so it's never appended a second time.
+    if cfg.get("disable_advancements") and kind == "paper" and spigot_yml in bundle.remote:
+        bundle.edit(spigot_yml, [(r"^  - (minecraft:story/disabled|'\*')$", "  - '*'")])
 
     # [flan]: deny = Flan world rules, ALLFALSE in every dimension of the server unless a player is in
     # /flan bypass (explicit dimensions, since Flan saves "*" back expanded, and "*" only reaches the
@@ -976,12 +1060,7 @@ for name, cfg in backends.items():
             changes.append(files.put(name=f"{name}: Flan config", src=StringIO(json.dumps({**current, **wanted}, indent=2)),
                                      dest=flan_config, **OWNER))
 
-    if cfg.get("new_world") and host.get_fact(File, path=f"{d}/server.properties") is None:
-        props = "".join(f"{k}={v}\n" for k, v in cfg["new_world"].items())
-        changes.append(files.put(name=f"{name}: new world settings", src=StringIO(props), dest=f"{d}/server.properties", **OWNER))
-
-    # Created as mc first: files.line would otherwise create them as root.
-    files.file(name=f"{name}: server.properties", path=f"{d}/server.properties", **OWNER)
+    # A new server starts from its new_world settings (the server adds its defaults on first start).
     managed = {
         "server-ip": "127.0.0.1",
         "server-port": cfg["port"],
@@ -994,32 +1073,19 @@ for name, cfg in backends.items():
         "rcon.password": rcon_password,
         **cfg.get("properties", {}),
     }
-    for key, value in managed.items():
-        changes.append(
-            files.line(name=f"{name}: {key}", path=f"{d}/server.properties", line=f"^{key}=.*", replace=f"{key}={value}")
-        )
+    bundle.edit(server_properties, [(f"^{key}=.*", f"{key}={value}") for key, value in managed.items()],
+                base="".join(f"{k}={v}\n" for k, v in cfg.get("new_world", {}).items()))
 
     files.directory(name=f"{name}: config folder", path=f"{d}/config", **OWNER)
     if kind == "fabric":
-        files.file(name=f"{name}: FabricProxy-Lite.toml", path=f"{d}/config/FabricProxy-Lite.toml", **OWNER)
-        changes.append(
-            files.line(
-                name=f"{name}: Velocity secret",
-                path=f"{d}/config/FabricProxy-Lite.toml",
-                line="^secret *=.*",
-                replace=f'secret = "{secret}"',
-            )
-        )
         # hackEarlySend: LuckPerms needs the real UUID at pre-login, otherwise it kicks everyone.
         # hackMessageChain: avoids "invalid chat signature" kicks after switching servers.
-        for key in ["hackEarlySend", "hackMessageChain"]:
-            changes.append(files.line(
-                name=f"{name}: FabricProxy-Lite {key}",
-                path=f"{d}/config/FabricProxy-Lite.toml",
-                line=f"^{key} *=.*",
-                replace=f"{key} = true",
-            ))
-    elif not host.get_fact(PaperVelocityOk, server_dir=d):
+        bundle.edit(proxy_toml, [("^secret *=.*", f'secret = "{secret}"'),
+                                 *((f"^{key} *=.*", f"{key} = true") for key in ["hackEarlySend", "hackMessageChain"])])
+
+    restart_ops, _ = bundle.ops()
+    changes += restart_ops
+    if kind != "fabric" and not host.get_fact(PaperVelocityOk, server_dir=d):
         changes.append(server.shell(name=f"{name}: Velocity forwarding", commands=[f"/usr/local/bin/paper-velocity {d}"]))
 
     ownership(name, d)
