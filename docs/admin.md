@@ -16,6 +16,16 @@ uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod --dry   # previ
 uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod
 ```
 
+To deploy once nobody is on, with [maintenance](#maintenance) on for the deploy:
+
+```
+ssh <prod> mc-wait-empty 3 && uv run pyinfra deploy/inventory.py deploy/deploy.py --limit prod; ssh <prod> mc-maintenance off
+```
+
+`mc-wait-empty [--ignore-staff] [minutes]` waits until no server has had a player for that long (3 by default; with
+`--ignore-staff`, helpers, mods, staff and admins don't count, since they stay on through maintenance), then turns
+maintenance on; `mc-maintenance on|off` types it into the velocity console. Both arrive with a deploy.
+
 ## Secrets
 
 | File | Contents |

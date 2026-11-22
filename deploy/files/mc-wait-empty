@@ -1,0 +1,87 @@
+#!/bin/bash
+# Wait until no server has had a player for <minutes> (default 3), then turn maintenance on:
+#   mc-wait-empty [--ignore-staff] [minutes]
+# --ignore-staff doesn't count helpers, mods, staff and admins (who stay on through maintenance).
+# deploy-prod-when-empty runs it before a deploy. A server that doesn't answer counts as empty.
+minutes=3
+ignore_staff=""
+for arg in "$@"; do
+    case "$arg" in
+        --ignore-staff) ignore_staff=1 ;;
+        *[!0-9]*|"") echo "usage: mc-wait-empty [--ignore-staff] [minutes]"; exit 1 ;;
+        *) minutes=$arg ;;
+    esac
+done
+need=$((minutes * 60))
+
+# Lowercase names of everyone in a group with maintenance.bypass (admin through *).
+staff_names() {
+    mysql -N luckperms -e "SELECT DISTINCT p.username FROM luckperms_user_permissions u
+        JOIN luckperms_players p ON p.uuid = u.uuid
+        WHERE u.permission IN ('group.helper', 'group.mod', 'group.staff', 'group.admin')
+          AND u.value = 1 AND (u.expiry = 0 OR u.expiry > UNIX_TIMESTAMP())"
+}
+
+# A server's player count on the first line, then the names in its list, one per line: Fabric
+# "...online: a, b", EssentialsX (limbo) "default: a, b" on the lines after; [AFK]-style tags
+# dropped. The count is there because a name we can't read still has to count.
+players() {
+    local out count
+    out=$(timeout 20 mc-rcon "$1" list 2>/dev/null | sed 's/§.//g')
+    count=$(echo "$out" | grep -oE '[0-9]+' | head -1)
+    echo "${count:-0}"
+    echo "$out" | grep ': ' | sed 's/^.*: //' | tr ',' '\n' | sed 's/\[[^]]*\]//g; s/^ *//; s/ *$//' | grep -v '^$'
+}
+
+empty_since=""
+last=""
+while true; do
+    staff=""
+    if [ -n "$ignore_staff" ]; then
+        staff=$(set -o pipefail; staff_names | tr 'A-Z' 'a-z') || { echo "Can't read the staff from LuckPerms."; exit 1; }
+    fi
+    total=0
+    busy=""
+    ignored=""
+    for props in /home/mc/servers/*/server.properties; do
+        grep -q "^enable-rcon=true" "$props" || continue
+        s=$(basename "$(dirname "$props")")
+        n=0
+        named=0
+        count=""
+        while read -r name; do
+            if [ -z "$count" ]; then count=$name; continue; fi
+            named=$((named + 1))
+            if [ -n "$ignore_staff" ] && grep -qxF "$(echo "$name" | tr 'A-Z' 'a-z')" <<< "$staff"; then
+                ignored="$ignored $name"
+            else
+                n=$((n + 1))
+            fi
+        done < <(players "$s")
+        [ "${count:-0}" -gt "$named" ] && n=$((n + count - named))
+        if [ "$n" -gt 0 ]; then
+            total=$((total + n))
+            busy="$busy $s:$n"
+        fi
+    done
+    now=$(date +%s)
+    note=""
+    [ -n "$ignored" ] && note=", staff ignored:$ignored"
+    if [ "$total" -gt 0 ]; then
+        empty_since=""
+        status="$(date +%H:%M) $total online ($busy )$note"
+    else
+        [ -z "$empty_since" ] && empty_since=$now
+        if [ $((now - empty_since)) -ge "$need" ]; then
+            echo "$(date +%H:%M) empty for $minutes min$note, turning maintenance on"
+            exec mc-maintenance on
+        fi
+        status="$(date +%H:%M) empty$note, waiting for $minutes min"
+    fi
+    # Only print when something changes (the time aside).
+    if [ "${status#* }" != "$last" ]; then
+        echo "$status"
+        last="${status#* }"
+    fi
+    sleep 15
+done
