@@ -661,7 +661,8 @@ if not LOCAL:
 
 for unit in ["mc@.service", "mc-backup.service", "mc-backup.timer", "propwash-bot@.service"]:
     files.put(name=f"systemd unit {unit}", src=str(ROOT / "deploy/files" / unit), dest=f"/etc/systemd/system/{unit}", mode="644", **ROOT_OWNER)
-for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension", "mc-diagnose"]:
+for script in ["mc-console", "paper-velocity", "mc-rcon", "mc-backup", "mc-restore", "mc-merge-courses", "mc-seed-dimension", "mc-diagnose",
+               "mc-maintenance", "mc-wait-empty"]:
     files.put(name=f"{script} script", src=str(ROOT / "deploy/files" / script), dest=f"/usr/local/bin/{script}", mode="755", **ROOT_OWNER)
 
 files.directory(name="servers folder", path=SERVERS, **OWNER)
