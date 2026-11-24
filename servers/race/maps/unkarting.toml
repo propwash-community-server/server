@@ -1,7 +1,7 @@
 title = "Unkarting"
-author = "SHO"
+author = "Denied"
 # More than one person: these lines show instead of "by <author>" (one line per role).
-credits = ["Uncrashed map by SHO", "Adapted by pincil"]
+credits = ["Uncrashed map by Denied", "Adapted by pincil", "Race by HighRez"]
 rank = "Intermediate"
 border = { x = 80, z = 48, size = 1280 }
 # Where /rtp lands: x and z ranges (inside the border).
